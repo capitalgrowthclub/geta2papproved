@@ -75,26 +75,82 @@ export default function DashboardPage() {
         ) : plan && plan.plan_type !== "none" ? null : null}
       </div>
 
+      {/* Plan Status Card */}
+      {plan && plan.plan_type !== "none" && (
+        <Card className="p-4 sm:p-6 mb-6 border-teal-200 bg-gradient-to-r from-teal-50 to-emerald-50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-white border border-teal-200 flex items-center justify-center flex-shrink-0">
+                <svg className="w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-teal-800">{plan.plan_label}</p>
+                {plan.plan_type === "single_credit" ? (
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="text-2xl font-bold text-slate-900">{plan.credits_remaining}</span>
+                    <span className="text-sm text-slate-500">credit{plan.credits_remaining !== 1 ? "s" : ""} remaining</span>
+                  </div>
+                ) : (
+                  <div className="mt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold text-slate-900">
+                        {plan.project_limit - plan.projects_used_this_period}
+                      </span>
+                      <span className="text-sm text-slate-500">
+                        of {plan.project_limit} projects remaining
+                      </span>
+                    </div>
+                    <div className="w-48 bg-white rounded-full h-2 mt-2 border border-slate-200">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all"
+                        style={{ width: `${Math.min((plan.projects_used_this_period / plan.project_limit) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {plan.projects_used_this_period} of {plan.project_limit} used this period
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <Link href="/dashboard/billing" className="self-start sm:self-center">
+              <Button variant="outline" size="sm">Manage Plan</Button>
+            </Link>
+          </div>
+        </Card>
+      )}
+
       {/* Upgrade Banner */}
-      {plan && !hasCredits && (
+      {plan && plan.plan_type === "none" && (
         <Card className="p-4 sm:p-6 mb-6 border-amber-200 bg-amber-50">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="font-semibold text-slate-900">
-                {plan.plan_type === "none"
-                  ? "Choose a plan to create projects"
-                  : "You've reached your project limit"}
-              </h3>
+              <h3 className="font-semibold text-slate-900">Choose a plan to create projects</h3>
               <p className="text-sm text-slate-600 mt-1">
-                {plan.plan_type === "none"
-                  ? "Purchase a credit or subscribe to start generating A2P compliant documents."
-                  : "Upgrade your plan or wait for the next billing period to create more projects."}
+                Purchase a credit or subscribe to start generating A2P compliant documents.
               </p>
             </div>
             <Link href="/dashboard/billing" className="self-start sm:self-center">
-              <Button>
-                {plan.plan_type === "none" ? "Choose a Plan" : "Upgrade"}
-              </Button>
+              <Button>Choose a Plan</Button>
+            </Link>
+          </div>
+        </Card>
+      )}
+
+      {/* Limit Reached Banner */}
+      {plan && plan.plan_type !== "none" && !hasCredits && (
+        <Card className="p-4 sm:p-6 mb-6 border-amber-200 bg-amber-50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-semibold text-slate-900">You&apos;ve reached your project limit</h3>
+              <p className="text-sm text-slate-600 mt-1">
+                Upgrade your plan or wait for the next billing period to create more projects.
+              </p>
+            </div>
+            <Link href="/dashboard/billing" className="self-start sm:self-center">
+              <Button>Upgrade</Button>
             </Link>
           </div>
         </Card>
