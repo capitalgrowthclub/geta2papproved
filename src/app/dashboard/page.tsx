@@ -1,0 +1,165 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
+import Card from "@/components/ui/Card";
+import Badge from "@/components/ui/Badge";
+import Button from "@/components/ui/Button";
+import type { Project } from "@/lib/supabase";
+
+interface PlanInfo {
+  plan_type: string;
+  credits_remaining: number;
+  projects_used_this_period: number;
+  project_limit: number;
+  plan_label: string;
+}
+
+export default function DashboardPage() {
+  const { user } = useUser();
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [plan, setPlan] = useState<PlanInfo | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [projRes, planRes] = await Promise.all([
+          fetch("/api/projects"),
+          fetch("/api/user/plan"),
+        ]);
+        if (projRes.ok) {
+          const data = await projRes.json();
+          setProjects(data.projects || []);
+        }
+        if (planRes.ok) {
+          setPlan(await planRes.json());
+        }
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  const hasCredits = plan && (
+    plan.plan_type === "single_credit" ? plan.credits_remaining > 0 :
+    plan.plan_type !== "none" ? plan.projects_used_this_period < plan.project_limit :
+    false
+  );
+
+  return (
+    <div className="max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">
+            Welcome{user?.firstName ? `, ${user.firstName}` : ""}
+          </h1>
+          <p className="text-slate-500 mt-1">
+            Manage your A2P registration projects
+          </p>
+        </div>
+        {hasCredits ? (
+          <Link href="/dashboard/new-project">
+            <Button>
+              <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+              New Project
+            </Button>
+          </Link>
+        ) : plan && plan.plan_type !== "none" ? null : null}
+      </div>
+
+      {/* Upgrade Banner */}
+      {plan && !hasCredits && (
+        <Card className="p-6 mb-6 border-amber-200 bg-amber-50">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-slate-900">
+                {plan.plan_type === "none"
+                  ? "Choose a plan to create projects"
+                  : "You've reached your project limit"}
+              </h3>
+              <p className="text-sm text-slate-600 mt-1">
+                {plan.plan_type === "none"
+                  ? "Purchase a credit or subscribe to start generating A2P compliant documents."
+                  : "Upgrade your plan or wait for the next billing period to create more projects."}
+              </p>
+            </div>
+            <Link href="/dashboard/billing">
+              <Button>
+                {plan.plan_type === "none" ? "Choose a Plan" : "Upgrade"}
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      )}
+
+      {/* Projects Grid */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="p-6 animate-pulse">
+              <div className="h-4 bg-slate-200 rounded w-3/4 mb-3" />
+              <div className="h-3 bg-slate-100 rounded w-1/2 mb-4" />
+              <div className="h-6 bg-slate-100 rounded w-20" />
+            </Card>
+          ))}
+        </div>
+      ) : projects.length === 0 ? (
+        <Card className="p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full gradient-bg-subtle flex items-center justify-center">
+            <svg className="w-8 h-8 text-teal-600" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m3.75 9v6m3-3H9m1.5-12H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">
+            No projects yet
+          </h3>
+          <p className="text-slate-500 mb-6 max-w-md mx-auto">
+            {hasCredits
+              ? "Create your first A2P registration project to generate a compliant privacy policy and terms & conditions."
+              : "Choose a plan to get started with generating A2P compliant documents."}
+          </p>
+          {hasCredits ? (
+            <Link href="/dashboard/new-project">
+              <Button size="lg">Create Your First Project</Button>
+            </Link>
+          ) : (
+            <Link href="/dashboard/billing">
+              <Button size="lg">Choose a Plan</Button>
+            </Link>
+          )}
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {projects.map((project) => (
+            <Link key={project.id} href={`/dashboard/project/${project.id}`}>
+              <Card hover className="p-6">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold text-slate-900">
+                      {project.name}
+                    </h3>
+                    <p className="text-sm text-slate-500 mt-0.5">
+                      {project.business_name}
+                    </p>
+                  </div>
+                  <Badge status={project.status} />
+                </div>
+                <p className="text-xs text-slate-400">
+                  Created {new Date(project.created_at).toLocaleDateString()}
+                </p>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,262 @@
+import { auth } from "@clerk/nextjs/server";
+import { NextRequest, NextResponse } from "next/server";
+import Anthropic from "@anthropic-ai/sdk";
+import { createServiceClient } from "@/lib/supabase";
+
+function getAnthropic() {
+  return new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+}
+
+const SYSTEM_PROMPT = `You are an expert legal document generator specializing in A2P 10DLC compliance. Your job is to generate privacy policies and terms & conditions that will pass carrier review for A2P 10DLC campaign registration.
+
+CRITICAL REQUIREMENTS:
+1. Documents must be professionally formatted and legally structured
+2. All A2P-specific sections must be included (SMS consent, opt-in/opt-out, message frequency, TCPA compliance)
+3. Output must be clean, well-organized HTML that can be directly copy-pasted
+4. Use proper legal language while remaining clear and understandable
+5. Include all required disclosures for carrier compliance
+6. Ensure TCPA, CTIA, and carrier-specific requirements are addressed
+7. The SMS/messaging section must explicitly state: consent is not shared with third parties, users can opt out by replying STOP, message and data rates may apply, and the exact message frequency
+8. Write EVERY section in FULL — do not use shortcuts, placeholders, "[insert here]" markers, or abbreviated language
+9. Every paragraph must be fully written out with complete legal language — no paraphrasing, no summarizing, no "etc."
+10. The document should be COMPREHENSIVE and PRODUCTION-READY — the user should be able to copy-paste it directly onto their website with zero edits needed
+
+FORMAT REQUIREMENTS:
+- Use clean HTML with proper heading hierarchy (h1, h2, h3)
+- Use paragraphs, ordered lists, and unordered lists appropriately
+- Include today's date as the "Last Updated" date
+- Include proper section numbering
+- Write every section completely — this is a real legal document, not a template
+- The output should look professional when rendered in a browser
+
+Do NOT include any markdown formatting. Output ONLY valid HTML content (no <html>, <head>, or <body> tags — just the document content).`;
+
+function buildPrivacyPolicyPrompt(answers: Record<string, string>): string {
+  return `Generate a comprehensive Privacy Policy for A2P 10DLC compliance based on the following business information:
+
+BUSINESS IDENTITY:
+- Legal Business Name: ${answers.legal_business_name || "N/A"}
+- DBA Names: ${answers.has_dba === "Yes" ? answers.dba_names || "N/A" : "None"}
+- Business Address: ${answers.business_address || "N/A"}
+- Business Phone: ${answers.business_phone || "N/A"}
+- Business Email: ${answers.business_email || "N/A"}
+- Website: ${answers.primary_website || "N/A"}
+
+SMS CAMPAIGN USE CASES:
+- Marketing Use Case: ${answers.marketing_use_case || "N/A"}
+- Marketing Message Types: ${answers.marketing_message_types || "N/A"}
+- Marketing Frequency: ${answers.marketing_frequency || "N/A"}
+- Transactional Use Case: ${answers.transactional_use_case || "N/A"}
+- Transactional Message Types: ${answers.transactional_message_types || "N/A"}
+- Transactional Frequency: ${answers.transactional_frequency || "N/A"}
+
+OPT-IN DETAILS:
+- Opt-in Locations: ${answers.optin_locations || "N/A"}
+- Phone Field Required: ${answers.phone_field_required || "N/A"}
+- Pre-checked Consent Boxes: ${answers.prechecked_consent || "N/A"}
+- Policy Links Visible: ${answers.policy_links_visible || "N/A"}
+
+SUPPORT & OPT-OUT:
+- STOP/HELP Number: ${answers.stop_help_number || "N/A"}
+- Support Email: ${answers.support_email || "N/A"}
+- Toll-free Number: ${answers.tollfree_number || "N/A"}
+
+DATA SHARING & THIRD PARTIES:
+- Shares SMS Opt-in Data: ${answers.shares_optin_data || "N/A"}
+- Passes Leads to Third Parties: ${answers.passes_leads || "N/A"}
+- Lead Passing Tied to SMS: ${answers.lead_passing_tied_to_sms || "N/A"}
+- Uses Subcontractors: ${answers.uses_subcontractors || "N/A"}
+- Subcontractor Details: ${answers.subcontractor_details || "N/A"}
+- Uses Affiliate Tracking: ${answers.uses_affiliate_tracking || "N/A"}
+
+COMPLIANCE:
+- Collects Data Under 13: ${answers.collects_under_13 || "N/A"}
+- Operates in California: ${answers.operates_in_california || "N/A"}
+- Business State: ${answers.business_state || "N/A"}
+
+PLATFORM:
+- Primary SMS Platform: ${answers.primary_sms_platform || "N/A"}
+- Additional Platforms: ${answers.additional_sms_platforms || "N/A"}
+- Additional Platform Details: ${answers.additional_platform_details || "N/A"}
+
+${answers.existing_privacy_policy ? `
+EXISTING PRIVACY POLICY TO UPDATE:
+The user has an existing privacy policy they want updated for A2P compliance. Keep their existing language and structure where appropriate, but ADD all the required SMS/messaging sections and A2P-specific language. Here is their current policy:
+
+${answers.existing_privacy_policy}
+
+Update the above policy to include all A2P requirements listed below. Keep existing sections that are still relevant.
+` : ""}
+Generate the COMPLETE privacy policy in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
+
+CRITICAL A2P requirements to include:
+1. Introduction identifying the business and scope
+2. Information collected (personal data, device data, SMS opt-in data)
+3. How information is used (including SMS messaging purposes)
+4. SMS/Text Messaging section — MUST include:
+   - Clear description of the messaging program
+   - Explicit statement that SMS opt-in consent is NOT shared with or sold to third parties
+   - How to opt in (describe the consent mechanism)
+   - How to opt out (reply STOP)
+   - How to get help (reply HELP or contact support)
+   - Message frequency disclosure
+   - "Message and data rates may apply" statement
+   - Supported carriers disclaimer
+5. Data sharing and third-party disclosure
+6. Data security measures
+7. Data retention practices
+8. User rights (access, correction, deletion)
+9. Children's privacy (COPPA compliance)
+10. California privacy rights (if applicable)
+11. Changes to the policy
+12. Contact information`;
+}
+
+function buildTermsPrompt(answers: Record<string, string>): string {
+  return `Generate comprehensive Terms & Conditions for A2P 10DLC compliance based on the following information:
+
+BUSINESS IDENTITY:
+- Legal Business Name: ${answers.legal_business_name || "N/A"}
+- DBA Names: ${answers.has_dba === "Yes" ? answers.dba_names || "N/A" : "None"}
+- Business Address: ${answers.business_address || "N/A"}
+- Business Phone: ${answers.business_phone || "N/A"}
+- Business Email: ${answers.business_email || "N/A"}
+- Website: ${answers.primary_website || "N/A"}
+
+SMS CAMPAIGN USE CASES:
+- Marketing Use Case: ${answers.marketing_use_case || "N/A"}
+- Marketing Message Types: ${answers.marketing_message_types || "N/A"}
+- Marketing Frequency: ${answers.marketing_frequency || "N/A"}
+- Transactional Use Case: ${answers.transactional_use_case || "N/A"}
+- Transactional Message Types: ${answers.transactional_message_types || "N/A"}
+- Transactional Frequency: ${answers.transactional_frequency || "N/A"}
+
+OPT-IN & OPT-OUT:
+- Opt-in Locations: ${answers.optin_locations || "N/A"}
+- STOP/HELP Number: ${answers.stop_help_number || "N/A"}
+- Support Email: ${answers.support_email || "N/A"}
+
+DATA SHARING:
+- Shares SMS Opt-in Data: ${answers.shares_optin_data || "N/A"}
+- Uses Subcontractors: ${answers.uses_subcontractors || "N/A"}
+- Subcontractor Details: ${answers.subcontractor_details || "N/A"}
+
+COMPLIANCE:
+- Business State: ${answers.business_state || "N/A"}
+- Primary SMS Platform: ${answers.primary_sms_platform || "N/A"}
+
+CONFIRMATIONS:
+- Two Separate Consent Boxes: ${answers.understands_consent_boxes || "N/A"}
+- No Pre-checked Consent: ${answers.no_prechecked_consent || "N/A"}
+
+${answers.existing_terms ? `
+EXISTING TERMS & CONDITIONS TO UPDATE:
+The user has existing terms & conditions they want updated for A2P compliance. Keep their existing language and structure where appropriate, but ADD all the required SMS/messaging sections and A2P-specific language. Here is their current document:
+
+${answers.existing_terms}
+
+Update the above terms to include all A2P requirements listed below. Keep existing sections that are still relevant.
+` : ""}
+Generate the COMPLETE terms & conditions in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
+
+CRITICAL A2P requirements to include:
+1. Acceptance of terms
+2. Description of service (including SMS messaging program)
+3. User eligibility (must be 18+, US-based)
+4. SMS/Text Messaging Terms — MUST include:
+   - Program description (marketing and transactional campaigns)
+   - Consent mechanism description
+   - TWO separate consent disclosures (marketing + non-marketing)
+   - Explicit statement: "By opting in, you agree to receive [marketing/transactional] text messages"
+   - Message frequency for each campaign type
+   - "Message and data rates may apply"
+   - Opt-out: "Reply STOP to cancel at any time"
+   - Help: "Reply HELP for assistance or contact ${answers.support_email || "support"}"
+   - Statement that consent is not a condition of purchase
+   - Statement that SMS opt-in data is not shared with third parties
+5. Intellectual property
+6. Prohibited conduct
+7. Disclaimers and warranties ("as is" service)
+8. Limitation of liability
+9. Indemnification
+10. Termination
+11. Dispute resolution and governing law (${answers.business_state || "applicable state"})
+12. Severability
+13. Changes to terms
+14. Contact information`;
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { project_id, type, answers } = await req.json();
+
+    if (!project_id || !type || !answers) {
+      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    }
+
+    const prompt =
+      type === "privacy_policy"
+        ? buildPrivacyPolicyPrompt(answers)
+        : buildTermsPrompt(answers);
+
+    const message = await getAnthropic().messages.create({
+      model: "claude-sonnet-4-5-20250929",
+      max_tokens: 16000,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    const content = message.content[0];
+    if (content.type !== "text") {
+      return NextResponse.json({ error: "Unexpected response type" }, { status: 500 });
+    }
+
+    const generatedContent = content.text;
+
+    const supabase = createServiceClient();
+
+    const { data: existing } = await supabase
+      .from("generated_documents")
+      .select("version")
+      .eq("project_id", project_id)
+      .eq("type", type)
+      .order("version", { ascending: false })
+      .limit(1);
+
+    const nextVersion = existing && existing.length > 0 ? existing[0].version + 1 : 1;
+
+    const { data: doc, error } = await supabase
+      .from("generated_documents")
+      .insert({
+        project_id,
+        type,
+        content: generatedContent,
+        version: nextVersion,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error saving document:", error);
+      return NextResponse.json({ error: "Failed to save document" }, { status: 500 });
+    }
+
+    // Update project status
+    await supabase
+      .from("projects")
+      .update({ status: "completed", updated_at: new Date().toISOString() })
+      .eq("id", project_id);
+
+    return NextResponse.json({ document: doc });
+  } catch (error) {
+    console.error("AI generation error:", error);
+    return NextResponse.json({ error: "Failed to generate document" }, { status: 500 });
+  }
+}
