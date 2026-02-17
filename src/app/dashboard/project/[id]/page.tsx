@@ -27,6 +27,19 @@ export default function ProjectDetailPage() {
   const [generatingTerms, setGeneratingTerms] = useState(false);
   const [errorPrivacy, setErrorPrivacy] = useState("");
   const [errorTerms, setErrorTerms] = useState("");
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  // Timer for generation elapsed time
+  useEffect(() => {
+    if (!generatingPrivacy && !generatingTerms) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setElapsedSeconds((s) => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [generatingPrivacy, generatingTerms]);
 
   // Client link form state
   const [showLinkForm, setShowLinkForm] = useState(false);
@@ -212,8 +225,8 @@ export default function ProjectDetailPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900">Writing your {label.toLowerCase()}...</p>
-                <p className="text-xs text-slate-500">This usually takes 1-2 minutes. Please don&apos;t close this page.</p>
+                <p className="text-sm font-medium text-slate-900">Writing your {label.toLowerCase()}... ({elapsedSeconds}s)</p>
+                <p className="text-xs text-slate-500">This usually takes 60-90 seconds. Please don&apos;t close this page.</p>
               </div>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -514,8 +527,8 @@ export default function ProjectDetailPage() {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
                   </div>
-                  <p className="text-slate-900 font-medium mb-1">Writing your privacy policy...</p>
-                  <p className="text-sm text-slate-500">This usually takes 1-2 minutes. Please don&apos;t close this page.</p>
+                  <p className="text-slate-900 font-medium mb-1">Writing your privacy policy... ({elapsedSeconds}s)</p>
+                  <p className="text-sm text-slate-500">This usually takes 60-90 seconds. Please don&apos;t close this page.</p>
                 </div>
               ) : (
                 <>
@@ -561,8 +574,8 @@ export default function ProjectDetailPage() {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
                   </div>
-                  <p className="text-slate-900 font-medium mb-1">Writing your terms &amp; conditions...</p>
-                  <p className="text-sm text-slate-500">This usually takes 1-2 minutes. Please don&apos;t close this page.</p>
+                  <p className="text-slate-900 font-medium mb-1">Writing your terms &amp; conditions... ({elapsedSeconds}s)</p>
+                  <p className="text-sm text-slate-500">This usually takes 60-90 seconds. Please don&apos;t close this page.</p>
                 </div>
               ) : (
                 <>

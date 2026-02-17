@@ -255,8 +255,23 @@ export async function POST(req: NextRequest) {
       .eq("id", project_id);
 
     return NextResponse.json({ document: doc });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("AI generation error:", error);
-    return NextResponse.json({ error: "Failed to generate document" }, { status: 500 });
+
+    // Surface specific error messages
+    let message = "Failed to generate document. Please try again.";
+    if (error instanceof Error) {
+      if (error.message.includes("credit balance is too low")) {
+        message = "AI service billing issue. Please contact support.";
+      } else if (error.message.includes("rate_limit")) {
+        message = "AI service is busy. Please wait a moment and try again.";
+      } else if (error.message.includes("overloaded")) {
+        message = "AI service is temporarily overloaded. Please try again in a few minutes.";
+      } else if (error.message.includes("authentication")) {
+        message = "AI service configuration error. Please contact support.";
+      }
+    }
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
