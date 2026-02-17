@@ -166,7 +166,7 @@ export default function BillingPage() {
       </h2>
       <div className="grid sm:grid-cols-3 gap-4">
         {plans.map((tier) => {
-          const isCurrentPlan = plan?.plan_type === tier.key;
+          const isCurrentPlan = plan?.plan_type === tier.key && tier.key !== "single_credit";
           return (
             <div
               key={tier.key}
