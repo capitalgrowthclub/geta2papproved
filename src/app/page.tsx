@@ -209,7 +209,7 @@ export default function Home() {
         <div className="relative px-6 py-20 sm:py-28 text-center max-w-4xl mx-auto">
           <div className="inline-flex items-center gap-2 bg-white border border-teal-200 rounded-full px-4 py-1.5 text-sm text-teal-700 font-medium mb-8 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
-            A2P compliance preparation tool for SMS marketers & agencies
+            Trusted By Agencies & Marketers
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.1] text-slate-900">
