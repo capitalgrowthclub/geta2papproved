@@ -60,12 +60,23 @@ export async function POST(req: NextRequest) {
           expiresAt.setFullYear(expiresAt.getFullYear() + 1);
         }
 
+        // Preserve single credits when upgrading from single_credit to a subscription
+        const { data: existingUser } = await supabase
+          .from("users")
+          .select("plan_type, credits_remaining")
+          .eq("clerk_id", clerkId)
+          .single();
+
+        const carryOverCredits = existingUser?.plan_type === "single_credit"
+          ? (existingUser.credits_remaining || 0)
+          : 0;
+
         await supabase
           .from("users")
           .update({
             is_paid: true,
             plan_type: plan,
-            credits_remaining: 0,
+            credits_remaining: carryOverCredits,
             stripe_subscription_id: session.subscription as string,
             plan_started_at: now.toISOString(),
             plan_expires_at: expiresAt.toISOString(),

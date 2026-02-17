@@ -72,6 +72,10 @@ export function canCreateProject(user: UserPlanData): { allowed: boolean; reason
   }
 
   if (user.projects_used_this_period >= plan.projectLimit) {
+    // Allow if they have carried-over single credits
+    if (user.credits_remaining > 0) {
+      return { allowed: true };
+    }
     return {
       allowed: false,
       reason: `You've reached your limit of ${plan.projectLimit} projects this ${plan.period}. Upgrade your plan or wait for the next billing period.`,
@@ -97,10 +101,22 @@ export async function consumeCredit(supabase: SupabaseClient, userId: string): P
       .update({ credits_remaining: Math.max(0, user.credits_remaining - 1) })
       .eq("id", userId);
   } else {
-    // Subscription: increment usage counter
-    await supabase
-      .from("users")
-      .update({ projects_used_this_period: (user.projects_used_this_period || 0) + 1 })
-      .eq("id", userId);
+    // Subscription: use subscription quota first, then single credits
+    const plan = PLANS[user.plan_type as PlanKey];
+    const atLimit = plan && user.projects_used_this_period >= plan.projectLimit;
+
+    if (atLimit && user.credits_remaining > 0) {
+      // Use a carried-over single credit
+      await supabase
+        .from("users")
+        .update({ credits_remaining: Math.max(0, user.credits_remaining - 1) })
+        .eq("id", userId);
+    } else {
+      // Use subscription quota
+      await supabase
+        .from("users")
+        .update({ projects_used_this_period: (user.projects_used_this_period || 0) + 1 })
+        .eq("id", userId);
+    }
   }
 }
