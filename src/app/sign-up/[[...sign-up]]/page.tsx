@@ -2,7 +2,7 @@ import { SignUp } from "@clerk/nextjs";
 
 export default function SignUpPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white px-4">
+    <div className="min-h-screen flex items-center justify-center bg-white px-4 py-8">
       <div className="w-full max-w-md flex flex-col items-center">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold gradient-text">GetA2PApproved</h1>
