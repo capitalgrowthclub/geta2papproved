@@ -264,18 +264,18 @@ export default function ProjectDetailPage() {
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-1">
+      <div className="flex items-start justify-between mb-6 sm:mb-8 gap-2">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 sm:gap-3 mb-1 flex-wrap">
             <Link href="/dashboard" className="text-slate-400 hover:text-slate-600">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
               </svg>
             </Link>
-            <h1 className="text-2xl font-bold text-slate-900">{project.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">{project.name}</h1>
             <Badge status={project.status} />
           </div>
-          <p className="text-slate-500 ml-8">{project.business_name}</p>
+          <p className="text-slate-500 ml-7 sm:ml-8 text-sm truncate">{project.business_name}</p>
         </div>
         <button
           onClick={() => setShowDeleteConfirm(true)}
@@ -312,7 +312,7 @@ export default function ProjectDetailPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex border-b border-slate-200 mb-6">
+      <div className="flex border-b border-slate-200 mb-6 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         {[
           { key: "overview" as const, label: "Overview" },
           { key: "privacy" as const, label: "Privacy Policy" },
@@ -321,7 +321,7 @@ export default function ProjectDetailPage() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
+            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === tab.key
                 ? "border-teal-500 text-teal-700"
                 : "border-transparent text-slate-500 hover:text-slate-700"
@@ -368,7 +368,7 @@ export default function ProjectDetailPage() {
               <p className="text-sm text-slate-500">
                 Generate a link for your client to fill out their basic business information. They&apos;ll only see 8 simple questions. No account needed.
               </p>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Input
                   label="Client Name (optional)"
                   placeholder="e.g., John Smith"

@@ -47,6 +47,7 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [plan, setPlan] = useState<PlanInfo | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     fetch("/api/user/plan")
@@ -54,6 +55,11 @@ export default function Sidebar() {
       .then((data) => setPlan(data))
       .catch(() => {});
   }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   function getPlanStatusText() {
     if (!plan || plan.plan_type === "none") return null;
@@ -65,15 +71,8 @@ export default function Sidebar() {
 
   const statusText = getPlanStatusText();
 
-  return (
-    <aside className="w-64 bg-white border-r border-slate-200 min-h-screen flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-slate-200">
-        <Link href="/dashboard" className="text-xl font-bold gradient-text">
-          GetA2PApproved
-        </Link>
-      </div>
-
+  const sidebarContent = (
+    <>
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
@@ -133,6 +132,59 @@ export default function Sidebar() {
           <span className="text-sm text-slate-600">Account</span>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile Header Bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+        <Link href="/dashboard" className="text-lg font-bold gradient-text">
+          GetA2PApproved
+        </Link>
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          className="p-2 text-slate-600 hover:text-slate-900 cursor-pointer"
+        >
+          {mobileOpen ? (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Overlay */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-30 bg-black/30"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Mobile Slide-out Sidebar */}
+      <aside
+        className={`lg:hidden fixed top-[57px] left-0 bottom-0 z-30 w-64 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-200 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {sidebarContent}
+      </aside>
+
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex w-64 bg-white border-r border-slate-200 min-h-screen flex-col">
+        {/* Logo */}
+        <div className="p-6 border-b border-slate-200">
+          <Link href="/dashboard" className="text-xl font-bold gradient-text">
+            GetA2PApproved
+          </Link>
+        </div>
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

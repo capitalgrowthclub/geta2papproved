@@ -96,7 +96,7 @@ export default function BillingPage() {
     return (
       <div className="max-w-4xl mx-auto">
         <div className="h-8 bg-slate-200 rounded w-1/3 mb-8 animate-pulse" />
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="p-6 animate-pulse">
               <div className="h-4 bg-slate-200 rounded w-2/3 mb-4" />
@@ -122,7 +122,7 @@ export default function BillingPage() {
       {/* Current Plan */}
       {plan && plan.plan_type !== "none" && (
         <Card className="p-6 mb-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <p className="text-sm text-slate-500">Current Plan</p>
               <p className="text-lg font-semibold text-slate-900">{plan.plan_label}</p>
@@ -146,6 +146,7 @@ export default function BillingPage() {
                 variant="outline"
                 onClick={handleManageSubscription}
                 disabled={portalLoading}
+                className="self-start sm:self-center"
               >
                 {portalLoading ? "Loading..." : "Manage Subscription"}
               </Button>

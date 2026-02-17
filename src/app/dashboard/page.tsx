@@ -54,12 +54,12 @@ export default function DashboardPage() {
   return (
     <div className="max-w-5xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
             Welcome{user?.firstName ? `, ${user.firstName}` : ""}
           </h1>
-          <p className="text-slate-500 mt-1">
+          <p className="text-slate-500 mt-1 text-sm sm:text-base">
             Manage your A2P registration projects
           </p>
         </div>
@@ -77,8 +77,8 @@ export default function DashboardPage() {
 
       {/* Upgrade Banner */}
       {plan && !hasCredits && (
-        <Card className="p-6 mb-6 border-amber-200 bg-amber-50">
-          <div className="flex items-center justify-between">
+        <Card className="p-4 sm:p-6 mb-6 border-amber-200 bg-amber-50">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="font-semibold text-slate-900">
                 {plan.plan_type === "none"
@@ -91,7 +91,7 @@ export default function DashboardPage() {
                   : "Upgrade your plan or wait for the next billing period to create more projects."}
               </p>
             </div>
-            <Link href="/dashboard/billing">
+            <Link href="/dashboard/billing" className="self-start sm:self-center">
               <Button>
                 {plan.plan_type === "none" ? "Choose a Plan" : "Upgrade"}
               </Button>
