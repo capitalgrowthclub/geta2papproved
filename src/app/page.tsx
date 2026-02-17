@@ -1,4 +1,4 @@
-const APP_URL = "https://go.geta2papproved.com";
+const APP_URL = "";
 
 const pricingTiers = [
   {
