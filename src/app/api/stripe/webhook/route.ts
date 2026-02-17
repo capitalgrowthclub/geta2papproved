@@ -29,13 +29,24 @@ export async function POST(req: NextRequest) {
 
     if (clerkId && plan) {
       if (plan === "single_credit") {
-        // One-time payment: give 1 credit
+        // One-time payment: add credits (supports multi-quantity)
+        const quantity = parseInt(session.metadata?.quantity || "1", 10) || 1;
+
+        // Get current credits to add to them
+        const { data: currentUser } = await supabase
+          .from("users")
+          .select("credits_remaining")
+          .eq("clerk_id", clerkId)
+          .single();
+
+        const currentCredits = currentUser?.credits_remaining || 0;
+
         await supabase
           .from("users")
           .update({
             is_paid: true,
             plan_type: "single_credit",
-            credits_remaining: 1,
+            credits_remaining: currentCredits + quantity,
             plan_started_at: new Date().toISOString(),
           })
           .eq("clerk_id", clerkId);

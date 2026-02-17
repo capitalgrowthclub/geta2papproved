@@ -49,6 +49,7 @@ export default function BillingPage() {
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
+  const [creditQty, setCreditQty] = useState(1);
 
   useEffect(() => {
     fetch("/api/user/plan")
@@ -61,10 +62,14 @@ export default function BillingPage() {
   async function handleCheckout(planKey: string) {
     setCheckoutLoading(planKey);
     try {
+      const body: Record<string, unknown> = { plan: planKey };
+      if (planKey === "single_credit" && creditQty > 1) {
+        body.quantity = creditQty;
+      }
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planKey }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (data.url) {
@@ -178,8 +183,21 @@ export default function BillingPage() {
               )}
               <div className="mb-4">
                 <p className="text-sm font-medium text-slate-500">{tier.name}</p>
-                <p className="text-3xl font-bold text-slate-900 mt-1">{tier.price}</p>
-                <p className="text-sm text-slate-500">{tier.period}</p>
+                {tier.key === "single_credit" ? (
+                  <>
+                    <p className="text-3xl font-bold text-slate-900 mt-1">
+                      ${47 * creditQty}
+                    </p>
+                    <p className="text-sm text-slate-500">
+                      {creditQty > 1 ? `$47 x ${creditQty} credits` : "one-time"}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-3xl font-bold text-slate-900 mt-1">{tier.price}</p>
+                    <p className="text-sm text-slate-500">{tier.period}</p>
+                  </>
+                )}
               </div>
               <ul className="space-y-2 text-sm text-slate-600 flex-1 mb-6">
                 {tier.features.map((f) => (
@@ -189,6 +207,25 @@ export default function BillingPage() {
                   </li>
                 ))}
               </ul>
+              {tier.key === "single_credit" && !isCurrentPlan && (
+                <div className="flex items-center justify-center gap-3 mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setCreditQty(Math.max(1, creditQty - 1))}
+                    className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    -
+                  </button>
+                  <span className="text-lg font-semibold text-slate-900 w-8 text-center">{creditQty}</span>
+                  <button
+                    type="button"
+                    onClick={() => setCreditQty(Math.min(10, creditQty + 1))}
+                    className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
               {isCurrentPlan ? (
                 <Button variant="outline" disabled className="w-full">
                   Current Plan
@@ -200,7 +237,7 @@ export default function BillingPage() {
                   disabled={checkoutLoading === tier.key}
                   className="w-full"
                 >
-                  {checkoutLoading === tier.key ? "Loading..." : tier.key === "single_credit" ? "Buy Credit" : "Subscribe"}
+                  {checkoutLoading === tier.key ? "Loading..." : tier.key === "single_credit" ? `Buy ${creditQty} Credit${creditQty > 1 ? "s" : ""}` : "Subscribe"}
                 </Button>
               )}
             </div>

@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { plan } = await req.json();
+    const { plan, quantity: rawQty } = await req.json();
+    const quantity = plan === "single_credit" ? Math.max(1, Math.min(10, Number(rawQty) || 1)) : 1;
     if (!plan || !VALID_PLANS.includes(plan)) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
@@ -53,11 +54,11 @@ export async function POST(req: NextRequest) {
     const session = await getStripe().checkout.sessions.create({
       customer: customerId,
       payment_method_types: ["card"],
-      line_items: [{ price: priceId, quantity: 1 }],
+      line_items: [{ price: priceId, quantity }],
       mode,
       success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard?payment=success`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard?payment=cancelled`,
-      metadata: { clerk_id: userId, plan },
+      metadata: { clerk_id: userId, plan, quantity: String(quantity) },
     });
 
     return NextResponse.json({ url: session.url });
