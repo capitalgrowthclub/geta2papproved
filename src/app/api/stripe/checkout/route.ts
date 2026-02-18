@@ -33,6 +33,18 @@ export async function POST(req: NextRequest) {
 
     // Create or retrieve Stripe customer
     let customerId = existingUser?.stripe_customer_id;
+
+    // Verify the stored customer ID is valid in the current Stripe mode
+    if (customerId) {
+      try {
+        await getStripe().customers.retrieve(customerId);
+      } catch {
+        // Customer doesn't exist in this mode (e.g. test→live migration) — create a new one
+        console.log("Stored customer ID invalid, creating new customer:", customerId);
+        customerId = null;
+      }
+    }
+
     if (!customerId) {
       const customer = await getStripe().customers.create({
         email: email || undefined,
