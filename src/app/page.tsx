@@ -166,8 +166,37 @@ const features = [
 ];
 
 export default function Home() {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "GetA2PApproved",
+    url: "https://www.geta2papproved.com",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    description:
+      "AI-powered A2P 10DLC compliance document generator. Creates privacy policies, terms & conditions, and submission language for carrier approval.",
+    offers: [
+      {
+        "@type": "Offer",
+        name: "Single Credit",
+        price: "47.00",
+        priceCurrency: "USD",
+      },
+      {
+        "@type": "Offer",
+        name: "Monthly Subscription",
+        price: "97.00",
+        priceCurrency: "USD",
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
       {/* Nav */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
         <div className="flex items-center justify-between px-6 py-4 max-w-6xl mx-auto">
