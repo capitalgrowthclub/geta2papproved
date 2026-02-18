@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
       await supabase.from("users").upsert({
         clerk_id: userId,
         email: email || "",
+        first_name: user?.firstName || "",
+        last_name: user?.lastName || "",
         stripe_customer_id: customerId,
         is_paid: false,
       }, { onConflict: "clerk_id" });

@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase";
 import { canCreateProject, consumeCredit } from "@/lib/pricing";
@@ -13,8 +13,15 @@ export async function GET() {
     const supabase = createServiceClient();
 
     // Ensure user exists
+    const clerkUser = await currentUser();
     await supabase.from("users").upsert(
-      { clerk_id: userId, email: "", is_paid: false },
+      {
+        clerk_id: userId,
+        email: clerkUser?.emailAddresses[0]?.emailAddress || "",
+        first_name: clerkUser?.firstName || "",
+        last_name: clerkUser?.lastName || "",
+        is_paid: false,
+      },
       { onConflict: "clerk_id", ignoreDuplicates: true }
     );
 
@@ -57,8 +64,15 @@ export async function POST(req: NextRequest) {
     const supabase = createServiceClient();
 
     // Ensure user exists
+    const clerkUser = await currentUser();
     await supabase.from("users").upsert(
-      { clerk_id: userId, email: "", is_paid: false },
+      {
+        clerk_id: userId,
+        email: clerkUser?.emailAddresses[0]?.emailAddress || "",
+        first_name: clerkUser?.firstName || "",
+        last_name: clerkUser?.lastName || "",
+        is_paid: false,
+      },
       { onConflict: "clerk_id", ignoreDuplicates: true }
     );
 
