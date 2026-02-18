@@ -270,6 +270,25 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Demo Video */}
+      <section className="px-6 pb-20 max-w-4xl mx-auto">
+        <div className="text-center mb-8">
+          <p className="text-sm font-semibold uppercase tracking-wider text-teal-600 mb-3">
+            See It In Action
+          </p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
+            Watch How It Works
+          </h2>
+        </div>
+        <div className="rounded-2xl overflow-hidden shadow-xl border border-slate-200" style={{ position: "relative", paddingBottom: "64.67%", height: 0 }}>
+          <iframe
+            src="https://www.loom.com/embed/d9666f60d5384a3d919b74ef2246956e"
+            allowFullScreen
+            style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }}
+          />
+        </div>
+      </section>
+
       {/* Problem / Pain Points */}
       <section id="problem" className="px-6 py-20 bg-slate-50">
         <div className="text-center mb-14">
