@@ -10,28 +10,28 @@ const pricingTiers = [
     features: [
       "1 complete A2P project",
       "Privacy policy + terms & conditions",
+      "A2P submission language generation",
       "Update existing docs or generate new",
-      "Copy-paste application answers",
-      "Consent box language guidance",
+      "Copy-paste ready for registration",
     ],
-    cta: "Buy Now",
+    cta: "Get Started",
     highlighted: false,
   },
   {
     name: "Monthly Pro",
     price: "$97",
     period: "/month",
-    description: "Up to 15 projects/month",
+    description: "Up to 8 projects/month",
     plan: "monthly_pro",
     features: [
-      "Up to 15 projects per month",
+      "Up to 8 projects per month",
       "Privacy policy + terms & conditions",
+      "A2P submission language generation",
       "Update existing docs or generate new",
-      "Copy-paste application answers",
-      "Consent box language guidance",
+      "Copy-paste ready for registration",
       "Shareable client intake links",
     ],
-    cta: "Subscribe Now",
+    cta: "Get Started",
     highlighted: true,
     badge: "Most Popular",
   },
@@ -44,13 +44,13 @@ const pricingTiers = [
     features: [
       "Up to 150 projects per year",
       "Privacy policy + terms & conditions",
+      "A2P submission language generation",
       "Update existing docs or generate new",
-      "Copy-paste application answers",
-      "Consent box language guidance",
+      "Copy-paste ready for registration",
       "Shareable client intake links",
       "Save 57% vs monthly",
     ],
-    cta: "Subscribe & Save",
+    cta: "Get Started",
     highlighted: false,
   },
 ];
@@ -245,7 +245,7 @@ export default function Home() {
           </div>
 
           <p className="mt-6 text-sm text-slate-400">
-            No subscription required. Start with a single project for $47. Already have documents? We{"'"}ll update them.
+            No subscription required. Single projects starting at $47.
           </p>
         </div>
       </section>
@@ -669,7 +669,7 @@ export default function Home() {
               Get Started for $47
             </a>
             <p className="mt-4 text-sm text-teal-200">
-              No subscription required. One credit = one complete project.
+              No subscription required. 1 credit = 1 project (privacy policy + terms & conditions + A2P submission language).
             </p>
           </div>
         </div>

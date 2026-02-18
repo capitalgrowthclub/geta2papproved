@@ -22,15 +22,15 @@ const plans = [
     price: "$47",
     period: "one-time",
     description: "1 A2P project",
-    features: ["1 complete A2P project", "Privacy policy + terms & conditions", "AI-powered generation"],
+    features: ["1 complete A2P project", "Privacy policy + terms & conditions", "A2P submission language"],
   },
   {
     key: "monthly_pro",
     name: "Monthly Pro",
     price: "$97",
     period: "/month",
-    description: "Up to 15 projects/month",
-    features: ["Up to 15 projects per month", "Privacy policy + terms & conditions", "Client intake links", "AI-powered generation"],
+    description: "Up to 8 projects/month",
+    features: ["Up to 8 projects per month", "Privacy policy + terms & conditions", "A2P submission language", "Client intake links"],
     highlighted: true,
     badge: "Most Popular",
   },
@@ -40,7 +40,7 @@ const plans = [
     price: "$497",
     period: "/year",
     description: "Up to 150 projects/year",
-    features: ["Up to 150 projects per year", "Privacy policy + terms & conditions", "Client intake links", "AI-powered generation", "Save 57% vs monthly"],
+    features: ["Up to 150 projects per year", "Privacy policy + terms & conditions", "A2P submission language", "Client intake links", "Save 57% vs monthly"],
   },
 ];
 

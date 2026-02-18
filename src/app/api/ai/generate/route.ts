@@ -201,6 +201,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Check regeneration limit (max 3 versions per document type)
+    const supabaseCheck = createServiceClient();
+    const { count } = await supabaseCheck
+      .from("generated_documents")
+      .select("id", { count: "exact", head: true })
+      .eq("project_id", project_id)
+      .eq("type", type);
+
+    if (count !== null && count >= 3) {
+      return NextResponse.json(
+        { error: "You've reached the maximum number of regenerations for this document. Please contact support at support@geta2papproved.com for assistance." },
+        { status: 429 }
+      );
+    }
+
     const prompt =
       type === "privacy_policy"
         ? buildPrivacyPolicyPrompt(answers)

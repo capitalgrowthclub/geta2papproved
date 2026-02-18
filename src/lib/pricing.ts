@@ -13,9 +13,9 @@ export const PLANS = {
   monthly_pro: {
     label: "Monthly Pro",
     price: 97,
-    projectLimit: 15,
+    projectLimit: 8,
     period: "month" as const,
-    description: "Up to 15 projects/month",
+    description: "Up to 8 projects/month",
   },
   annual_unlimited: {
     label: "Annual Unlimited",

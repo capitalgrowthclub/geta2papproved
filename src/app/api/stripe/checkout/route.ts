@@ -51,8 +51,14 @@ export async function POST(req: NextRequest) {
     const priceId = getPriceId(plan as PlanKey);
     const mode = isSubscription(plan as PlanKey) ? "subscription" : "payment";
 
+    // Ensure Stripe customer email matches Clerk email
+    if (email && customerId) {
+      await getStripe().customers.update(customerId, { email });
+    }
+
     const session = await getStripe().checkout.sessions.create({
       customer: customerId,
+      customer_update: { name: "auto" },
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity }],
       mode,
