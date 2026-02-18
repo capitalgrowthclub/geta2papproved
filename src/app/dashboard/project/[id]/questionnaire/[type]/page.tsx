@@ -50,35 +50,6 @@ export default function QuestionnairePage() {
     }
   }
 
-  async function handleGenerate(answers: Record<string, string>) {
-    // Save first
-    await fetch(`/api/projects/${id}/questionnaire`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        section: type,
-        questions_answers: answers,
-        completed: true,
-      }),
-    });
-
-    // Generate both documents
-    await Promise.all([
-      fetch("/api/ai/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: id, type: "privacy_policy", answers }),
-      }),
-      fetch("/api/ai/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_id: id, type: "terms_conditions", answers }),
-      }),
-    ]);
-
-    router.push(`/dashboard/project/${id}`);
-  }
-
   if (loading) {
     return (
       <div className="max-w-3xl mx-auto animate-pulse space-y-4">
@@ -114,7 +85,6 @@ export default function QuestionnairePage() {
         sections={a2pComplianceQuestions}
         initialAnswers={initialAnswers}
         onSave={handleSave}
-        onGenerate={handleGenerate}
       />
     </div>
   );
