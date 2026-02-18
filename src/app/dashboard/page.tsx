@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useUser } from "@clerk/nextjs";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
@@ -18,10 +19,46 @@ interface PlanInfo {
 }
 
 export default function DashboardPage() {
+  return (
+    <Suspense>
+      <DashboardContent />
+    </Suspense>
+  );
+}
+
+function DashboardContent() {
   const { user } = useUser();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<PlanInfo | null>(null);
+
+  // Auto-trigger checkout when redirected from sign-up with a plan
+  useEffect(() => {
+    const checkoutPlan = searchParams.get("checkout");
+    if (!checkoutPlan) return;
+
+    // Clean the URL so it doesn't re-trigger
+    router.replace("/dashboard", { scroll: false });
+
+    async function startCheckout() {
+      try {
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: checkoutPlan }),
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        }
+      } catch (error) {
+        console.error("Auto-checkout failed:", error);
+      }
+    }
+    startCheckout();
+  }, [searchParams, router]);
 
   useEffect(() => {
     async function fetchData() {

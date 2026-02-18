@@ -555,7 +555,7 @@ export default function Home() {
                 ))}
               </ul>
               <a
-                href={`${APP_URL}/sign-up`}
+                href={`${APP_URL}/sign-up?plan=${tier.plan}`}
                 className={`block text-center rounded-lg px-6 py-3 font-semibold transition-all duration-200 ${
                   tier.highlighted
                     ? "gradient-bg text-white hover:opacity-90 shadow-md"
