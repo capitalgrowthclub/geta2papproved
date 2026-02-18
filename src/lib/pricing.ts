@@ -101,12 +101,9 @@ export async function consumeCredit(supabase: SupabaseClient, userId: string): P
       .update({ credits_remaining: Math.max(0, user.credits_remaining - 1) })
       .eq("id", userId);
   } else {
-    // Subscription: use subscription quota first, then single credits
-    const plan = PLANS[user.plan_type as PlanKey];
-    const atLimit = plan && user.projects_used_this_period >= plan.projectLimit;
-
-    if (atLimit && user.credits_remaining > 0) {
-      // Use a carried-over single credit
+    // Subscription: use single credits first, then subscription quota
+    if (user.credits_remaining > 0) {
+      // Use a single credit first
       await supabase
         .from("users")
         .update({ credits_remaining: Math.max(0, user.credits_remaining - 1) })

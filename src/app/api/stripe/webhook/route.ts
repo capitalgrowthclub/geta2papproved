@@ -60,16 +60,14 @@ export async function POST(req: NextRequest) {
           expiresAt.setFullYear(expiresAt.getFullYear() + 1);
         }
 
-        // Preserve single credits when upgrading from single_credit to a subscription
+        // Preserve any existing single credits when upgrading to a subscription
         const { data: existingUser } = await supabase
           .from("users")
-          .select("plan_type, credits_remaining")
+          .select("credits_remaining")
           .eq("clerk_id", clerkId)
           .single();
 
-        const carryOverCredits = existingUser?.plan_type === "single_credit"
-          ? (existingUser.credits_remaining || 0)
-          : 0;
+        const carryOverCredits = existingUser?.credits_remaining || 0;
 
         await supabase
           .from("users")
