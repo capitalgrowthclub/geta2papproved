@@ -26,8 +26,25 @@ export async function POST(req: NextRequest) {
     const session = event.data.object as Stripe.Checkout.Session;
     const clerkId = session.metadata?.clerk_id;
     const plan = session.metadata?.plan as PlanKey | undefined;
+    const customerEmail = session.customer_details?.email || "";
+    const customerName = session.customer_details?.name || "";
+    const [firstName, ...lastParts] = customerName.split(" ");
+    const lastName = lastParts.join(" ");
 
     if (clerkId && plan) {
+      // Ensure user record exists before updating plan data
+      await supabase.from("users").upsert(
+        {
+          clerk_id: clerkId,
+          email: customerEmail,
+          first_name: firstName || "",
+          last_name: lastName || "",
+          stripe_customer_id: session.customer as string,
+          is_paid: false,
+        },
+        { onConflict: "clerk_id", ignoreDuplicates: true }
+      );
+
       if (plan === "single_credit") {
         // One-time payment: add credits (supports multi-quantity)
         const quantity = parseInt(session.metadata?.quantity || "1", 10) || 1;
@@ -52,10 +69,14 @@ export async function POST(req: NextRequest) {
           updateData.plan_started_at = new Date().toISOString();
         }
 
-        await supabase
+        const { error: updateError } = await supabase
           .from("users")
           .update(updateData)
           .eq("clerk_id", clerkId);
+
+        if (updateError) {
+          console.error("Error updating single credit:", updateError);
+        }
       } else {
         // Subscription: set plan type and period
         const now = new Date();
@@ -75,7 +96,7 @@ export async function POST(req: NextRequest) {
 
         const carryOverCredits = existingUser?.credits_remaining || 0;
 
-        await supabase
+        const { error: updateError } = await supabase
           .from("users")
           .update({
             is_paid: true,
@@ -88,6 +109,10 @@ export async function POST(req: NextRequest) {
             period_reset_at: now.toISOString(),
           })
           .eq("clerk_id", clerkId);
+
+        if (updateError) {
+          console.error("Error updating subscription:", updateError);
+        }
       }
     } else if (clerkId) {
       // Legacy fallback: no plan metadata

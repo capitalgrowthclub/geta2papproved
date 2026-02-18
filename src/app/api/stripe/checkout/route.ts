@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
       });
       customerId = customer.id;
 
-      await supabase.from("users").upsert({
+      const { error: upsertError } = await supabase.from("users").upsert({
         clerk_id: userId,
         email: email || "",
         first_name: user?.firstName || "",
@@ -48,6 +48,10 @@ export async function POST(req: NextRequest) {
         stripe_customer_id: customerId,
         is_paid: false,
       }, { onConflict: "clerk_id" });
+
+      if (upsertError) {
+        console.error("Error upserting user in checkout:", upsertError);
+      }
     }
 
     const priceId = getPriceId(plan as PlanKey);
