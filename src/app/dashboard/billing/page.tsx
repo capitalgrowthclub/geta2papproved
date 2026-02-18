@@ -50,6 +50,7 @@ export default function BillingPage() {
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
   const [creditQty, setCreditQty] = useState(1);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/user/plan")
@@ -61,6 +62,7 @@ export default function BillingPage() {
 
   async function handleCheckout(planKey: string) {
     setCheckoutLoading(planKey);
+    setCheckoutError(null);
     try {
       const body: Record<string, unknown> = { plan: planKey };
       if (planKey === "single_credit" && creditQty > 1) {
@@ -74,9 +76,11 @@ export default function BillingPage() {
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        setCheckoutError(data.error || "Failed to start checkout. Please try again.");
       }
     } catch {
-      // Silent failure
+      setCheckoutError("Something went wrong. Please try again.");
     } finally {
       setCheckoutLoading(null);
     }
@@ -168,6 +172,12 @@ export default function BillingPage() {
               </p>
             </Card>
           )}
+        </div>
+      )}
+
+      {checkoutError && (
+        <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+          {checkoutError}
         </div>
       )}
 
