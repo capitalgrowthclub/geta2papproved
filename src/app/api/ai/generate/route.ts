@@ -188,6 +188,44 @@ CRITICAL A2P requirements to include:
 14. Contact information`;
 }
 
+const SUBMISSION_SYSTEM_PROMPT = `You are an expert A2P 10DLC registration specialist. Your job is to generate the exact text fields needed to fill out an A2P campaign registration form. These fields will be copy-pasted directly into the registration portal.
+
+You MUST output ONLY valid JSON with no markdown, no code fences, no extra text. The JSON must have these exact keys:
+- "use_case_description": A detailed description of how the business uses SMS messaging (min 40 chars, max 4096 chars). Must mention: what types of messages are sent, that consent is collected through compliant opt-in processes, and that recipients can opt out by replying STOP.
+- "sample_message_1": A realistic sample transactional/service message from the business (min 20 chars, max 1024 chars). Must include the business name, a specific message example, and "Reply STOP to unsubscribe."
+- "sample_message_2": A realistic sample marketing/promotional message from the business (min 20 chars, max 1024 chars). Must include the business name, a different message type than sample 1, and "Reply STOP to unsubscribe."
+- "opt_in_description": Description of how contacts opt in to receive messages (min 40 chars, max 2048 chars). Must mention the specific opt-in method, that the form clearly explains messaging, includes explicit SMS consent language, and reference the website URL.
+- "opt_in_message": The confirmation message sent after someone opts in (max 320 chars). Must include: business name, what they signed up for, message frequency note, "Msg & data rates may apply", "Reply STOP to opt out", "Reply HELP for help."
+
+Each field must be realistic, specific to the business, and ready to copy-paste. Do NOT use generic placeholder language. Use the actual business name and details provided.`;
+
+function buildSubmissionLanguagePrompt(answers: Record<string, string>): string {
+  return `Generate A2P 10DLC registration form fields for the following business:
+
+BUSINESS IDENTITY:
+- Legal Business Name: ${answers.legal_business_name || "N/A"}
+- DBA Names: ${answers.has_dba === "Yes" ? answers.dba_names || "N/A" : "None"}
+- Website: ${answers.primary_website || "N/A"}
+- Business Phone: ${answers.business_phone || "N/A"}
+- Business Email: ${answers.business_email || "N/A"}
+
+SMS CAMPAIGN USE CASES:
+- Marketing Use Case: ${answers.marketing_use_case || "N/A"}
+- Marketing Message Types: ${answers.marketing_message_types || "N/A"}
+- Marketing Frequency: ${answers.marketing_frequency || "N/A"}
+- Transactional Use Case: ${answers.transactional_use_case || "N/A"}
+- Transactional Message Types: ${answers.transactional_message_types || "N/A"}
+- Transactional Frequency: ${answers.transactional_frequency || "N/A"}
+
+OPT-IN DETAILS:
+- Opt-in Locations: ${answers.optin_locations || "N/A"}
+- Phone Field Required: ${answers.phone_field_required || "N/A"}
+- Support Email: ${answers.support_email || "N/A"}
+- STOP/HELP Number: ${answers.stop_help_number || "N/A"}
+
+Generate the JSON with all 5 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.`;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
@@ -216,15 +254,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const isSubmissionLanguage = type === "submission_language";
     const prompt =
       type === "privacy_policy"
         ? buildPrivacyPolicyPrompt(answers)
+        : type === "submission_language"
+        ? buildSubmissionLanguagePrompt(answers)
         : buildTermsPrompt(answers);
 
     const message = await getAnthropic().messages.create({
       model: "claude-sonnet-4-5-20250929",
-      max_tokens: 16000,
-      system: SYSTEM_PROMPT,
+      max_tokens: isSubmissionLanguage ? 4000 : 16000,
+      system: isSubmissionLanguage ? SUBMISSION_SYSTEM_PROMPT : SYSTEM_PROMPT,
       messages: [{ role: "user", content: prompt }],
     });
 
@@ -233,7 +274,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unexpected response type" }, { status: 500 });
     }
 
-    const generatedContent = content.text;
+    let generatedContent = content.text;
+
+    // Strip markdown code fences if the AI wraps JSON in them
+    if (isSubmissionLanguage) {
+      generatedContent = generatedContent.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
+    }
 
     const supabase = createServiceClient();
 

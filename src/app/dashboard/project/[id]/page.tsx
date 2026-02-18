@@ -8,9 +8,10 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import DocumentViewer from "@/components/DocumentViewer";
+import SubmissionLanguageViewer from "@/components/SubmissionLanguageViewer";
 import type { Project, QuestionnaireResponse, GeneratedDocument, ClientIntakeLink } from "@/lib/supabase";
 
-type DocumentType = "privacy_policy" | "terms_conditions";
+type DocumentType = "privacy_policy" | "terms_conditions" | "submission_language";
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,17 +22,19 @@ export default function ProjectDetailPage() {
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null);
   const [documents, setDocuments] = useState<GeneratedDocument[]>([]);
   const [clientLinks, setClientLinks] = useState<ClientIntakeLink[]>([]);
-  const [activeTab, setActiveTab] = useState<"overview" | "privacy" | "terms">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "privacy" | "terms" | "submission">("overview");
   const [loading, setLoading] = useState(true);
   const [generatingPrivacy, setGeneratingPrivacy] = useState(false);
   const [generatingTerms, setGeneratingTerms] = useState(false);
+  const [generatingSubmission, setGeneratingSubmission] = useState(false);
   const [errorPrivacy, setErrorPrivacy] = useState("");
   const [errorTerms, setErrorTerms] = useState("");
+  const [errorSubmission, setErrorSubmission] = useState("");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
   // Timer for generation elapsed time
   useEffect(() => {
-    if (!generatingPrivacy && !generatingTerms) {
+    if (!generatingPrivacy && !generatingTerms && !generatingSubmission) {
       setElapsedSeconds(0);
       return;
     }
@@ -39,7 +42,7 @@ export default function ProjectDetailPage() {
       setElapsedSeconds((s) => s + 1);
     }, 1000);
     return () => clearInterval(interval);
-  }, [generatingPrivacy, generatingTerms]);
+  }, [generatingPrivacy, generatingTerms, generatingSubmission]);
 
   // Client link form state
   const [showLinkForm, setShowLinkForm] = useState(false);
@@ -89,6 +92,10 @@ export default function ProjectDetailPage() {
       setGeneratingTerms(true);
       setErrorTerms("");
     }
+    if (type === "submission_language") {
+      setGeneratingSubmission(true);
+      setErrorSubmission("");
+    }
 
     try {
       const res = await fetch("/api/ai/generate", {
@@ -104,15 +111,18 @@ export default function ProjectDetailPage() {
         const errMsg = data.error || "Generation failed. Please try again.";
         if (type === "privacy_policy") setErrorPrivacy(errMsg);
         if (type === "terms_conditions") setErrorTerms(errMsg);
+        if (type === "submission_language") setErrorSubmission(errMsg);
       }
     } catch (error) {
       console.error("Error generating:", error);
       const errMsg = "Something went wrong. Please try again.";
       if (type === "privacy_policy") setErrorPrivacy(errMsg);
       if (type === "terms_conditions") setErrorTerms(errMsg);
+      if (type === "submission_language") setErrorSubmission(errMsg);
     } finally {
       if (type === "privacy_policy") setGeneratingPrivacy(false);
       if (type === "terms_conditions") setGeneratingTerms(false);
+      if (type === "submission_language") setGeneratingSubmission(false);
     }
   }
 
@@ -161,6 +171,7 @@ export default function ProjectDetailPage() {
 
   const privacyDoc = documents.find((d) => d.type === "privacy_policy");
   const termsDoc = documents.find((d) => d.type === "terms_conditions");
+  const submissionDoc = documents.find((d) => d.type === "submission_language");
   const clientLink = clientLinks.length > 0 ? clientLinks[0] : null;
   const hasClientResponded = clientLink?.status === "submitted";
   const isQuestionnaireComplete = response?.completed === true;
@@ -189,7 +200,7 @@ export default function ProjectDetailPage() {
     type: DocumentType,
     doc: GeneratedDocument | undefined,
     isGenerating: boolean,
-    tabKey: "privacy" | "terms",
+    tabKey: "privacy" | "terms" | "submission",
     error?: string
   ) {
     return (
@@ -330,6 +341,7 @@ export default function ProjectDetailPage() {
           { key: "overview" as const, label: "Overview" },
           { key: "privacy" as const, label: "Privacy Policy" },
           { key: "terms" as const, label: "Terms & Conditions" },
+          { key: "submission" as const, label: "Submission Language" },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -481,9 +493,10 @@ export default function ProjectDetailPage() {
           </Card>
 
           {/* Document Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {renderDocCard("Privacy Policy", "privacy_policy", privacyDoc, generatingPrivacy, "privacy", errorPrivacy)}
             {renderDocCard("Terms & Conditions", "terms_conditions", termsDoc, generatingTerms, "terms", errorTerms)}
+            {renderDocCard("A2P Submission Language", "submission_language", submissionDoc, generatingSubmission, "submission", errorSubmission)}
           </div>
 
           {/* Legal Disclaimer */}
@@ -587,6 +600,52 @@ export default function ProjectDetailPage() {
                   {isQuestionnaireComplete ? (
                     <Button onClick={() => handleGenerate("terms_conditions")}>
                       Generate Terms &amp; Conditions
+                    </Button>
+                  ) : (
+                    <Link href={`/dashboard/project/${id}/questionnaire/a2p_compliance`}>
+                      <Button>Start Questionnaire</Button>
+                    </Link>
+                  )}
+                </>
+              )}
+            </Card>
+          )}
+        </div>
+      )}
+
+      {activeTab === "submission" && (
+        <div>
+          {submissionDoc ? (
+            <SubmissionLanguageViewer
+              content={submissionDoc.content}
+              version={submissionDoc.version}
+              createdAt={submissionDoc.created_at}
+              onRegenerate={() => handleGenerate("submission_language")}
+              regenerating={generatingSubmission}
+            />
+          ) : (
+            <Card className="p-12 text-center">
+              {generatingSubmission ? (
+                <div className="py-4">
+                  <div className="w-12 h-12 mx-auto mb-4 rounded-full gradient-bg-subtle flex items-center justify-center">
+                    <svg className="animate-spin w-6 h-6 text-teal-600" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  </div>
+                  <p className="text-slate-900 font-medium mb-1">Generating your A2P submission language... ({elapsedSeconds}s)</p>
+                  <p className="text-sm text-slate-500">This usually takes 30-60 seconds. Please don&apos;t close this page.</p>
+                </div>
+              ) : (
+                <>
+                  <p className="text-slate-500 mb-4">
+                    {isQuestionnaireComplete
+                      ? "Questionnaire complete. Generate your A2P submission language to copy into your registration form."
+                      : "Complete the A2P compliance questionnaire first."}
+                  </p>
+                  {isQuestionnaireComplete ? (
+                    <Button onClick={() => handleGenerate("submission_language")}>
+                      Generate Submission Language
                     </Button>
                   ) : (
                     <Link href={`/dashboard/project/${id}/questionnaire/a2p_compliance`}>

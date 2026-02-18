@@ -67,7 +67,7 @@ export interface ClientIntakeLink {
 export interface GeneratedDocument {
   id: string;
   project_id: string;
-  type: "privacy_policy" | "terms_conditions";
+  type: "privacy_policy" | "terms_conditions" | "submission_language";
   content: string;
   version: number;
   created_at: string;
