@@ -268,10 +268,12 @@ export default function Home() {
             No subscription required. Single projects starting at $47.
           </p>
         </div>
+        {/* Gradient fade to white */}
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-b from-transparent to-white" />
       </section>
 
       {/* Demo Video */}
-      <section className="px-6 pb-20 max-w-4xl mx-auto">
+      <section className="px-6 pt-16 pb-20 max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <p className="text-sm font-semibold uppercase tracking-wider text-teal-600 mb-3">
             See It In Action
