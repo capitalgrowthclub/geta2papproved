@@ -233,15 +233,6 @@ export default function Home() {
             >
               Generate Your Documents Now
             </a>
-            <a
-              href="#how-it-works"
-              className="flex items-center gap-2 text-slate-600 font-medium hover:text-slate-900 transition-colors"
-            >
-              See how it works
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-              </svg>
-            </a>
           </div>
 
           <p className="mt-6 text-sm text-slate-400">
