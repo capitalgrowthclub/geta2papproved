@@ -9,6 +9,41 @@ function getAnthropic() {
   });
 }
 
+async function fetchWebsiteContent(url: string): Promise<string> {
+  try {
+    const parsed = new URL(url);
+    if (!parsed.protocol.startsWith("http")) return "";
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: { "User-Agent": "GetA2PApproved/1.0" },
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) return "";
+
+    const html = await res.text();
+    let text = html
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&amp;/gi, "&")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (text.length > 5000) text = text.substring(0, 5000) + "...";
+    return text;
+  } catch {
+    return "";
+  }
+}
+
 const SYSTEM_PROMPT = `You are an expert legal document generator specializing in A2P 10DLC compliance. Your job is to generate privacy policies and terms & conditions that will pass carrier review for A2P 10DLC campaign registration.
 
 CRITICAL REQUIREMENTS:
@@ -33,7 +68,17 @@ FORMAT REQUIREMENTS:
 
 Do NOT include any markdown formatting. Output ONLY valid HTML content (no <html>, <head>, or <body> tags — just the document content).`;
 
-function buildPrivacyPolicyPrompt(answers: Record<string, string>): string {
+function buildWebsiteSection(answers: Record<string, string>, websiteContent: string): string {
+  if (!websiteContent) return "";
+  return `
+WEBSITE CONTENT (extracted from ${answers.primary_website}):
+The following is text content from the business's website. Use this to better understand their business, services, and branding tone. Write documents that are accurate and specific to this business:
+
+${websiteContent}
+`;
+}
+
+function buildPrivacyPolicyPrompt(answers: Record<string, string>, websiteContent: string): string {
   return `Generate a comprehensive Privacy Policy for A2P 10DLC compliance based on the following business information:
 
 BUSINESS IDENTITY:
@@ -80,7 +125,7 @@ PLATFORM:
 - Primary SMS Platform: ${answers.primary_sms_platform || "N/A"}
 - Additional Platforms: ${answers.additional_sms_platforms || "N/A"}
 - Additional Platform Details: ${answers.additional_platform_details || "N/A"}
-
+${buildWebsiteSection(answers, websiteContent)}
 ${answers.existing_privacy_policy ? `
 EXISTING PRIVACY POLICY TO UPDATE:
 The user has an existing privacy policy they want updated for A2P compliance. Keep their existing language and structure where appropriate, but ADD all the required SMS/messaging sections and A2P-specific language. Here is their current policy:
@@ -114,7 +159,7 @@ CRITICAL A2P requirements to include:
 12. Contact information`;
 }
 
-function buildTermsPrompt(answers: Record<string, string>): string {
+function buildTermsPrompt(answers: Record<string, string>, websiteContent: string): string {
   return `Generate comprehensive Terms & Conditions for A2P 10DLC compliance based on the following information:
 
 BUSINESS IDENTITY:
@@ -150,7 +195,7 @@ COMPLIANCE:
 CONFIRMATIONS:
 - Two Separate Consent Boxes: ${answers.understands_consent_boxes || "N/A"}
 - No Pre-checked Consent: ${answers.no_prechecked_consent || "N/A"}
-
+${buildWebsiteSection(answers, websiteContent)}
 ${answers.existing_terms ? `
 EXISTING TERMS & CONDITIONS TO UPDATE:
 The user has existing terms & conditions they want updated for A2P compliance. Keep their existing language and structure where appropriate, but ADD all the required SMS/messaging sections and A2P-specific language. Here is their current document:
@@ -191,15 +236,19 @@ CRITICAL A2P requirements to include:
 const SUBMISSION_SYSTEM_PROMPT = `You are an expert A2P 10DLC registration specialist. Your job is to generate the exact text fields needed to fill out an A2P campaign registration form. These fields will be copy-pasted directly into the registration portal.
 
 You MUST output ONLY valid JSON with no markdown, no code fences, no extra text. The JSON must have these exact keys:
-- "use_case_description": A detailed description of how the business uses SMS messaging (min 40 chars, max 4096 chars). Must mention: what types of messages are sent, that consent is collected through compliant opt-in processes, and that recipients can opt out by replying STOP.
+- "use_case_description": A concise description of how the business uses SMS messaging (min 40 chars, max 4096 chars). Keep it focused and direct — 2-4 sentences. Must mention: message types sent, consent collected via compliant opt-in, recipients can opt out by replying STOP.
 - "sample_message_1": A realistic sample transactional/service message from the business (min 20 chars, max 1024 chars). Must include the business name, a specific message example, and "Reply STOP to unsubscribe."
 - "sample_message_2": A realistic sample marketing/promotional message from the business (min 20 chars, max 1024 chars). Must include the business name, a different message type than sample 1, and "Reply STOP to unsubscribe."
-- "opt_in_description": Description of how contacts opt in to receive messages (min 40 chars, max 2048 chars). Must mention the specific opt-in method, that the form clearly explains messaging, includes explicit SMS consent language, and reference the website URL.
+- "opt_in_description": Concise description of how contacts opt in (min 40 chars, max 2048 chars). Keep it to 2-3 sentences. Must mention: specific opt-in method, that the form includes SMS consent language, and the website URL.
 - "opt_in_message": The confirmation message sent after someone opts in (max 320 chars). Must include: business name, what they signed up for, message frequency note, "Msg & data rates may apply", "Reply STOP to opt out", "Reply HELP for help."
+- "marketing_consent_checkbox": SHORT checkbox text for marketing SMS consent. Keep it to 1-2 concise sentences max. Must mention: consent to marketing texts from the business, msg frequency, "Msg & data rates may apply", "Reply STOP to cancel", consent not required for purchase. Example: "I agree to receive marketing texts from [Business Name]. Up to [X] msgs/mo. Msg & data rates may apply. Reply STOP to cancel. Consent not required for purchase."
+- "transactional_consent_checkbox": SHORT checkbox text for transactional SMS consent. Keep it to 1-2 concise sentences max. Must mention: consent to service texts from the business (e.g. reminders, updates), "Msg & data rates may apply", "Reply STOP to cancel". Example: "I agree to receive service texts from [Business Name] (e.g. appointment reminders, updates). Msg frequency varies. Msg & data rates may apply. Reply STOP to cancel."
+
+IMPORTANT: Keep ALL fields concise and practical. Avoid verbose, overly-detailed language. Each field should be the minimum length needed to meet carrier requirements while remaining compliant. Consent checkbox texts especially must be short — they need to fit next to a small checkbox on a form.
 
 Each field must be realistic, specific to the business, and ready to copy-paste. Do NOT use generic placeholder language. Use the actual business name and details provided.`;
 
-function buildSubmissionLanguagePrompt(answers: Record<string, string>): string {
+function buildSubmissionLanguagePrompt(answers: Record<string, string>, websiteContent: string): string {
   return `Generate A2P 10DLC registration form fields for the following business:
 
 BUSINESS IDENTITY:
@@ -222,8 +271,8 @@ OPT-IN DETAILS:
 - Phone Field Required: ${answers.phone_field_required || "N/A"}
 - Support Email: ${answers.support_email || "N/A"}
 - STOP/HELP Number: ${answers.stop_help_number || "N/A"}
-
-Generate the JSON with all 5 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.`;
+${buildWebsiteSection(answers, websiteContent)}
+Generate the JSON with all 7 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.`;
 }
 
 export async function POST(req: NextRequest) {
@@ -254,13 +303,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Fetch website content for AI context
+    const websiteUrl = answers.primary_website || "";
+    const websiteContent = websiteUrl ? await fetchWebsiteContent(websiteUrl) : "";
+
     const isSubmissionLanguage = type === "submission_language";
     const prompt =
       type === "privacy_policy"
-        ? buildPrivacyPolicyPrompt(answers)
+        ? buildPrivacyPolicyPrompt(answers, websiteContent)
         : type === "submission_language"
-        ? buildSubmissionLanguagePrompt(answers)
-        : buildTermsPrompt(answers);
+        ? buildSubmissionLanguagePrompt(answers, websiteContent)
+        : buildTermsPrompt(answers, websiteContent);
 
     const message = await getAnthropic().messages.create({
       model: "claude-sonnet-4-5-20250929",

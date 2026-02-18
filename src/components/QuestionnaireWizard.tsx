@@ -17,7 +17,6 @@ interface QuestionnaireWizardProps {
   sections: QuestionSection[];
   initialAnswers?: Record<string, string>;
   onSave: (answers: Record<string, string>, completed: boolean) => Promise<void>;
-  onGenerate?: (answers: Record<string, string>) => Promise<void>;
   mode?: "full" | "client";
 }
 
@@ -25,12 +24,10 @@ export default function QuestionnaireWizard({
   sections,
   initialAnswers = {},
   onSave,
-  onGenerate,
   mode = "full",
 }: QuestionnaireWizardProps) {
   const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers);
   const [saving, setSaving] = useState(false);
-  const [generating, setGenerating] = useState(false);
 
   const flatQuestions = useMemo<FlatQuestion[]>(() => {
     const result: FlatQuestion[] = [];
@@ -106,16 +103,6 @@ export default function QuestionnaireWizard({
     }
   }
 
-  async function handleGenerate() {
-    if (!onGenerate) return;
-    setGenerating(true);
-    try {
-      await onGenerate(answers);
-    } finally {
-      setGenerating(false);
-    }
-  }
-
   async function handleSaveDraft() {
     setSaving(true);
     try {
@@ -183,26 +170,9 @@ export default function QuestionnaireWizard({
 
           <div className="flex gap-2">
             {isLast ? (
-              <>
-                <Button variant="secondary" onClick={handleComplete} disabled={saving}>
-                  {saving ? "Completing..." : "Complete"}
-                </Button>
-                {onGenerate && (
-                  <Button onClick={handleGenerate} disabled={generating}>
-                    {generating ? (
-                      <>
-                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                        </svg>
-                        Generating...
-                      </>
-                    ) : (
-                      "Generate Documents"
-                    )}
-                  </Button>
-                )}
-              </>
+              <Button onClick={handleComplete} disabled={saving}>
+                {saving ? "Completing..." : "Complete"}
+              </Button>
             ) : (
               <Button onClick={handleNext}>
                 Next
@@ -262,6 +232,14 @@ function QuestionRenderer({
     }
   }
 
+  const recommendationTip = question.recommendationText && (
+    <div className="mt-2 p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+      <p className="text-xs text-emerald-800">
+        <span className="font-semibold">What we recommend:</span> {question.recommendationText}
+      </p>
+    </div>
+  );
+
   const aiButton = question.aiSuggest && !value && (
     <button
       type="button"
@@ -299,6 +277,7 @@ function QuestionRenderer({
           onChange={(e) => onUpdate(question.id, e.target.value)}
           required={question.required}
         />
+        {recommendationTip}
         {aiButton}
       </div>
     );
@@ -315,6 +294,7 @@ function QuestionRenderer({
           onChange={(e) => onUpdate(question.id, e.target.value)}
           required={question.required}
         />
+        {recommendationTip}
         {aiButton}
       </div>
     );
@@ -359,6 +339,7 @@ function QuestionRenderer({
         {question.helperText && (
           <p className="text-xs text-slate-500">{question.helperText}</p>
         )}
+        {recommendationTip}
       </div>
     );
   }
@@ -434,6 +415,7 @@ function QuestionRenderer({
         {question.helperText && (
           <p className="text-xs text-slate-500">{question.helperText}</p>
         )}
+        {recommendationTip}
       </div>
     );
   }

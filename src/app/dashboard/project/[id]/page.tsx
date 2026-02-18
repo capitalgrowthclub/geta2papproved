@@ -6,7 +6,6 @@ import Link from "next/link";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
 import DocumentViewer from "@/components/DocumentViewer";
 import SubmissionLanguageViewer from "@/components/SubmissionLanguageViewer";
 import type { Project, QuestionnaireResponse, GeneratedDocument, ClientIntakeLink } from "@/lib/supabase";
@@ -46,8 +45,6 @@ export default function ProjectDetailPage() {
 
   // Client link form state
   const [showLinkForm, setShowLinkForm] = useState(false);
-  const [clientName, setClientName] = useState("");
-  const [clientEmail, setClientEmail] = useState("");
   const [generatedUrl, setGeneratedUrl] = useState("");
   const [creatingLink, setCreatingLink] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -132,7 +129,7 @@ export default function ProjectDetailPage() {
       const res = await fetch(`/api/projects/${id}/client-link`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ section: "a2p_compliance", client_name: clientName, client_email: clientEmail }),
+        body: JSON.stringify({ section: "a2p_compliance" }),
       });
       if (res.ok) {
         const data = await res.json();
@@ -259,13 +256,21 @@ export default function ProjectDetailPage() {
             <p className="text-sm text-slate-500 mb-4">
               Your A2P-compliant {label.toLowerCase()} is ready. Click below to review it and copy the text.
             </p>
-            <Button variant="secondary" size="sm" onClick={() => setActiveTab(tabKey)}>
-              <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-              </svg>
-              Review &amp; Copy
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setActiveTab(tabKey)}>
+                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                </svg>
+                Review &amp; Copy
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => handleGenerate(type)}>
+                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+                </svg>
+                Regenerate
+              </Button>
+            </div>
           </>
         ) : isQuestionnaireComplete ? (
           <>
@@ -393,22 +398,8 @@ export default function ProjectDetailPage() {
               <p className="text-sm text-slate-500">
                 Generate a link for your client to fill out their basic business information. They&apos;ll only see 8 simple questions. No account needed.
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Input
-                  label="Client Name (optional)"
-                  placeholder="e.g., John Smith"
-                  value={clientName}
-                  onChange={(e) => setClientName(e.target.value)}
-                />
-                <Input
-                  label="Client Email (optional)"
-                  placeholder="e.g., john@example.com"
-                  value={clientEmail}
-                  onChange={(e) => setClientEmail(e.target.value)}
-                />
-              </div>
               <Button onClick={handleCreateClientLink} disabled={creatingLink}>
-                {creatingLink ? "Generating Link..." : "Generate Client Link"}
+                {creatingLink ? "Generating Link..." : "Generate Link"}
               </Button>
             </div>
           )}
@@ -437,7 +428,7 @@ export default function ProjectDetailPage() {
 
             <p className="text-sm text-slate-500 mb-4">
               {isQuestionnaireComplete
-                ? "All questions answered. You can now generate your documents below."
+                ? "All questions answered. Generate your documents below or edit your answers."
                 : clientLink?.status === "pending"
                 ? "Waiting for your client to submit their business information."
                 : hasClientResponded
@@ -446,7 +437,16 @@ export default function ProjectDetailPage() {
             </p>
 
             <div className="flex flex-wrap gap-2">
-              {!isQuestionnaireComplete && (
+              {isQuestionnaireComplete ? (
+                <Link href={`/dashboard/project/${id}/questionnaire/a2p_compliance`}>
+                  <Button variant="outline" size="sm">
+                    <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                    </svg>
+                    Edit Answers
+                  </Button>
+                </Link>
+              ) : (
                 <Link href={`/dashboard/project/${id}/questionnaire/a2p_compliance`}>
                   <Button size="sm">
                     {hasClientResponded
@@ -464,8 +464,6 @@ export default function ProjectDetailPage() {
                   onClick={() => {
                     setShowLinkForm(true);
                     setGeneratedUrl("");
-                    setClientName("");
-                    setClientEmail("");
                   }}
                 >
                   <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
