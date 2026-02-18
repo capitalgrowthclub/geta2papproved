@@ -10,6 +10,8 @@ interface SubmissionFields {
   sample_message_2: string;
   opt_in_description: string;
   opt_in_message: string;
+  marketing_consent_checkbox?: string;
+  transactional_consent_checkbox?: string;
 }
 
 interface SubmissionLanguageViewerProps {
@@ -172,6 +174,32 @@ export default function SubmissionLanguageViewer({
               />
             </div>
           </div>
+
+          {(fields.marketing_consent_checkbox || fields.transactional_consent_checkbox) && (
+            <div>
+              <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                <span className="w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">4</span>
+                Consent Checkbox Text
+              </h3>
+              <p className="text-xs text-slate-500 mb-3 ml-8">
+                Place these texts next to two separate, unchecked checkboxes on every form that collects a phone number. Both checkboxes must be unchecked by default.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-8">
+                {fields.marketing_consent_checkbox && (
+                  <CopyField
+                    label="Marketing Consent Checkbox"
+                    value={fields.marketing_consent_checkbox}
+                  />
+                )}
+                {fields.transactional_consent_checkbox && (
+                  <CopyField
+                    label="Transactional Consent Checkbox"
+                    value={fields.transactional_consent_checkbox}
+                  />
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </Card>
 

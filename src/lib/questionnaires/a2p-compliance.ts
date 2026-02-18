@@ -4,6 +4,8 @@ export interface Question {
   type: "text" | "textarea" | "select" | "multi-select";
   placeholder?: string;
   helperText?: string;
+  /** Recommendation tip shown in a highlighted box below the helper text */
+  recommendationText?: string;
   options?: string[];
   required?: boolean;
   clientFacing?: boolean;
@@ -130,8 +132,10 @@ export const a2pComplianceQuestions: QuestionSection[] = [
           "Referral program messages",
           "Re-engagement messages",
         ],
-        helperText: "WHY THIS MATTERS: Each type of marketing message needs to be disclosed in your terms. Select all that apply — it's better to include more than to leave something out.",
+        helperText: "WHY THIS MATTERS: Each type of marketing message needs to be disclosed in your terms. Select all that apply and use the 'Other' field to add anything specific to your business (e.g., 'Weekly property listings', 'Flash sale alerts'). The more specific you are, the better your documents will be.",
+        recommendationText: "Select every type you might ever send — it's much easier to include them now than to update your documents later. Use the Other field to describe your most common message type in your own words.",
         required: true,
+        allowOther: true,
       },
       {
         id: "marketing_frequency",
@@ -146,6 +150,7 @@ export const a2pComplianceQuestions: QuestionSection[] = [
           "Up to 20 messages per month",
         ],
         helperText: "WHY THIS MATTERS: Your privacy policy and terms MUST state the message frequency. Carriers will reject you if your actual sending exceeds what's stated. Pick a realistic maximum — you can always send fewer.",
+        recommendationText: "We recommend 'Up to 4 messages per month' for most businesses. This gives you enough flexibility for weekly promos without raising carrier flags. Only go higher if you genuinely send that many.",
         required: true,
       },
       {
@@ -171,8 +176,10 @@ export const a2pComplianceQuestions: QuestionSection[] = [
           "Customer support responses",
           "Service outage notifications",
         ],
-        helperText: "WHY THIS MATTERS: These must be listed in your terms & conditions under a separate non-marketing SMS section.",
+        helperText: "WHY THIS MATTERS: These must be listed in your terms & conditions under a separate non-marketing SMS section. Use the 'Other' field to add anything specific to your business.",
+        recommendationText: "Most businesses should at minimum select 'Appointment reminders' or 'Booking confirmations' plus 'Customer support responses'. Add your own specific use case with the Other field.",
         required: true,
+        allowOther: true,
       },
       {
         id: "transactional_frequency",
@@ -187,6 +194,7 @@ export const a2pComplianceQuestions: QuestionSection[] = [
           "As needed based on account activity",
         ],
         helperText: "WHY THIS MATTERS: Even transactional messages need a frequency cap disclosed in your terms. 'As needed based on account activity' is acceptable for most businesses.",
+        recommendationText: "We recommend 'As needed based on account activity' — this is the safest choice for transactional messages since they're triggered by customer actions and hard to predict exactly.",
         required: true,
       },
     ],
@@ -221,6 +229,7 @@ export const a2pComplianceQuestions: QuestionSection[] = [
         type: "select",
         options: ["Required", "Optional"],
         helperText: "WHY THIS MATTERS: If the phone field is required, your consent language must clearly state that providing a phone number and consenting to messages is NOT required to use your service or make a purchase.",
+        recommendationText: "We recommend making phone fields 'Required' if texting is core to your service. Just make sure your consent language states it's not required for purchase — we'll handle that in your documents.",
         required: true,
       },
       {
@@ -242,6 +251,7 @@ export const a2pComplianceQuestions: QuestionSection[] = [
           "I don't have policy pages yet",
         ],
         helperText: "WHY THIS MATTERS: Every form that collects a phone number must have clickable links to your Privacy Policy and Terms & Conditions. Carriers check for this. We'll generate both documents for you.",
+        recommendationText: "Best practice: Place policy links directly next to or below the consent checkboxes — not just in the footer. Carriers are more likely to approve when links are clearly visible near the opt-in area.",
         required: true,
       },
     ],
@@ -284,6 +294,7 @@ export const a2pComplianceQuestions: QuestionSection[] = [
         question: "What is your toll-free number?",
         type: "text",
         placeholder: "e.g., 1-800-555-1234",
+        helperText: "Leave blank if not applicable. Most businesses don't have one and that's perfectly fine for A2P approval.",
       },
     ],
   },
@@ -300,6 +311,7 @@ export const a2pComplianceQuestions: QuestionSection[] = [
         type: "select",
         options: ["No — we never share opt-in data", "Yes — we share with some parties"],
         helperText: "CRITICAL: For A2P approval, your privacy policy MUST explicitly state that SMS opt-in consent data is NOT shared with or sold to third parties. If you currently share this data, you need to stop before applying. This is one of the top reasons for rejection.",
+        recommendationText: "You MUST select 'No' for A2P approval. If you currently share opt-in data, stop doing so before submitting your application. There is no workaround for this requirement.",
         required: true,
       },
       {
@@ -348,6 +360,7 @@ export const a2pComplianceQuestions: QuestionSection[] = [
         type: "select",
         options: ["No — all leads come directly from my own forms", "Yes — I buy or receive leads from outside sources"],
         helperText: "WHY THIS MATTERS: This includes things like: buying lead lists from services like HomeAdvisor or Angi, getting phone numbers from partner referral programs, or using any service that sends you customer contact info you didn't collect yourself. If you text people whose numbers came from outside sources without their direct consent to YOUR business, carriers can shut down your messaging.",
+        recommendationText: "For best approval odds, select 'No'. If you do buy leads, you must get fresh SMS consent from each person through your own compliant opt-in form before texting them.",
         required: true,
       },
     ],
@@ -381,6 +394,7 @@ export const a2pComplianceQuestions: QuestionSection[] = [
           "I'm not sure",
         ],
         helperText: "WHY THIS MATTERS: If you have ANY California customers, your policy must include CCPA (California Consumer Privacy Act) rights. This includes the right to know what data is collected, the right to delete, and the right to opt out of data sales. When in doubt, select 'Yes' to be safe.",
+        recommendationText: "When in doubt, select 'Yes — some customers are in California'. Including CCPA language doesn't hurt your application and protects you if you ever get California customers.",
         required: true,
       },
       {
