@@ -127,25 +127,31 @@ function DashboardContent() {
                 {plan.has_subscription && (
                   <div>
                     <p className="text-sm font-medium text-teal-800">{plan.plan_label}</p>
-                    <div className="mt-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-slate-900">
-                          {plan.project_limit - plan.projects_used_this_period}
-                        </span>
-                        <span className="text-sm text-slate-500">
-                          of {plan.project_limit} projects remaining
-                        </span>
+                    {plan.plan_type === "annual_unlimited" ? (
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-2xl font-bold text-slate-900">Infinity Go Crazy</span>
                       </div>
-                      <div className="w-48 bg-white rounded-full h-2 mt-2 border border-slate-200">
-                        <div
-                          className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all"
-                          style={{ width: `${Math.min((plan.projects_used_this_period / plan.project_limit) * 100, 100)}%` }}
-                        />
+                    ) : (
+                      <div className="mt-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-bold text-slate-900">
+                            {plan.project_limit - plan.projects_used_this_period}
+                          </span>
+                          <span className="text-sm text-slate-500">
+                            of {plan.project_limit} projects remaining
+                          </span>
+                        </div>
+                        <div className="w-48 bg-white rounded-full h-2 mt-2 border border-slate-200">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all"
+                            style={{ width: `${Math.min((plan.projects_used_this_period / plan.project_limit) * 100, 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">
+                          {plan.projects_used_this_period} of {plan.project_limit} used this period
+                        </p>
                       </div>
-                      <p className="text-xs text-slate-400 mt-1">
-                        {plan.projects_used_this_period} of {plan.project_limit} used this period
-                      </p>
-                    </div>
+                    )}
                   </div>
                 )}
                 {plan.credits_remaining > 0 && (

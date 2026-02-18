@@ -39,8 +39,8 @@ const plans = [
     name: "Annual Unlimited",
     price: "$497",
     period: "/year",
-    description: "Up to 150 projects/year",
-    features: ["Up to 150 projects per year", "Privacy policy + terms & conditions", "A2P submission language", "Client intake links", "Save 57% vs monthly"],
+    description: "Unlimited projects",
+    features: ["Unlimited projects", "Privacy policy + terms & conditions", "A2P submission language", "Client intake links", "Save 57% vs monthly"],
   },
 ];
 
@@ -134,7 +134,9 @@ export default function BillingPage() {
                   <p className="text-sm text-slate-500">Subscription</p>
                   <p className="text-lg font-semibold text-slate-900">{plan.plan_label}</p>
                   <p className="text-sm text-slate-600 mt-1">
-                    {plan.projects_used_this_period} of {plan.project_limit} projects used this {plan.plan_period}
+                    {plan.plan_type === "annual_unlimited"
+                      ? "Unlimited projects"
+                      : `${plan.projects_used_this_period} of ${plan.project_limit} projects used this ${plan.plan_period}`}
                   </p>
                   {plan.plan_expires_at && (
                     <p className="text-xs text-slate-400 mt-1">

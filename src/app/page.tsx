@@ -39,10 +39,10 @@ const pricingTiers = [
     name: "Annual Unlimited",
     price: "$497",
     period: "/year",
-    description: "Up to 150 projects/year",
+    description: "Unlimited projects",
     plan: "annual_unlimited",
     features: [
-      "Up to 150 projects per year",
+      "Unlimited projects",
       "Privacy policy + terms & conditions",
       "A2P submission language generation",
       "Update existing docs or generate new",
@@ -191,7 +191,7 @@ export default function Home() {
               Sign In
             </a>
             <a
-              href={`${APP_URL}/sign-up`}
+              href="#pricing"
               className="gradient-bg rounded-lg px-4 py-2 text-white font-medium hover:opacity-90 transition-opacity shadow-sm"
             >
               Get Started
@@ -228,10 +228,10 @@ export default function Home() {
 
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <a
-              href={`${APP_URL}/sign-up`}
+              href="#pricing"
               className="gradient-bg rounded-lg px-8 py-3.5 text-white font-semibold hover:opacity-90 transition-opacity shadow-md hover:shadow-lg text-base"
             >
-              Generate Your Documents Now
+              Start Your Approval
             </a>
           </div>
 

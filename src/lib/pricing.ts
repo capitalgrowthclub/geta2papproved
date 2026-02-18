@@ -22,7 +22,7 @@ export const PLANS = {
     price: 497,
     projectLimit: 150,
     period: "year" as const,
-    description: "Up to 150 projects/year",
+    description: "Unlimited projects",
   },
 } as const;
 
@@ -72,10 +72,18 @@ export function canCreateProject(user: UserPlanData): { allowed: boolean; reason
   }
 
   if (user.projects_used_this_period >= plan.projectLimit) {
-    // Allow if they have carried-over single credits
+    // Allow if they have single credits
     if (user.credits_remaining > 0) {
       return { allowed: true };
     }
+
+    if (user.plan_type === "annual_unlimited") {
+      return {
+        allowed: false,
+        reason: "Your account has reached a usage threshold. Please contact support at support@geta2papproved.com so we can review your account and enable additional projects.",
+      };
+    }
+
     return {
       allowed: false,
       reason: `You've reached your limit of ${plan.projectLimit} projects this ${plan.period}. Upgrade your plan, buy single credits, or wait for the next billing period.`,
