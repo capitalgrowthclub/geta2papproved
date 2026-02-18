@@ -78,7 +78,7 @@ export function canCreateProject(user: UserPlanData): { allowed: boolean; reason
     }
     return {
       allowed: false,
-      reason: `You've reached your limit of ${plan.projectLimit} projects this ${plan.period}. Upgrade your plan or wait for the next billing period.`,
+      reason: `You've reached your limit of ${plan.projectLimit} projects this ${plan.period}. Upgrade your plan, buy single credits, or wait for the next billing period.`,
     };
   }
 

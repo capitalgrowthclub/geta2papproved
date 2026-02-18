@@ -32,23 +32,29 @@ export async function POST(req: NextRequest) {
         // One-time payment: add credits (supports multi-quantity)
         const quantity = parseInt(session.metadata?.quantity || "1", 10) || 1;
 
-        // Get current credits to add to them
+        // Get current user to check existing plan and credits
         const { data: currentUser } = await supabase
           .from("users")
-          .select("credits_remaining")
+          .select("plan_type, credits_remaining, stripe_subscription_id")
           .eq("clerk_id", clerkId)
           .single();
 
         const currentCredits = currentUser?.credits_remaining || 0;
+        const hasSubscription = !!currentUser?.stripe_subscription_id;
+
+        // Only set plan_type to single_credit if user doesn't have an active subscription
+        const updateData: Record<string, unknown> = {
+          is_paid: true,
+          credits_remaining: currentCredits + quantity,
+        };
+        if (!hasSubscription) {
+          updateData.plan_type = "single_credit";
+          updateData.plan_started_at = new Date().toISOString();
+        }
 
         await supabase
           .from("users")
-          .update({
-            is_paid: true,
-            plan_type: "single_credit",
-            credits_remaining: currentCredits + quantity,
-            plan_started_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq("clerk_id", clerkId);
       } else {
         // Subscription: set plan type and period

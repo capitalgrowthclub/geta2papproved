@@ -14,6 +14,7 @@ interface PlanInfo {
   projects_used_this_period: number;
   project_limit: number;
   plan_label: string;
+  has_subscription: boolean;
 }
 
 export default function DashboardPage() {
@@ -76,7 +77,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Plan Status Card */}
-      {plan && plan.plan_type !== "none" && (
+      {plan && (plan.has_subscription || plan.credits_remaining > 0) && (
         <Card className="p-4 sm:p-6 mb-6 border-teal-200 bg-gradient-to-r from-teal-50 to-emerald-50">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -85,32 +86,41 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                 </svg>
               </div>
-              <div>
-                <p className="text-sm font-medium text-teal-800">{plan.plan_label}</p>
-                {plan.plan_type === "single_credit" ? (
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-2xl font-bold text-slate-900">{plan.credits_remaining}</span>
-                    <span className="text-sm text-slate-500">credit{plan.credits_remaining !== 1 ? "s" : ""} remaining</span>
+              <div className="flex flex-col sm:flex-row sm:items-start gap-4 sm:gap-8">
+                {plan.has_subscription && (
+                  <div>
+                    <p className="text-sm font-medium text-teal-800">{plan.plan_label}</p>
+                    <div className="mt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl font-bold text-slate-900">
+                          {plan.project_limit - plan.projects_used_this_period}
+                        </span>
+                        <span className="text-sm text-slate-500">
+                          of {plan.project_limit} projects remaining
+                        </span>
+                      </div>
+                      <div className="w-48 bg-white rounded-full h-2 mt-2 border border-slate-200">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all"
+                          style={{ width: `${Math.min((plan.projects_used_this_period / plan.project_limit) * 100, 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1">
+                        {plan.projects_used_this_period} of {plan.project_limit} used this period
+                      </p>
+                    </div>
                   </div>
-                ) : (
-                  <div className="mt-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl font-bold text-slate-900">
-                        {plan.project_limit - plan.projects_used_this_period}
-                      </span>
-                      <span className="text-sm text-slate-500">
-                        of {plan.project_limit} projects remaining
-                      </span>
+                )}
+                {plan.credits_remaining > 0 && (
+                  <div className={plan.has_subscription ? "sm:border-l sm:border-teal-200 sm:pl-8" : ""}>
+                    <p className="text-sm font-medium text-teal-800">Single Credits</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-2xl font-bold text-slate-900">{plan.credits_remaining}</span>
+                      <span className="text-sm text-slate-500">credit{plan.credits_remaining !== 1 ? "s" : ""} remaining</span>
                     </div>
-                    <div className="w-48 bg-white rounded-full h-2 mt-2 border border-slate-200">
-                      <div
-                        className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all"
-                        style={{ width: `${Math.min((plan.projects_used_this_period / plan.project_limit) * 100, 100)}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-slate-400 mt-1">
-                      {plan.projects_used_this_period} of {plan.project_limit} used this period
-                    </p>
+                    {plan.has_subscription && (
+                      <p className="text-xs text-slate-400 mt-1">Used first before subscription</p>
+                    )}
                   </div>
                 )}
               </div>

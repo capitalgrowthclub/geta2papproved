@@ -125,39 +125,48 @@ export default function BillingPage() {
       </div>
 
       {/* Current Plan */}
-      {plan && plan.plan_type !== "none" && (
-        <Card className="p-6 mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-sm text-slate-500">Current Plan</p>
-              <p className="text-lg font-semibold text-slate-900">{plan.plan_label}</p>
-              {plan.plan_type === "single_credit" ? (
-                <p className="text-sm text-slate-600 mt-1">
-                  {plan.credits_remaining} credit{plan.credits_remaining !== 1 ? "s" : ""} remaining
-                </p>
-              ) : (
-                <p className="text-sm text-slate-600 mt-1">
-                  {plan.projects_used_this_period} of {plan.project_limit} projects used this {plan.plan_period}
-                </p>
-              )}
-              {plan.plan_expires_at && (
-                <p className="text-xs text-slate-400 mt-1">
-                  {plan.has_subscription ? "Renews" : "Expires"} {new Date(plan.plan_expires_at).toLocaleDateString()}
-                </p>
-              )}
-            </div>
-            {plan.has_subscription && (
-              <Button
-                variant="outline"
-                onClick={handleManageSubscription}
-                disabled={portalLoading}
-                className="self-start sm:self-center"
-              >
-                {portalLoading ? "Loading..." : "Manage Subscription"}
-              </Button>
-            )}
-          </div>
-        </Card>
+      {plan && (plan.has_subscription || plan.credits_remaining > 0) && (
+        <div className={`grid gap-4 mb-8 ${plan.has_subscription && plan.credits_remaining > 0 ? "sm:grid-cols-2" : "grid-cols-1"}`}>
+          {plan.has_subscription && (
+            <Card className="p-6">
+              <div className="flex flex-col justify-between h-full gap-4">
+                <div>
+                  <p className="text-sm text-slate-500">Subscription</p>
+                  <p className="text-lg font-semibold text-slate-900">{plan.plan_label}</p>
+                  <p className="text-sm text-slate-600 mt-1">
+                    {plan.projects_used_this_period} of {plan.project_limit} projects used this {plan.plan_period}
+                  </p>
+                  {plan.plan_expires_at && (
+                    <p className="text-xs text-slate-400 mt-1">
+                      Renews {new Date(plan.plan_expires_at).toLocaleDateString()}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleManageSubscription}
+                  disabled={portalLoading}
+                  className="self-start"
+                >
+                  {portalLoading ? "Loading..." : "Manage Subscription"}
+                </Button>
+              </div>
+            </Card>
+          )}
+          {plan.credits_remaining > 0 && (
+            <Card className="p-6">
+              <p className="text-sm text-slate-500">Single Credits</p>
+              <p className="text-lg font-semibold text-slate-900">
+                {plan.credits_remaining} credit{plan.credits_remaining !== 1 ? "s" : ""} remaining
+              </p>
+              <p className="text-xs text-slate-500 mt-1">
+                {plan.has_subscription
+                  ? "Single credits are used first before subscription quota"
+                  : "Each credit covers 1 complete A2P project"}
+              </p>
+            </Card>
+          )}
+        </div>
       )}
 
       {/* Plan Options */}
