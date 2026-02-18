@@ -15,13 +15,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GetA2PApproved - Fast-Track Your A2P 10DLC Registration",
+  title: "GetA2PApproved - AI Tool That Generates Your A2P 10DLC Compliance Documents",
   description:
-    "Get your A2P 10DLC campaign approved quickly. AI-powered privacy policy and terms & conditions generator built for A2P compliance.",
+    "Stop getting rejected. GetA2PApproved generates the exact privacy policy, terms & conditions, and submission language you need to get your A2P 10DLC campaign approved by carriers.",
   openGraph: {
-    title: "GetA2PApproved - Fast-Track Your A2P 10DLC Registration",
+    title: "GetA2PApproved - AI Tool That Generates Your A2P 10DLC Compliance Documents",
     description:
-      "Get your A2P 10DLC campaign approved quickly. AI-powered privacy policy and terms & conditions generator built for A2P compliance.",
+      "Stop getting rejected. GetA2PApproved generates the exact privacy policy, terms & conditions, and submission language you need to get your A2P 10DLC campaign approved by carriers.",
     url: "https://www.geta2papproved.com",
     siteName: "GetA2PApproved",
     images: [{ url: "https://www.geta2papproved.com/og-image.png", width: 1200, height: 630, alt: "GetA2PApproved" }],
@@ -29,9 +29,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "GetA2PApproved - Fast-Track Your A2P 10DLC Registration",
+    title: "GetA2PApproved - AI Tool That Generates Your A2P 10DLC Compliance Documents",
     description:
-      "Get your A2P 10DLC campaign approved quickly. AI-powered privacy policy and terms & conditions generator built for A2P compliance.",
+      "Stop getting rejected. GetA2PApproved generates the exact privacy policy, terms & conditions, and submission language you need to get your A2P 10DLC campaign approved by carriers.",
     images: ["https://www.geta2papproved.com/og-image.png"],
   },
 };
