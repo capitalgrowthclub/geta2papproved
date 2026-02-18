@@ -24,7 +24,7 @@ export const metadata: Metadata = {
       "Get your A2P 10DLC campaign approved quickly. AI-powered privacy policy and terms & conditions generator built for A2P compliance.",
     url: "https://www.geta2papproved.com",
     siteName: "GetA2PApproved",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "GetA2PApproved" }],
+    images: [{ url: "https://www.geta2papproved.com/og-image.png", width: 1200, height: 630, alt: "GetA2PApproved" }],
     type: "website",
   },
   twitter: {
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     title: "GetA2PApproved - Fast-Track Your A2P 10DLC Registration",
     description:
       "Get your A2P 10DLC campaign approved quickly. AI-powered privacy policy and terms & conditions generator built for A2P compliance.",
-    images: ["/og-image.png"],
+    images: ["https://www.geta2papproved.com/og-image.png"],
   },
 };
 
