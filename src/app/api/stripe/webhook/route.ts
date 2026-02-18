@@ -31,9 +31,11 @@ export async function POST(req: NextRequest) {
     const [firstName, ...lastParts] = customerName.split(" ");
     const lastName = lastParts.join(" ");
 
+    console.log("Webhook checkout.session.completed:", { clerkId, plan, customerEmail, customerName });
+
     if (clerkId && plan) {
       // Ensure user record exists before updating plan data
-      await supabase.from("users").upsert(
+      const { error: upsertError } = await supabase.from("users").upsert(
         {
           clerk_id: clerkId,
           email: customerEmail,
@@ -44,18 +46,20 @@ export async function POST(req: NextRequest) {
         },
         { onConflict: "clerk_id", ignoreDuplicates: true }
       );
+      console.log("Webhook upsert result:", { upsertError });
 
       if (plan === "single_credit") {
         // One-time payment: add credits (supports multi-quantity)
         const quantity = parseInt(session.metadata?.quantity || "1", 10) || 1;
 
         // Get current user to check existing plan and credits
-        const { data: currentUser } = await supabase
+        const { data: currentUser, error: selectError } = await supabase
           .from("users")
           .select("plan_type, credits_remaining, stripe_subscription_id")
           .eq("clerk_id", clerkId)
           .single();
 
+        console.log("Webhook single_credit - user lookup:", { currentUser, selectError });
         const currentCredits = currentUser?.credits_remaining || 0;
         const hasSubscription = !!currentUser?.stripe_subscription_id;
 
@@ -88,12 +92,13 @@ export async function POST(req: NextRequest) {
         }
 
         // Preserve any existing single credits when upgrading to a subscription
-        const { data: existingUser } = await supabase
+        const { data: existingUser, error: selectError2 } = await supabase
           .from("users")
           .select("credits_remaining")
           .eq("clerk_id", clerkId)
           .single();
 
+        console.log("Webhook subscription - user lookup:", { existingUser, selectError2 });
         const carryOverCredits = existingUser?.credits_remaining || 0;
 
         const { error: updateError } = await supabase
