@@ -99,8 +99,10 @@ ${websiteContent}
 `;
 }
 
-function buildPrivacyPolicyPrompt(answers: Record<string, string>, websiteContent: string): string {
+function buildPrivacyPolicyPrompt(answers: Record<string, string>, websiteContent: string, today: string): string {
   return `Generate a comprehensive Privacy Policy for A2P 10DLC compliance based on the following business information:
+
+TODAY'S DATE: ${today} — use this as the "Last Updated" and "Effective Date" in the document.
 
 BUSINESS IDENTITY:
 - Legal Business Name: ${answers.legal_business_name || "N/A"}
@@ -180,8 +182,10 @@ CRITICAL A2P requirements to include:
 12. Contact information`;
 }
 
-function buildTermsPrompt(answers: Record<string, string>, websiteContent: string): string {
+function buildTermsPrompt(answers: Record<string, string>, websiteContent: string, today: string): string {
   return `Generate comprehensive Terms & Conditions for A2P 10DLC compliance based on the following information:
+
+TODAY'S DATE: ${today} — use this as the "Last Updated" and "Effective Date" in the document.
 
 BUSINESS IDENTITY:
 - Legal Business Name: ${answers.legal_business_name || "N/A"}
@@ -269,7 +273,7 @@ IMPORTANT: Keep ALL fields concise and practical. Avoid verbose, overly-detailed
 
 Each field must be realistic, specific to the business, and ready to copy-paste. Do NOT use generic placeholder language. Use the actual business name and details provided.`;
 
-function buildSubmissionLanguagePrompt(answers: Record<string, string>, websiteContent: string): string {
+function buildSubmissionLanguagePrompt(answers: Record<string, string>, websiteContent: string, _today: string): string {
   return `Generate A2P 10DLC registration form fields for the following business:
 
 BUSINESS IDENTITY:
@@ -328,13 +332,14 @@ export async function POST(req: NextRequest) {
     const websiteUrl = answers.primary_website || "";
     const websiteContent = websiteUrl ? await fetchWebsiteContent(websiteUrl) : "";
 
+    const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
     const isSubmissionLanguage = type === "submission_language";
     const prompt =
       type === "privacy_policy"
-        ? buildPrivacyPolicyPrompt(answers, websiteContent)
+        ? buildPrivacyPolicyPrompt(answers, websiteContent, today)
         : type === "submission_language"
-        ? buildSubmissionLanguagePrompt(answers, websiteContent)
-        : buildTermsPrompt(answers, websiteContent);
+        ? buildSubmissionLanguagePrompt(answers, websiteContent, today)
+        : buildTermsPrompt(answers, websiteContent, today);
 
     const stream = getAnthropic().messages.stream({
       model: "claude-sonnet-4-6",

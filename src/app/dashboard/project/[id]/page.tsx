@@ -305,7 +305,7 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto overflow-hidden">
+    <div className="max-w-5xl mx-auto">
       {/* Header */}
       <div className="flex items-start justify-between mb-6 sm:mb-8 gap-2">
         <div className="min-w-0">
