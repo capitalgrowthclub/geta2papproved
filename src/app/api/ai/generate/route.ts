@@ -66,7 +66,7 @@ async function fetchWebsiteContent(urlsRaw: string): Promise<string> {
     .join("\n\n");
 }
 
-const SYSTEM_PROMPT = `You are an expert legal document generator specializing in A2P 10DLC compliance. Your job is to generate privacy policies and terms & conditions that will pass carrier review for A2P 10DLC campaign registration.
+const SYSTEM_PROMPT = `You are an expert legal document generator specializing in A2P 10DLC compliance. Your job is to generate privacy policies and terms & conditions that will pass the strictest possible carrier review for A2P 10DLC campaign registration. Write as if the most rigorous A2P compliance reviewer will scrutinize every word.
 
 CRITICAL REQUIREMENTS:
 1. Documents must be professionally formatted and legally structured
@@ -79,6 +79,9 @@ CRITICAL REQUIREMENTS:
 8. Write EVERY section in FULL — do not use shortcuts, placeholders, "[insert here]" markers, or abbreviated language
 9. Every paragraph must be fully written out with complete legal language — no paraphrasing, no summarizing, no "etc."
 10. The document should be COMPREHENSIVE and PRODUCTION-READY — the user should be able to copy-paste it directly onto their website with zero edits needed
+11. STAFF TRAINING CLAUSE: Whenever mentioning staff training in any data use or data processing section, include this exact sentence: "Staff training uses anonymized or aggregated data and does not involve the disclosure of individual client personal information to unauthorized personnel." This prevents reviewers from questioning whether real client SMS data is used in AI or automated training systems.
+12. VERBATIM CONSENT LANGUAGE: The SMS/Text Messaging section of the Privacy Policy MUST include a quoted example of the actual consent checkbox language users see at the point of opt-in. Format it as a blockquote or indented paragraph labeled "Consent Disclosure" and write representative consent language based on the business information provided. Example format: 'The consent disclosure presented to users at the point of opt-in reads as follows: "By checking this box, you consent to receive [message type] text messages from [Business Name] regarding [purpose]. Message frequency varies / Up to [X] messages per month. Msg & data rates may apply. Reply STOP to opt out or HELP for help. SMS opt-in data is never shared with third parties."'
+13. HTML ENCODING: Always write "Msg &amp; data rates may apply" — use the HTML entity &amp; for the ampersand so it renders correctly in browsers and in raw page source alike. Never use a bare & in HTML text content.
 
 FORMAT REQUIREMENTS:
 - Use clean semantic HTML: h1 for the document title, h2 for major sections, h3 for subsections, p for paragraphs, ul/ol/li for lists
@@ -294,10 +297,11 @@ UNIVERSAL RULES FOR ALL RESTRICTED INDUSTRIES:
 2. The SMS program is limited EXCLUSIVELY to transactional messages triggered by specific user actions or account events. Broadcast or scheduled marketing messages are not sent.
 3. Every generated document must state affirmatively and explicitly that this business does not use SMS for promotional or marketing purposes.
 4. The marketing_use_case and marketing_message_types fields below should be treated as N/A and ignored — the business cannot send promotional SMS regardless of what was entered there.
-5. Every message identifies the business by name, includes STOP opt-out language, and includes "Msg & data rates may apply."
+5. Every message identifies the business by name, includes STOP opt-out language, and includes "Msg &amp; data rates may apply."
 6. SMS opt-in consent cannot be shared with or transferred to any third party under any circumstance.
 7. Any message with a promotional call to action, a discount, a rate quote, or language designed to persuade rather than inform is prohibited.
 8. Any message sent to a cold contact who did not affirmatively opt in is prohibited.
+9. TRANSACTIONAL MESSAGE PHRASING — CRITICAL FOR FINANCIAL SERVICES AND HEALTHCARE: When listing allowable transactional message types in any document, phrase them to make explicitly clear the message CONFIRMS OR RESPONDS TO an action the recipient already initiated — not that the business is presenting new information to them. Example: instead of "rate lock confirmations," write "rate lock status notifications confirming actions taken on the client's active file at the client's direction." Instead of "appointment reminders," write "appointment reminders for appointments the patient scheduled." This distinction is critical — a strict reviewer will flag any language that could be read as the business initiating contact with financial or health information, even in a transactional context.
 
 SPECIFIC RULES BY INDUSTRY:${perIndustryRules}
 
