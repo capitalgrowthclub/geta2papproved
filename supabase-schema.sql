@@ -63,12 +63,25 @@ CREATE TABLE IF NOT EXISTS client_intake_links (
   submitted_at TIMESTAMPTZ
 );
 
+-- Document share links table
+-- Generates public share URLs for privacy policy / terms & conditions
+-- One link per project per document type; always serves the latest version
+CREATE TABLE IF NOT EXISTS document_share_links (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  type TEXT NOT NULL CHECK (type IN ('privacy_policy', 'terms_conditions')),
+  token TEXT UNIQUE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(project_id, type)
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_users_clerk_id ON users(clerk_id);
 CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
 CREATE INDEX IF NOT EXISTS idx_questionnaire_project_id ON questionnaire_responses(project_id);
 CREATE INDEX IF NOT EXISTS idx_documents_project_id ON generated_documents(project_id);
 CREATE INDEX IF NOT EXISTS idx_client_intake_token ON client_intake_links(token);
+CREATE INDEX IF NOT EXISTS idx_share_links_token ON document_share_links(token);
 
 -- Row Level Security (RLS)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -84,3 +97,6 @@ CREATE POLICY "Service role full access" ON generated_documents FOR ALL USING (t
 
 ALTER TABLE client_intake_links ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Service role full access" ON client_intake_links FOR ALL USING (true);
+
+ALTER TABLE document_share_links ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full access" ON document_share_links FOR ALL USING (true);

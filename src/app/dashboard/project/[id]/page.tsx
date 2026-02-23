@@ -539,6 +539,8 @@ export default function ProjectDetailPage() {
               type="privacy_policy"
               version={privacyDoc.version}
               createdAt={privacyDoc.created_at}
+              projectId={id}
+              docType="privacy_policy"
               onRegenerate={() => handleGenerate("privacy_policy")}
               regenerating={generatingPrivacy}
             />
@@ -586,6 +588,8 @@ export default function ProjectDetailPage() {
               type="terms_conditions"
               version={termsDoc.version}
               createdAt={termsDoc.created_at}
+              projectId={id}
+              docType="terms_conditions"
               onRegenerate={() => handleGenerate("terms_conditions")}
               regenerating={generatingTerms}
             />
