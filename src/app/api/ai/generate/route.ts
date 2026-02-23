@@ -317,7 +317,7 @@ export async function POST(req: NextRequest) {
 
     const message = await getAnthropic().messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: isSubmissionLanguage ? 4000 : 32000,
+      max_tokens: isSubmissionLanguage ? 4000 : 64000,
       system: isSubmissionLanguage ? SUBMISSION_SYSTEM_PROMPT : SYSTEM_PROMPT,
       messages: [{ role: "user", content: prompt }],
     });
