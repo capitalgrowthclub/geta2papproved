@@ -62,10 +62,10 @@ export async function POST(
     // Insert a new share link, or do nothing if one already exists for this project+type
     await supabase
       .from("document_share_links")
-      .insert({ project_id: projectId, type, token: randomUUID() })
-      .onConflict("project_id, type")
-      // @ts-expect-error - ignoreDuplicates not typed but supported
-      .ignoreDuplicates();
+      .upsert(
+        { project_id: projectId, type, token: randomUUID() },
+        { onConflict: "project_id,type", ignoreDuplicates: true }
+      );
 
     // Always fetch the canonical token (handles both new and existing)
     const { data: link } = await supabase
