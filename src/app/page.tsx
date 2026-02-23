@@ -213,6 +213,9 @@ export default function Home() {
             <a href="#pricing" className="text-slate-500 hover:text-slate-900 transition-colors">
               Pricing
             </a>
+            <a href="/eligibility" className="text-slate-500 hover:text-slate-900 transition-colors">
+              Eligibility
+            </a>
             <a
               href={`${APP_URL}/sign-in`}
               className="text-slate-600 hover:text-slate-900 font-medium transition-colors"
@@ -617,6 +620,23 @@ export default function Home() {
             </div>
           ))}
         </div>
+
+        {/* Industry eligibility notice */}
+        <div className="max-w-5xl mx-auto mt-10 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+          </svg>
+          <div>
+            <p className="text-sm font-semibold text-amber-800">Some industries are restricted or prohibited from A2P 10DLC registration</p>
+            <p className="text-sm text-amber-700 mt-1">
+              Certain industries — including cannabis, payday loans, gambling, and firearms — are fully blocked by carriers and cannot register regardless of message type. Others like healthcare, mortgage lending, law firms, and insurance can register but are limited to transactional messages only.{" "}
+              <a href="/eligibility" className="font-semibold underline underline-offset-2 hover:text-amber-900 transition-colors">
+                Check your industry eligibility →
+              </a>{" "}
+              before purchasing.
+            </p>
+          </div>
+        </div>
       </section>
 
       {/* FAQ */}
@@ -730,6 +750,7 @@ export default function Home() {
             <div className="flex gap-6 text-sm text-slate-400">
               <a href={`${APP_URL}/sign-in`} className="hover:text-slate-600 transition-colors">Sign In</a>
               <a href="#pricing" className="hover:text-slate-600 transition-colors">Pricing</a>
+              <a href="/eligibility" className="hover:text-slate-600 transition-colors">Eligibility</a>
             </div>
           </div>
         </div>
