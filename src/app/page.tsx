@@ -263,7 +263,7 @@ export default function Home() {
               href="#pricing"
               className="gradient-bg rounded-lg px-8 py-3.5 text-white font-semibold hover:opacity-90 transition-opacity shadow-md hover:shadow-lg text-base"
             >
-              Start Your Approval
+              Start Your Approval Now
             </a>
           </div>
 
