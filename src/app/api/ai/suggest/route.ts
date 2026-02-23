@@ -82,14 +82,16 @@ export async function POST(req: NextRequest) {
       .map(([k, v]) => `- ${k}: ${v}`)
       .join("\n");
 
+    const siteCount = websiteContent ? (websiteContent.match(/^--- http/gm) || []).length : 0;
+
     const websiteSection = websiteContent
-      ? `\n\nWEBSITE CONTENT (fetched from the business's listed URLs):\n${websiteContent}\n\nUse the above website content to accurately understand what this business actually does. Do NOT guess based on the domain name.`
+      ? `\n\nWEBSITE CONTENT (fetched from ${siteCount} of the business's listed URLs — synthesize ALL of them):\n${websiteContent}\n\nIMPORTANT: Read ALL of the website sections above, not just the first one. Combine and synthesize information from every site to form a complete picture of the business before answering. Do NOT ignore any site.`
       : "";
 
     const message = await getAnthropic().messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 300,
-      system: `You help businesses fill out A2P 10DLC compliance questionnaires. Given a question and business context, write a short, realistic answer that would help them get approved. Be specific to their actual business — use the website content to understand what they do, not guesswork. Reply with ONLY the answer text — no quotes, no preamble, no explanation.`,
+      max_tokens: 500,
+      system: `You help businesses fill out A2P 10DLC compliance questionnaires. Given a question and business context, write a short, realistic answer that would help them get approved. The business may operate multiple websites — synthesize information from ALL of them to give an accurate, combined answer. Do NOT focus on just one site. Reply with ONLY the answer text — no quotes, no preamble, no explanation.`,
       messages: [
         {
           role: "user",
