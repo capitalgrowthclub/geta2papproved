@@ -51,10 +51,10 @@ async function fetchAllWebsites(urlsRaw: string): Promise<string> {
 
   if (urls.length === 0) return "";
 
-  const results = await Promise.all(urls.slice(0, 5).map(fetchWebsiteContent));
+  const results = await Promise.all(urls.slice(0, 10).map(fetchWebsiteContent));
 
   return urls
-    .slice(0, 5)
+    .slice(0, 10)
     .map((url, i) => (results[i] ? `--- ${url} ---\n${results[i]}` : ""))
     .filter(Boolean)
     .join("\n\n");
@@ -90,7 +90,7 @@ export async function POST(req: NextRequest) {
 
     const message = await getAnthropic().messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 500,
+      max_tokens: 2000,
       system: `You help businesses fill out A2P 10DLC compliance questionnaires. Given a question and business context, write a short, realistic answer that would help them get approved. The business may operate multiple websites — synthesize information from ALL of them to give an accurate, combined answer. Do NOT focus on just one site. Reply with ONLY the answer text — no quotes, no preamble, no explanation.`,
       messages: [
         {
