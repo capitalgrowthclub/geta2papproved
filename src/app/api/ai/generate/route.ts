@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase";
 
-export const maxDuration = 900; // 15 minutes
+export const maxDuration = 800; // ~13 minutes
 
 function getAnthropic() {
   return new Anthropic({
