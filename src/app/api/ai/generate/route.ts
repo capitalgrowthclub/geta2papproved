@@ -537,9 +537,9 @@ export async function POST(req: NextRequest) {
       .eq("project_id", project_id)
       .eq("type", type);
 
-    if (count !== null && count >= 3) {
+    if (count !== null && count >= 10) {
       return NextResponse.json(
-        { error: "You've reached the maximum number of regenerations for this document. Please contact support at support@geta2papproved.com for assistance." },
+        { error: "You've reached the maximum number of regenerations (10) for this document. Please contact support at support@geta2papproved.com or start a new project to generate fresh documents." },
         { status: 429 }
       );
     }
