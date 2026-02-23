@@ -80,14 +80,16 @@ CRITICAL REQUIREMENTS:
 10. The document should be COMPREHENSIVE and PRODUCTION-READY — the user should be able to copy-paste it directly onto their website with zero edits needed
 
 FORMAT REQUIREMENTS:
-- Use clean HTML with proper heading hierarchy (h1, h2, h3)
-- Use paragraphs, ordered lists, and unordered lists appropriately
-- Include today's date as the "Last Updated" date
-- Include proper section numbering
+- Use clean semantic HTML: h1 for the document title, h2 for major sections, h3 for subsections, p for paragraphs, ul/ol/li for lists
+- Include proper section numbering in headings (e.g. "1. Information We Collect")
 - Write every section completely — this is a real legal document, not a template
-- The output should look professional when rendered in a browser
+- CRITICAL: Do NOT use any style="" attributes or inline CSS on any element whatsoever
+- CRITICAL: Do NOT wrap the document in a <div> with max-width, width, margin, padding, or font-family styles
+- CRITICAL: Do NOT include any <style> tags or font-family declarations anywhere
+- Output the document content directly — start with <h1> for the title, then proceed with sections
+- The styling is handled externally — just output clean, unstyled semantic HTML
 
-Do NOT include any markdown formatting. Output ONLY valid HTML content (no <html>, <head>, or <body> tags — just the document content).`;
+Do NOT include any markdown formatting. Output ONLY valid HTML content (no <html>, <head>, <body>, or <style> tags — just the document content starting with <h1>).`;
 
 function buildWebsiteSection(_answers: Record<string, string>, websiteContent: string): string {
   if (!websiteContent) return "";

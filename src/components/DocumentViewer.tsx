@@ -116,7 +116,7 @@ export default function DocumentViewer({
       {/* Document Content */}
       <Card className="p-8 overflow-auto">
         <div
-          className="prose prose-slate max-w-none prose-headings:text-slate-900 prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:text-slate-600 prose-li:text-slate-600 prose-a:text-teal-600"
+          className="document-render"
           dangerouslySetInnerHTML={{ __html: content }}
         />
       </Card>
