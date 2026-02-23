@@ -261,7 +261,8 @@ export default function ProjectDetailPage() {
     isGenerating: boolean,
     elapsed: number,
     tabKey: "privacy" | "terms" | "submission",
-    error?: string
+    error?: string,
+    isLocked?: boolean
   ) {
     return (
       <Card className="p-6 flex flex-col">
@@ -279,6 +280,13 @@ export default function ProjectDetailPage() {
             <span className="text-xs text-red-600 font-medium">Error</span>
           ) : doc ? (
             <span className="text-xs text-emerald-600 font-medium">Complete</span>
+          ) : isLocked ? (
+            <span className="text-xs text-slate-400 flex items-center gap-1">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+              </svg>
+              Locked
+            </span>
           ) : isQuestionnaireComplete ? (
             <span className="text-xs text-amber-600 font-medium">Ready to Generate</span>
           ) : (
@@ -335,6 +343,10 @@ export default function ProjectDetailPage() {
               </Button>
             </div>
           </>
+        ) : isLocked ? (
+          <p className="text-sm text-slate-500 flex-1">
+            Generate your <strong>A2P Submission Language</strong> first. The consent checkbox text it produces will be quoted verbatim in this document to ensure your policy matches your opt-in form exactly.
+          </p>
         ) : isQuestionnaireComplete && industryIsProhibited ? (
           <p className="text-sm text-red-600">
             Generation unavailable — this industry is prohibited from A2P 10DLC registration.
@@ -465,9 +477,9 @@ export default function ProjectDetailPage() {
       <div className="flex border-b border-slate-200 mb-6 overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
         {[
           { key: "overview" as const, label: "Overview" },
+          { key: "submission" as const, label: "Submission Language" },
           { key: "privacy" as const, label: "Privacy Policy" },
           { key: "terms" as const, label: "Terms & Conditions" },
-          { key: "submission" as const, label: "Submission Language" },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -653,11 +665,11 @@ export default function ProjectDetailPage() {
             </div>
           )}
 
-          {/* Document Cards */}
+          {/* Document Cards — Submission Language must be generated first */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {renderDocCard("Privacy Policy", "privacy_policy", privacyDoc, generatingPrivacy, elapsedPrivacy, "privacy", errorPrivacy)}
-            {renderDocCard("Terms & Conditions", "terms_conditions", termsDoc, generatingTerms, elapsedTerms, "terms", errorTerms)}
             {renderDocCard("A2P Submission Language", "submission_language", submissionDoc, generatingSubmission, elapsedSubmission, "submission", errorSubmission)}
+            {renderDocCard("Privacy Policy", "privacy_policy", privacyDoc, generatingPrivacy, elapsedPrivacy, "privacy", errorPrivacy, !submissionDoc)}
+            {renderDocCard("Terms & Conditions", "terms_conditions", termsDoc, generatingTerms, elapsedTerms, "terms", errorTerms, !submissionDoc)}
           </div>
 
           {/* Legal Disclaimer */}
