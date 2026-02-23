@@ -311,7 +311,41 @@ Write the SMS/messaging sections of all documents to strictly reflect these rest
 `;
 }
 
-function buildPrivacyPolicyPrompt(answers: Record<string, string>, websiteContent: string, today: string): string {
+interface ConsentCheckboxes {
+  marketing?: string | null;
+  transactional?: string | null;
+}
+
+function buildConsentAnchorSection(checkboxes: ConsentCheckboxes | null, restricted: boolean): string {
+  if (!checkboxes) {
+    return `
+CONSENT LANGUAGE NOTE:
+No A2P Submission Language has been generated yet for this project. Write representative consent checkbox language in the "Consent Disclosure" blockquote that is consistent with the business information above. Ideally the user should generate A2P Submission Language first, then regenerate this document so the consent language can be quoted verbatim.
+`;
+  }
+
+  const marketingLine = restricted
+    ? "Marketing consent checkbox: Not applicable — restricted industry, transactional messages only."
+    : checkboxes.marketing
+    ? `Marketing consent checkbox: "${checkboxes.marketing}"`
+    : "";
+
+  const transactionalLine = checkboxes.transactional
+    ? `Transactional consent checkbox: "${checkboxes.transactional}"`
+    : "";
+
+  return `
+CONSENT CHECKBOX TEXT — ALREADY GENERATED FOR THIS BUSINESS — QUOTE VERBATIM:
+The following consent checkbox texts are the exact words that appear on this business's opt-in forms. The Privacy Policy SMS section MUST quote these word-for-word as the "Consent Disclosure" blockquote. Do not paraphrase or rewrite them.
+
+${marketingLine}
+${transactionalLine}
+
+Include both texts (as applicable) in the SMS/Text Messaging section's "Consent Disclosure" block exactly as written above.
+`;
+}
+
+function buildPrivacyPolicyPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null): string {
   const restricted = isRestrictedIndustry(answers);
   return `Generate a comprehensive Privacy Policy for A2P 10DLC compliance based on the following business information:
 
@@ -370,7 +404,7 @@ ${answers.existing_privacy_policy.length > 50000 ? answers.existing_privacy_poli
 
 Update the above policy to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
-${buildIndustryRestrictionSection(answers)}
+${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}
 Generate the COMPLETE privacy policy in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
 
 CRITICAL A2P requirements to include:
@@ -396,7 +430,7 @@ CRITICAL A2P requirements to include:
 12. Contact information`;
 }
 
-function buildTermsPrompt(answers: Record<string, string>, websiteContent: string, today: string): string {
+function buildTermsPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null): string {
   const restricted = isRestrictedIndustry(answers);
   return `Generate comprehensive Terms & Conditions for A2P 10DLC compliance based on the following information:
 
@@ -444,7 +478,7 @@ ${answers.existing_terms.length > 50000 ? answers.existing_terms.substring(0, 50
 
 Update the above terms to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
-${buildIndustryRestrictionSection(answers)}
+${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}
 Generate the COMPLETE terms & conditions in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
 
 CRITICAL A2P requirements to include:
@@ -556,18 +590,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch website content for AI context
+    // Fetch website content and (for PP/T&C) existing submission language in parallel
     const websiteUrl = answers.primary_website || "";
-    const websiteContent = websiteUrl ? await fetchWebsiteContent(websiteUrl) : "";
+    const isPPorTC = type === "privacy_policy" || type === "terms_conditions";
+
+    const [websiteContent, submissionDoc] = await Promise.all([
+      websiteUrl ? fetchWebsiteContent(websiteUrl) : Promise.resolve(""),
+      isPPorTC
+        ? supabaseCheck
+            .from("generated_documents")
+            .select("content")
+            .eq("project_id", project_id)
+            .eq("type", "submission_language")
+            .order("version", { ascending: false })
+            .limit(1)
+            .then(({ data }) => data?.[0] ?? null)
+        : Promise.resolve(null),
+    ]);
+
+    // Extract consent checkbox texts from submission language if it exists
+    let consentCheckboxes: ConsentCheckboxes | null = null;
+    if (submissionDoc) {
+      try {
+        const parsed = JSON.parse(submissionDoc.content);
+        consentCheckboxes = {
+          marketing: parsed.marketing_consent_checkbox ?? null,
+          transactional: parsed.transactional_consent_checkbox ?? null,
+        };
+      } catch {
+        // Malformed JSON — proceed without consent anchoring
+      }
+    }
 
     const today = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
     const isSubmissionLanguage = type === "submission_language";
     const prompt =
       type === "privacy_policy"
-        ? buildPrivacyPolicyPrompt(answers, websiteContent, today)
+        ? buildPrivacyPolicyPrompt(answers, websiteContent, today, consentCheckboxes)
         : type === "submission_language"
         ? buildSubmissionLanguagePrompt(answers, websiteContent, today)
-        : buildTermsPrompt(answers, websiteContent, today);
+        : buildTermsPrompt(answers, websiteContent, today, consentCheckboxes);
 
     const stream = getAnthropic().messages.stream({
       model: "claude-sonnet-4-6",
