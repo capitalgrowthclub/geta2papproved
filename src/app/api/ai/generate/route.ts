@@ -102,28 +102,211 @@ ${websiteContent}
 `;
 }
 
+const INDUSTRY_RULES: Record<string, { prohibited: string[]; allowed: string[]; regulatoryNote: string }> = {
+  "Mortgage Lending or Brokerage": {
+    prohibited: [
+      "Rate quote blasts (e.g., '30-year fixed at 6.5% — call us today')",
+      "Pre-approval solicitations to cold or purchased leads",
+      "Refinance campaign messages (e.g., 'Now is a great time to refinance')",
+      "Cash-out equity promotions",
+      "Product comparisons sent to unconverted leads",
+      "Urgency-based rate lock offers",
+      "Loan product promotions or limited-time offer announcements",
+    ],
+    allowed: [
+      "Application receipt confirmation sent immediately after form submission",
+      "Rate lock confirmation tied to a specific borrower's active file",
+      "Document checklist requests for open loan files",
+      "Appraisal scheduling notifications",
+      "Underwriting status updates",
+      "Closing date confirmations",
+      "Funding disbursement notifications",
+      "Payment due date reminders for active loan agreements",
+      "Direct responses to borrower-initiated inquiries",
+    ],
+    regulatoryNote: "Governed by RESPA, TILA, Regulation Z, and state mortgage lending statutes restricting unsolicited financial solicitations via SMS.",
+  },
+  "Banking or Credit Union": {
+    prohibited: [
+      "New account sign-up promotions",
+      "Credit card offer solicitations",
+      "Loan product advertisements",
+      "Promotional interest rate offers",
+      "Rewards program upsell messages",
+      "Cross-sell messages for additional banking products",
+    ],
+    allowed: [
+      "Account balance alerts triggered by account activity",
+      "Fraud detection alerts and suspicious activity notifications",
+      "Transaction confirmation messages",
+      "Low balance warnings",
+      "Payment due date reminders",
+      "Wire transfer confirmations",
+      "Password reset and security verification codes (OTP)",
+      "Deposit confirmation notifications",
+    ],
+    regulatoryNote: "Governed by FDIC/NCUA regulations, Gramm-Leach-Bliley Act, and applicable state banking laws restricting unsolicited promotional consumer contact.",
+  },
+  "Insurance Company": {
+    prohibited: [
+      "Policy solicitations to cold leads",
+      "Premium rate promotions (e.g., 'Switch and save 20%')",
+      "Coverage upsell messages to existing policyholders",
+      "Open enrollment campaign blasts",
+      "Cross-sell messages for additional insurance products",
+    ],
+    allowed: [
+      "Policy renewal reminders tied to a specific policyholder's expiring policy",
+      "Payment due date reminders",
+      "Claim status updates for active claims",
+      "Claim filing confirmations",
+      "Appointment confirmations for adjusters",
+      "Coverage change confirmations initiated by the policyholder",
+      "Authentication and verification codes",
+    ],
+    regulatoryNote: "Governed by state insurance department regulations and NAIC guidelines restricting unsolicited insurance solicitations.",
+  },
+  "Investment Advisory or Securities": {
+    prohibited: [
+      "Investment product solicitations",
+      "Stock or fund recommendations sent via SMS",
+      "Portfolio performance teasers designed to upsell services",
+      "Event invitations for sales-oriented seminars",
+      "Cold outreach to prospect lists",
+      "Any message that could be construed as investment advice or a securities recommendation",
+    ],
+    allowed: [
+      "Trade confirmation notifications for existing clients",
+      "Account statement availability alerts",
+      "Meeting or review appointment confirmations",
+      "Required regulatory disclosures triggered by account activity",
+      "Password reset and authentication codes",
+      "Responses to client-initiated inquiries",
+    ],
+    regulatoryNote: "Governed by SEC, FINRA, and Investment Advisers Act rules. Any message that could be construed as investment advice or a securities recommendation via SMS is prohibited.",
+  },
+  "Healthcare or Medical Services": {
+    prohibited: [
+      "New patient solicitation campaigns",
+      "Promotional messaging for elective procedures (e.g., 'Ask us about our cosmetic services')",
+      "Wellness product upsell messages",
+      "Referral incentive solicitations",
+      "Health screening event promotions sent to general lists",
+      "Any message marketing a specific service to patients who haven't inquired about it",
+    ],
+    allowed: [
+      "Appointment reminders and confirmations",
+      "Appointment rescheduling notifications",
+      "Prescription ready notifications",
+      "Lab result availability alerts (without disclosing PHI in the message body)",
+      "Post-appointment follow-up care instructions",
+      "Billing statements and payment due reminders",
+      "Referral appointment confirmations",
+      "Responses to patient-initiated inquiries",
+    ],
+    regulatoryNote: "Governed by HIPAA and HITECH Act. All messages must be HIPAA-compliant. PHI must never be included in SMS message bodies. Transactional messages must be triggered by a specific patient action or clinical event.",
+  },
+  "Debt Consolidation": {
+    prohibited: [
+      "Cold outreach campaigns",
+      "Savings-based promotional messaging (e.g., 'Consolidate and cut your payments in half')",
+      "Urgency-based solicitations to purchased or cold leads",
+      "Promotional program comparisons",
+    ],
+    allowed: [
+      "Program enrollment confirmations for active clients",
+      "Payment schedule notifications for enrolled clients",
+      "Account status updates for clients with active plans",
+      "Creditor communication updates tied to active enrollment",
+    ],
+    regulatoryNote: "Heavily scrutinized category similar to credit repair. Governed by FTC regulations on debt relief services. Requires strong documentation of opt-in consent and is frequently rejected without transactional-only framing.",
+  },
+  "Credit Repair Services": {
+    prohibited: [
+      "Solicitation campaigns (e.g., 'We can remove negative items from your credit report')",
+      "Before-and-after score promotional messaging",
+      "Urgency-based outreach (e.g., 'Your credit score is hurting you — act now')",
+      "Cold lead nurture sequences",
+    ],
+    allowed: [
+      "Dispute status updates for clients with an active service engagement",
+      "Document request notifications tied to an open file",
+      "Progress updates tied to an active service agreement",
+    ],
+    regulatoryNote: "Governed by the Credit Repair Organizations Act (CROA) and FTC rules. This category is frequently rejected by carriers even for transactional campaigns and requires exceptional documentation of explicit written opt-in consent and active client relationships.",
+  },
+  "Law Firm or Legal Services": {
+    prohibited: [
+      "Solicitation of new clients via SMS (violates state bar advertising rules in most jurisdictions)",
+      "Case type promotional campaigns (e.g., 'Were you in an accident? You may be entitled to compensation')",
+      "Mass outreach to purchased leads",
+      "Settlement advertising",
+      "Service area expansion announcements sent to cold contacts",
+    ],
+    allowed: [
+      "Case status updates for existing clients",
+      "Court date reminders for active clients",
+      "Document request notifications tied to an open matter",
+      "Appointment confirmations for client-initiated consultations",
+      "Billing reminders for existing clients",
+      "Authentication and verification codes",
+    ],
+    regulatoryNote: "Governed by state bar Model Rules of Professional Conduct (Rule 7.3 prohibiting direct solicitation). SMS solicitation of prospective clients is prohibited in virtually all U.S. jurisdictions, layered on top of carrier restrictions.",
+  },
+  "Political Campaign": {
+    prohibited: [
+      "Broadcast promotional political messaging via A2P 10DLC without proper special-use registration",
+      "Mass unsolicited campaign blasts to general lists",
+      "Peer-to-peer political texting via A2P platforms without P2P registration",
+    ],
+    allowed: [
+      "Volunteer shift confirmations",
+      "Event logistics for confirmed attendees",
+      "Donation receipt confirmations",
+      "RSVP confirmations for registered event attendees",
+    ],
+    regulatoryNote: "Political campaigns must register under a dedicated Political use case with additional carrier vetting. P2P political texting operates under different rules than A2P 10DLC. Broadcast promotional political messaging via 10DLC is heavily restricted without proper P2P platform registration.",
+  },
+};
+
 function buildIndustryRestrictionSection(answers: Record<string, string>): string {
   if (!isRestrictedIndustry(answers)) return "";
   const restricted = getSelectedRestricted(answers);
-  return `
-INDUSTRY RESTRICTION — CRITICAL:
-This business operates in a federally or state-regulated industry: ${restricted.join(", ")}.
 
-Due to this, the following rules MUST be strictly followed in ALL generated documents:
-1. This business is permitted to register for A2P 10DLC but is RESTRICTED TO TRANSACTIONAL MESSAGES ONLY.
-2. Promotional, marketing, or solicitation SMS messages are STRICTLY PROHIBITED for this industry under TCPA, carrier policies, and applicable federal/state regulations (e.g., SEC, FINRA, HIPAA, state bar rules).
-3. ALL references to "marketing messages," "promotional messages," or "special offers" must be REMOVED from the SMS sections.
-4. The SMS/Text Messaging section must clearly state that messages are limited to transactional communications only (e.g., appointment reminders, account alerts, status updates, service notifications).
-5. Include a clear disclosure that this business does not send promotional or marketing SMS messages, and that SMS consent is solely for transactional and service-related communications.
-6. For healthcare: reference HIPAA-compliant messaging practices.
-7. For financial services (mortgage, banking, insurance, investment, debt consolidation, credit repair): reference applicable federal and state financial regulations restricting unsolicited promotional contact.
-8. For law firms: reference state bar advertising rules prohibiting SMS solicitation.
-9. For political campaigns: note this is a separate special-use category requiring its own vetting.
-10. Write these restrictions as firm, affirmative policy statements — not as caveats or suggestions.
+  const perIndustryRules = restricted.map((industry) => {
+    const rules = INDUSTRY_RULES[industry];
+    if (!rules) return `\n${industry}: Restricted to transactional messages only. No promotional messaging permitted.`;
+    return `
+${industry.toUpperCase()}:
+  Regulatory note: ${rules.regulatoryNote}
+  PROHIBITED messages (never include, never reference):
+    ${rules.prohibited.map((p) => `• ${p}`).join("\n    ")}
+  ALLOWED messages (transactional only, triggered by user action or account event):
+    ${rules.allowed.map((a) => `• ${a}`).join("\n    ")}`;
+  }).join("\n");
+
+  return `
+INDUSTRY RESTRICTION — CRITICAL — READ BEFORE GENERATING:
+This business operates in a regulated industry that is PERMITTED to register for A2P 10DLC but is RESTRICTED TO TRANSACTIONAL MESSAGES ONLY: ${restricted.join(", ")}.
+
+UNIVERSAL RULES FOR ALL RESTRICTED INDUSTRIES:
+1. This business does NOT send promotional, marketing, or solicitation SMS messages. Remove ALL promotional SMS language from the document.
+2. The SMS program is limited EXCLUSIVELY to transactional messages triggered by specific user actions or account events. Broadcast or scheduled marketing messages are not sent.
+3. Every generated document must state affirmatively and explicitly that this business does not use SMS for promotional or marketing purposes.
+4. The marketing_use_case and marketing_message_types fields below should be treated as N/A and ignored — the business cannot send promotional SMS regardless of what was entered there.
+5. Every message identifies the business by name, includes STOP opt-out language, and includes "Msg & data rates may apply."
+6. SMS opt-in consent cannot be shared with or transferred to any third party under any circumstance.
+7. Any message with a promotional call to action, a discount, a rate quote, or language designed to persuade rather than inform is prohibited.
+8. Any message sent to a cold contact who did not affirmatively opt in is prohibited.
+
+SPECIFIC RULES BY INDUSTRY:${perIndustryRules}
+
+Write the SMS/messaging sections of all documents to strictly reflect these restrictions. Use firm, affirmative policy statements — not caveats or suggestions.
 `;
 }
 
 function buildPrivacyPolicyPrompt(answers: Record<string, string>, websiteContent: string, today: string): string {
+  const restricted = isRestrictedIndustry(answers);
   return `Generate a comprehensive Privacy Policy for A2P 10DLC compliance based on the following business information:
 
 TODAY'S DATE: ${today} — use this as the "Last Updated" and "Effective Date" in the document.
@@ -137,9 +320,9 @@ BUSINESS IDENTITY:
 - Website: ${answers.primary_website || "N/A"}
 
 SMS CAMPAIGN USE CASES:
-- Marketing Use Case: ${answers.marketing_use_case || "N/A"}
-- Marketing Message Types: ${answers.marketing_message_types || "N/A"}
-- Marketing Frequency: ${answers.marketing_frequency || "N/A"}
+- Marketing Use Case: ${restricted ? "N/A — Restricted industry. This business does not send promotional or marketing SMS messages." : (answers.marketing_use_case || "N/A")}
+- Marketing Message Types: ${restricted ? "None — transactional messages only per industry regulations" : (answers.marketing_message_types || "N/A")}
+- Marketing Frequency: ${restricted ? "N/A — no marketing messages sent" : (answers.marketing_frequency || "N/A")}
 - Transactional Use Case: ${answers.transactional_use_case || "N/A"}
 - Transactional Message Types: ${answers.transactional_message_types || "N/A"}
 - Transactional Frequency: ${answers.transactional_frequency || "N/A"}
@@ -208,6 +391,7 @@ CRITICAL A2P requirements to include:
 }
 
 function buildTermsPrompt(answers: Record<string, string>, websiteContent: string, today: string): string {
+  const restricted = isRestrictedIndustry(answers);
   return `Generate comprehensive Terms & Conditions for A2P 10DLC compliance based on the following information:
 
 TODAY'S DATE: ${today} — use this as the "Last Updated" and "Effective Date" in the document.
@@ -221,9 +405,9 @@ BUSINESS IDENTITY:
 - Website: ${answers.primary_website || "N/A"}
 
 SMS CAMPAIGN USE CASES:
-- Marketing Use Case: ${answers.marketing_use_case || "N/A"}
-- Marketing Message Types: ${answers.marketing_message_types || "N/A"}
-- Marketing Frequency: ${answers.marketing_frequency || "N/A"}
+- Marketing Use Case: ${restricted ? "N/A — Restricted industry. This business does not send promotional or marketing SMS messages." : (answers.marketing_use_case || "N/A")}
+- Marketing Message Types: ${restricted ? "None — transactional messages only per industry regulations" : (answers.marketing_message_types || "N/A")}
+- Marketing Frequency: ${restricted ? "N/A — no marketing messages sent" : (answers.marketing_frequency || "N/A")}
 - Transactional Use Case: ${answers.transactional_use_case || "N/A"}
 - Transactional Message Types: ${answers.transactional_message_types || "N/A"}
 - Transactional Frequency: ${answers.transactional_frequency || "N/A"}
@@ -300,6 +484,7 @@ IMPORTANT: Keep ALL fields concise and practical. Avoid verbose, overly-detailed
 Each field must be realistic, specific to the business, and ready to copy-paste. Do NOT use generic placeholder language. Use the actual business name and details provided.`;
 
 function buildSubmissionLanguagePrompt(answers: Record<string, string>, websiteContent: string, _today: string): string {
+  const restricted = isRestrictedIndustry(answers);
   return `Generate A2P 10DLC registration form fields for the following business:
 
 BUSINESS IDENTITY:
@@ -310,9 +495,9 @@ BUSINESS IDENTITY:
 - Business Email: ${answers.business_email || "N/A"}
 
 SMS CAMPAIGN USE CASES:
-- Marketing Use Case: ${answers.marketing_use_case || "N/A"}
-- Marketing Message Types: ${answers.marketing_message_types || "N/A"}
-- Marketing Frequency: ${answers.marketing_frequency || "N/A"}
+- Marketing Use Case: ${restricted ? "N/A — Restricted industry. This business does not send promotional or marketing SMS messages." : (answers.marketing_use_case || "N/A")}
+- Marketing Message Types: ${restricted ? "None — transactional messages only per industry regulations" : (answers.marketing_message_types || "N/A")}
+- Marketing Frequency: ${restricted ? "N/A — no marketing messages sent" : (answers.marketing_frequency || "N/A")}
 - Transactional Use Case: ${answers.transactional_use_case || "N/A"}
 - Transactional Message Types: ${answers.transactional_message_types || "N/A"}
 - Transactional Frequency: ${answers.transactional_frequency || "N/A"}
@@ -324,7 +509,7 @@ OPT-IN DETAILS:
 - STOP/HELP Number: ${answers.stop_help_number || "N/A"}
 ${buildWebsiteSection(answers, websiteContent)}
 ${buildIndustryRestrictionSection(answers)}
-Generate the JSON with all 7 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.${isRestrictedIndustry(answers) ? " IMPORTANT: Because this is a restricted industry, both sample messages must be transactional (no promotional content). The opt_in_message and checkbox texts must reflect transactional-only consent. Remove the marketing_consent_checkbox or write it as transactional-only consent." : ""}`;
+Generate the JSON with all 7 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.${restricted ? " CRITICAL: Both sample messages must be transactional only — no promotional content, no offers, no solicitations. The use_case_description must describe a transactional-only program. The opt_in_message and checkbox texts must reflect transactional-only consent. Set marketing_consent_checkbox to null or omit it — this business does not send marketing SMS." : ""}`;
 }
 
 export async function POST(req: NextRequest) {
