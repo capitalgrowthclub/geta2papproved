@@ -215,7 +215,7 @@ export default function ProjectDetailPage() {
     error?: string
   ) {
     return (
-      <Card className="p-6">
+      <Card className="p-6 flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-semibold text-slate-900">{label}</h3>
           {isGenerating ? (
@@ -267,10 +267,10 @@ export default function ProjectDetailPage() {
           </div>
         ) : doc ? (
           <>
-            <p className="text-sm text-slate-500 mb-4">
+            <p className="text-sm text-slate-500 mb-4 flex-1">
               Your A2P-compliant {label.toLowerCase()} is ready. Click below to review it and copy the text.
             </p>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mt-auto">
               <Button variant="secondary" size="sm" onClick={() => setActiveTab(tabKey)}>
                 <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
