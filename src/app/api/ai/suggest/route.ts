@@ -36,11 +36,28 @@ async function fetchWebsiteContent(url: string): Promise<string> {
       .replace(/\s+/g, " ")
       .trim();
 
-    if (text.length > 3000) text = text.substring(0, 3000) + "...";
+    if (text.length > 2000) text = text.substring(0, 2000) + "...";
     return text;
   } catch {
     return "";
   }
+}
+
+async function fetchAllWebsites(urlsRaw: string): Promise<string> {
+  const urls = urlsRaw
+    .split(/[\n,]+/)
+    .map((u) => u.trim())
+    .filter((u) => u.startsWith("http"));
+
+  if (urls.length === 0) return "";
+
+  const results = await Promise.all(urls.slice(0, 5).map(fetchWebsiteContent));
+
+  return urls
+    .slice(0, 5)
+    .map((url, i) => (results[i] ? `--- ${url} ---\n${results[i]}` : ""))
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 export async function POST(req: NextRequest) {
@@ -56,9 +73,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Question required" }, { status: 400 });
     }
 
-    // Fetch actual website content if a URL is provided
-    const websiteUrl = businessContext?.Website || "";
-    const websiteContent = websiteUrl ? await fetchWebsiteContent(websiteUrl) : "";
+    // Fetch actual website content from all listed URLs
+    const websiteUrls = businessContext?.Website || "";
+    const websiteContent = websiteUrls ? await fetchAllWebsites(websiteUrls) : "";
 
     const contextLines = Object.entries(businessContext || {})
       .filter(([, v]) => v)
@@ -66,7 +83,7 @@ export async function POST(req: NextRequest) {
       .join("\n");
 
     const websiteSection = websiteContent
-      ? `\n\nWEBSITE CONTENT (fetched from ${websiteUrl}):\n${websiteContent}\n\nUse the above website content to accurately understand what this business actually does. Do NOT guess based on the domain name.`
+      ? `\n\nWEBSITE CONTENT (fetched from the business's listed URLs):\n${websiteContent}\n\nUse the above website content to accurately understand what this business actually does. Do NOT guess based on the domain name.`
       : "";
 
     const message = await getAnthropic().messages.create({

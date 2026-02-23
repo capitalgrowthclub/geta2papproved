@@ -9,15 +9,15 @@ function getAnthropic() {
   });
 }
 
-async function fetchWebsiteContent(url: string): Promise<string> {
+async function fetchSingleUrl(url: string): Promise<string> {
   try {
-    const parsed = new URL(url);
+    const parsed = new URL(url.trim());
     if (!parsed.protocol.startsWith("http")) return "";
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 10000);
 
-    const res = await fetch(url, {
+    const res = await fetch(url.trim(), {
       signal: controller.signal,
       headers: { "User-Agent": "GetA2PApproved/1.0" },
     });
@@ -37,11 +37,30 @@ async function fetchWebsiteContent(url: string): Promise<string> {
       .replace(/\s+/g, " ")
       .trim();
 
-    if (text.length > 5000) text = text.substring(0, 5000) + "...";
+    if (text.length > 3000) text = text.substring(0, 3000) + "...";
     return text;
   } catch {
     return "";
   }
+}
+
+async function fetchWebsiteContent(urlsRaw: string): Promise<string> {
+  // Parse one URL per line (or comma-separated)
+  const urls = urlsRaw
+    .split(/[\n,]+/)
+    .map((u) => u.trim())
+    .filter((u) => u.startsWith("http"));
+
+  if (urls.length === 0) return "";
+
+  // Fetch up to 5 URLs in parallel
+  const results = await Promise.all(urls.slice(0, 5).map(fetchSingleUrl));
+
+  return urls
+    .slice(0, 5)
+    .map((url, i) => (results[i] ? `--- ${url} ---\n${results[i]}` : ""))
+    .filter(Boolean)
+    .join("\n\n");
 }
 
 const SYSTEM_PROMPT = `You are an expert legal document generator specializing in A2P 10DLC compliance. Your job is to generate privacy policies and terms & conditions that will pass carrier review for A2P 10DLC campaign registration.
@@ -68,11 +87,11 @@ FORMAT REQUIREMENTS:
 
 Do NOT include any markdown formatting. Output ONLY valid HTML content (no <html>, <head>, or <body> tags — just the document content).`;
 
-function buildWebsiteSection(answers: Record<string, string>, websiteContent: string): string {
+function buildWebsiteSection(_answers: Record<string, string>, websiteContent: string): string {
   if (!websiteContent) return "";
   return `
-WEBSITE CONTENT (extracted from ${answers.primary_website}):
-The following is text content from the business's website. Use this to better understand their business, services, and branding tone. Write documents that are accurate and specific to this business:
+WEBSITE CONTENT (fetched from the business's listed URLs):
+The following is text content scraped from the business's website(s). Use this to accurately understand their business, services, and branding tone. Write documents that are specific and accurate to this business — do not guess or infer from domain names:
 
 ${websiteContent}
 `;
