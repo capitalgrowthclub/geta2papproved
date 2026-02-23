@@ -92,6 +92,14 @@ CRITICAL REQUIREMENTS:
 13. HTML ENCODING: Always write "Msg &amp; data rates may apply" — use the HTML entity &amp; for the ampersand so it renders correctly in browsers and in raw page source alike. Never use a bare & in HTML text content.
 14. CARRIER LIST: When listing supported US wireless carriers, use ONLY: AT&amp;T, Verizon, T-Mobile, Boost Mobile, MetroPCS, and U.S. Cellular. Do NOT include Sprint — Sprint was fully absorbed into T-Mobile and no longer exists as a separate carrier. Never list Sprint.
 15. FREQUENCY CONSISTENCY: The message frequency you state anywhere in a document — in the SMS section, consent disclosures, frequency tables — must exactly match the frequency values from the questionnaire data (Transactional Frequency and Marketing Frequency fields). Use the exact number or range provided. Never substitute "varies" when a specific frequency is given.
+16. DUAL CONSENT MECHANISM: The Privacy Policy and Terms must explicitly state that providing a phone number alone does not constitute consent to receive SMS messages. Include language matching this exactly (substituting the real business name): "Providing your phone number on our contact forms, registration pages, or intake forms does not, by itself, constitute consent to receive SMS text messages from [Business Name]. Consent to receive text messages is obtained separately through an affirmative, unchecked checkbox specifically designated for SMS consent at the point of opt-in."
+17. NO PURCHASED LISTS STATEMENT: Include this exact sentence verbatim in the SMS/data section: "We do not purchase, rent, or acquire personal information from data brokers, list vendors, or any third-party lead generation sources for use in our SMS messaging program."
+18. EXPLICIT PROHIBITION SECTION — STANDALONE SUBSECTION: Within the SMS/Text Messaging section of the Privacy Policy, create a dedicated subsection with this exact title: "Explicit Prohibition on SMS Opt-In Data Sharing". This must be a named subsection (h3 or equivalent), not merely a sentence in another section. It must contain an explicit and unambiguous statement that SMS opt-in consent information — including phone numbers collected via opt-in — is never sold, rented, shared, transferred, or disclosed to any third party, affiliate, or partner under any circumstances, for any purpose.
+19. SMS OPT-OUT RECORDS — PERMANENT RETENTION: In the data retention section, include this sentence as a standalone statement: "SMS opt-out records, including the date and time of each STOP request received and processed, are retained permanently to ensure that opted-out mobile numbers are never reactivated without a new affirmative opt-in consent."
+20. SMS OPT-IN CONSENT RETENTION — 5 YEARS: State explicitly in the data retention section that SMS opt-in consent records and all supporting documentation are retained for a minimum of five (5) years from the date consent was obtained. Use "five (5) years" — not four years, not "several years."
+21. SERVICE TEXTS LANGUAGE: In all consent-facing language — consent disclosure blockquotes, opt-in confirmation message descriptions, checkbox text quoted inside documents — use "service texts" instead of "transactional texts" when referring to non-promotional messages (reminders, confirmations, updates, notifications). "Transactional" is internal carrier/industry terminology; "service texts" is the plain-language equivalent that consumers recognize and that carriers expect to see in consumer-facing consent copy. This rule applies to any language that will appear directly on a form, inside a quoted consent block, or in a message body description shown to end users.
+22. JURISDICTION CONSISTENCY: When generating any document containing dispute resolution, arbitration, or governing law clauses, the governing law state, the arbitration venue, and the jurisdiction for non-arbitrable claims must ALL reference the same single state throughout the document. Use ONLY the business's state of incorporation/operation (from the Business State field). Never mix or split jurisdictions — do not set governing law in one state and arbitration venue in a different state. A jurisdiction mismatch is a legal inconsistency that creates liability exposure.
+23. OPT-OUT CONFIRMATION MESSAGE CONTENT: When describing the opt-out confirmation message users receive after replying STOP, include this exact sentence explicitly: "The opt-out confirmation message will identify [Business Name] by name and confirm that no further messages will be sent." This closes the loop between the Terms and what the user actually receives, which carriers verify during compliance review.
 
 FORMAT REQUIREMENTS:
 - Use clean semantic HTML: h1 for the document title, h2 for major sections, h3 for subsections, p for paragraphs, ul/ol/li for lists
@@ -285,6 +293,7 @@ const INDUSTRY_RULES: Record<string, { prohibited: string[]; allowed: string[]; 
 function buildIndustryRestrictionSection(answers: Record<string, string>): string {
   if (!isRestrictedIndustry(answers)) return "";
   const restricted = getSelectedRestricted(answers);
+  const legalName = answers.legal_business_name || "This business";
 
   const perIndustryRules = restricted.map((industry) => {
     const rules = INDUSTRY_RULES[industry];
@@ -301,6 +310,12 @@ ${industry.toUpperCase()}:
   return `
 INDUSTRY RESTRICTION — CRITICAL — READ BEFORE GENERATING:
 This business operates in a regulated industry that is PERMITTED to register for A2P 10DLC but is RESTRICTED TO TRANSACTIONAL MESSAGES ONLY: ${restricted.join(", ")}.
+
+THREE MANDATORY DECLARATIVE PROHIBITION SENTENCES — INCLUDE VERBATIM IN THE SMS SECTION:
+These three sentences must appear as standalone statements in the SMS/Text Messaging policy section of every generated document. Use the exact legal business name as the subject. Do NOT bury them in a list — each must be its own sentence in a paragraph:
+  "${legalName} does not send promotional, advertising, or marketing SMS messages of any kind."
+  "${legalName} does not engage in SMS-based solicitation of prospective clients or customers."
+  "${legalName} does not use text messaging to present offers, rate quotes, discounts, or product comparisons."
 
 UNIVERSAL RULES FOR ALL RESTRICTED INDUSTRIES:
 1. This business does NOT send promotional, marketing, or solicitation SMS messages. Remove ALL promotional SMS language from the document.
@@ -501,13 +516,15 @@ CRITICAL A2P requirements to include:
    - Program description (marketing and transactional campaigns)
    - Consent mechanism description
    - TWO separate consent disclosures (marketing + non-marketing)
-   - Explicit statement: "By opting in, you agree to receive [marketing/transactional] text messages"
+   - Explicit statement: "By opting in, you agree to receive [marketing/service] text messages"
    - Message frequency for each campaign type
    - "Message and data rates may apply"
    - Opt-out: "Reply STOP to cancel at any time"
    - Help: "Reply HELP for assistance or contact ${answers.support_email || "support"}"
    - Statement that consent is not a condition of purchase
    - Statement that SMS opt-in data is not shared with third parties
+   - For the opt-out confirmation message, include explicitly: "The opt-out confirmation message will identify [Business Name] by name and confirm that no further messages will be sent."
+   - Cross-reference to the Privacy Policy for SMS consent record retention periods: add a sentence such as "SMS consent records are retained in accordance with the retention periods set forth in our Privacy Policy, which is incorporated herein by reference."
 5. Intellectual property
 6. Prohibited conduct
 7. Disclaimers and warranties ("as is" service)
