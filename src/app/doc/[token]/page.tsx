@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import DocCopyButtons from "./DocCopyButtons";
+import SubmissionShareFields from "./SubmissionShareFields";
 
 interface DocData {
   document: {
@@ -43,7 +44,13 @@ export default async function DocSharePage({
 
   const { document: doc, projectName } = data;
   const typeLabel =
-    doc.type === "privacy_policy" ? "Privacy Policy" : "Terms & Conditions";
+    doc.type === "privacy_policy"
+      ? "Privacy Policy"
+      : doc.type === "terms_conditions"
+      ? "Terms & Conditions"
+      : "A2P Submission Language";
+
+  const isSubmission = doc.type === "submission_language";
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -65,15 +72,19 @@ export default async function DocSharePage({
               {new Date(doc.created_at).toLocaleDateString()}
             </p>
           </div>
-          <DocCopyButtons content={doc.content} />
+          {!isSubmission && <DocCopyButtons content={doc.content} />}
         </div>
 
         {/* Document content */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-8 overflow-auto">
-          <div
-            className="document-render"
-            dangerouslySetInnerHTML={{ __html: doc.content }}
-          />
+          {isSubmission ? (
+            <SubmissionShareFields content={doc.content} />
+          ) : (
+            <div
+              className="document-render"
+              dangerouslySetInnerHTML={{ __html: doc.content }}
+            />
+          )}
         </div>
       </main>
     </div>

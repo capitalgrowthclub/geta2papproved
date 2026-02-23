@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS client_intake_links (
 CREATE TABLE IF NOT EXISTS document_share_links (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('privacy_policy', 'terms_conditions')),
+  type TEXT NOT NULL CHECK (type IN ('privacy_policy', 'terms_conditions', 'submission_language')),
   token TEXT UNIQUE NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(project_id, type)

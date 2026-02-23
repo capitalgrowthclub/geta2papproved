@@ -636,6 +636,7 @@ export default function ProjectDetailPage() {
               content={submissionDoc.content}
               version={submissionDoc.version}
               createdAt={submissionDoc.created_at}
+              projectId={id}
               onRegenerate={() => handleGenerate("submission_language")}
               regenerating={generatingSubmission}
             />

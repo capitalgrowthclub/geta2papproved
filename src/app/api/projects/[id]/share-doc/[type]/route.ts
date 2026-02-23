@@ -15,7 +15,7 @@ export async function POST(
 
     const { id: projectId, type } = await params;
 
-    if (type !== "privacy_policy" && type !== "terms_conditions") {
+    if (type !== "privacy_policy" && type !== "terms_conditions" && type !== "submission_language") {
       return NextResponse.json({ error: "Invalid document type" }, { status: 400 });
     }
 

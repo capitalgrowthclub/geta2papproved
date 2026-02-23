@@ -18,6 +18,7 @@ interface SubmissionLanguageViewerProps {
   content: string;
   version: number;
   createdAt: string;
+  projectId: string;
   onRegenerate?: () => void;
   regenerating?: boolean;
 }
@@ -82,9 +83,32 @@ export default function SubmissionLanguageViewer({
   content,
   version,
   createdAt,
+  projectId,
   onRegenerate,
   regenerating,
 }: SubmissionLanguageViewerProps) {
+  const [sharing, setSharing] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+
+  async function handleShare() {
+    setSharing(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/share-doc/submission_language`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.url) {
+        await navigator.clipboard.writeText(data.url);
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 2000);
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setSharing(false);
+    }
+  }
+
   let fields: SubmissionFields;
   try {
     fields = JSON.parse(content);
@@ -111,11 +135,30 @@ export default function SubmissionLanguageViewer({
               Version {version} — Generated {new Date(createdAt).toLocaleDateString()}
             </p>
           </div>
-          {onRegenerate && (
-            <Button variant="outline" size="sm" onClick={onRegenerate} disabled={regenerating}>
-              {regenerating ? "Regenerating..." : "Regenerate"}
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={handleShare} disabled={sharing}>
+              {shareCopied ? (
+                <>
+                  <svg className="w-4 h-4 mr-1.5 text-emerald-600" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                  </svg>
+                  Link Copied!
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" />
+                  </svg>
+                  {sharing ? "Generating..." : "Share Link"}
+                </>
+              )}
             </Button>
-          )}
+            {onRegenerate && (
+              <Button variant="outline" size="sm" onClick={onRegenerate} disabled={regenerating}>
+                {regenerating ? "Regenerating..." : "Regenerate"}
+              </Button>
+            )}
+          </div>
         </div>
 
         <p className="text-sm text-slate-500 mb-6">
