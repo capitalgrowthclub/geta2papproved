@@ -350,7 +350,7 @@ function stripHtmlToText(html: string): string {
 function buildPrivacyPolicyReferenceSection(privacyContent: string | null): string {
   if (!privacyContent) return "";
   const text = stripHtmlToText(privacyContent);
-  const truncated = text.length > 6000 ? text.substring(0, 6000) + "... [truncated for length]" : text;
+  const truncated = text.length > 60000 ? text.substring(0, 60000) + "... [truncated for length]" : text;
   return `
 PREVIOUSLY GENERATED PRIVACY POLICY — CROSS-DOCUMENT CONSISTENCY REQUIRED:
 The Privacy Policy for this business has already been generated. The Terms & Conditions MUST be consistent with it on every point where the documents overlap. Specifically:
