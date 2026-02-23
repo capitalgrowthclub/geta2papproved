@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import DocumentViewer from "@/components/DocumentViewer";
 import SubmissionLanguageViewer from "@/components/SubmissionLanguageViewer";
 import type { Project, QuestionnaireResponse, GeneratedDocument, ClientIntakeLink } from "@/lib/supabase";
+import { isProhibitedIndustry, isRestrictedIndustry, getSelectedProhibited, getSelectedRestricted } from "@/lib/questionnaires/a2p-compliance";
 
 type DocumentType = "privacy_policy" | "terms_conditions" | "submission_language";
 
@@ -186,6 +187,12 @@ export default function ProjectDetailPage() {
   const hasClientResponded = clientLink?.status === "submitted";
   const isQuestionnaireComplete = response?.completed === true;
 
+  const answers = (response?.questions_answers as Record<string, string>) || {};
+  const industryIsProhibited = isProhibitedIndustry(answers);
+  const industryIsRestricted = isRestrictedIndustry(answers);
+  const prohibitedList = getSelectedProhibited(answers);
+  const restrictedList = getSelectedRestricted(answers);
+
   if (loading) {
     return (
       <div className="max-w-5xl mx-auto animate-pulse space-y-4">
@@ -286,6 +293,10 @@ export default function ProjectDetailPage() {
               </Button>
             </div>
           </>
+        ) : isQuestionnaireComplete && industryIsProhibited ? (
+          <p className="text-sm text-red-600">
+            Generation unavailable — this industry is prohibited from A2P 10DLC registration.
+          </p>
         ) : isQuestionnaireComplete ? (
           <>
             <p className="text-sm text-slate-500 mb-4">
@@ -503,6 +514,48 @@ export default function ProjectDetailPage() {
               </div>
             )}
           </Card>
+
+          {/* Industry restriction warnings */}
+          {industryIsProhibited && (
+            <div className="p-4 bg-red-50 border border-red-300 rounded-lg">
+              <div className="flex gap-3">
+                <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636" />
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-red-800">Industry Not Eligible for A2P 10DLC Registration</p>
+                  <p className="text-sm text-red-700 mt-1">
+                    This business operates in an industry that is <strong>fully prohibited</strong> from A2P 10DLC registration by carriers and the CTIA. Document generation is not available.
+                  </p>
+                  <p className="text-xs text-red-600 mt-2">
+                    Prohibited industry selected: {prohibitedList.join(", ")}
+                  </p>
+                  <p className="text-xs text-red-600 mt-1">
+                    Prohibited industries include: cannabis/hemp, payday loans, third-party debt collection, firearms dealers, gambling/sweepstakes, and illicit drugs. These businesses cannot send A2P 10DLC messages regardless of message type.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!industryIsProhibited && industryIsRestricted && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+              <div className="flex gap-3">
+                <svg className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                <div>
+                  <p className="text-sm font-semibold text-amber-800">Restricted Industry — Transactional SMS Only</p>
+                  <p className="text-sm text-amber-700 mt-1">
+                    This business operates in a regulated industry that is permitted to register for A2P 10DLC, but is <strong>restricted to transactional messages only</strong>. Promotional or marketing SMS is not allowed. All generated documents will reflect this restriction.
+                  </p>
+                  <p className="text-xs text-amber-600 mt-2">
+                    Restricted industry selected: {restrictedList.join(", ")}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Document Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

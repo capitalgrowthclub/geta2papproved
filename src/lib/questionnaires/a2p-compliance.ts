@@ -22,6 +22,55 @@ export interface QuestionSection {
   questions: Question[];
 }
 
+// Industries that are fully prohibited from A2P 10DLC registration
+export const PROHIBITED_INDUSTRIES = [
+  "Cannabis or Hemp Products",
+  "Payday Loans",
+  "Third-Party Debt Collection",
+  "Firearms or Weapons Dealer",
+  "Gambling or Sweepstakes",
+  "Illicit Drugs or Controlled Substances",
+];
+
+// Industries that can register but are restricted to transactional-only SMS (no promotional)
+export const RESTRICTED_INDUSTRIES = [
+  "Mortgage Lending or Brokerage",
+  "Banking or Credit Union",
+  "Insurance Company",
+  "Investment Advisory or Securities",
+  "Healthcare or Medical Services",
+  "Debt Consolidation",
+  "Credit Repair Services",
+  "Law Firm or Legal Services",
+  "Political Campaign",
+];
+
+export function getIndustryTypes(answers: Record<string, string>): string[] {
+  const raw = answers.industry_type || "";
+  if (!raw) return [];
+  return raw.split(",").map((s) => s.trim()).filter(Boolean);
+}
+
+export function isProhibitedIndustry(answers: Record<string, string>): boolean {
+  const selected = getIndustryTypes(answers);
+  return selected.some((s) => PROHIBITED_INDUSTRIES.includes(s));
+}
+
+export function isRestrictedIndustry(answers: Record<string, string>): boolean {
+  const selected = getIndustryTypes(answers);
+  return selected.some((s) => RESTRICTED_INDUSTRIES.includes(s));
+}
+
+export function getSelectedProhibited(answers: Record<string, string>): string[] {
+  const selected = getIndustryTypes(answers);
+  return selected.filter((s) => PROHIBITED_INDUSTRIES.includes(s));
+}
+
+export function getSelectedRestricted(answers: Record<string, string>): string[] {
+  const selected = getIndustryTypes(answers);
+  return selected.filter((s) => RESTRICTED_INDUSTRIES.includes(s));
+}
+
 export const a2pComplianceQuestions: QuestionSection[] = [
   // ─── SECTION 1: BUSINESS IDENTITY (Client-Facing) ───
   {
@@ -29,6 +78,35 @@ export const a2pComplianceQuestions: QuestionSection[] = [
     title: "Business Identity",
     description: "Basic business details — these must match your brand registration exactly or your A2P application will be rejected.",
     questions: [
+      {
+        id: "industry_type",
+        question: "Does your business operate in any of these regulated industries?",
+        type: "multi-select",
+        options: [
+          // Prohibited
+          "Cannabis or Hemp Products",
+          "Payday Loans",
+          "Third-Party Debt Collection",
+          "Firearms or Weapons Dealer",
+          "Gambling or Sweepstakes",
+          "Illicit Drugs or Controlled Substances",
+          // Restricted
+          "Mortgage Lending or Brokerage",
+          "Banking or Credit Union",
+          "Insurance Company",
+          "Investment Advisory or Securities",
+          "Healthcare or Medical Services",
+          "Debt Consolidation",
+          "Credit Repair Services",
+          "Law Firm or Legal Services",
+          "Political Campaign",
+          // Standard
+          "None of the above",
+        ],
+        helperText: "WHY THIS MATTERS: Certain industries are blocked from A2P 10DLC registration entirely. Others can register but are restricted to transactional messages only — no promotional or marketing SMS. Select all that apply. If your business doesn't fit any regulated category, select 'None of the above'.\n\n• Fully prohibited (cannot register at all): Cannabis/hemp, payday loans, third-party debt collection, firearms dealers, gambling/sweepstakes, illicit drugs.\n• Restricted to transactional SMS only: Mortgage/lending, banking, insurance, investment/securities, healthcare, debt consolidation, credit repair, law firms, political campaigns.",
+        required: true,
+        clientFacing: true,
+      },
       {
         id: "legal_business_name",
         question: "What is your business's legal name?",

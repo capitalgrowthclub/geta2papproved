@@ -2,6 +2,7 @@ import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase";
+import { isProhibitedIndustry, isRestrictedIndustry, getSelectedRestricted } from "@/lib/questionnaires/a2p-compliance";
 
 export const maxDuration = 800; // ~13 minutes
 
@@ -101,6 +102,27 @@ ${websiteContent}
 `;
 }
 
+function buildIndustryRestrictionSection(answers: Record<string, string>): string {
+  if (!isRestrictedIndustry(answers)) return "";
+  const restricted = getSelectedRestricted(answers);
+  return `
+INDUSTRY RESTRICTION — CRITICAL:
+This business operates in a federally or state-regulated industry: ${restricted.join(", ")}.
+
+Due to this, the following rules MUST be strictly followed in ALL generated documents:
+1. This business is permitted to register for A2P 10DLC but is RESTRICTED TO TRANSACTIONAL MESSAGES ONLY.
+2. Promotional, marketing, or solicitation SMS messages are STRICTLY PROHIBITED for this industry under TCPA, carrier policies, and applicable federal/state regulations (e.g., SEC, FINRA, HIPAA, state bar rules).
+3. ALL references to "marketing messages," "promotional messages," or "special offers" must be REMOVED from the SMS sections.
+4. The SMS/Text Messaging section must clearly state that messages are limited to transactional communications only (e.g., appointment reminders, account alerts, status updates, service notifications).
+5. Include a clear disclosure that this business does not send promotional or marketing SMS messages, and that SMS consent is solely for transactional and service-related communications.
+6. For healthcare: reference HIPAA-compliant messaging practices.
+7. For financial services (mortgage, banking, insurance, investment, debt consolidation, credit repair): reference applicable federal and state financial regulations restricting unsolicited promotional contact.
+8. For law firms: reference state bar advertising rules prohibiting SMS solicitation.
+9. For political campaigns: note this is a separate special-use category requiring its own vetting.
+10. Write these restrictions as firm, affirmative policy statements — not as caveats or suggestions.
+`;
+}
+
 function buildPrivacyPolicyPrompt(answers: Record<string, string>, websiteContent: string, today: string): string {
   return `Generate a comprehensive Privacy Policy for A2P 10DLC compliance based on the following business information:
 
@@ -159,6 +181,7 @@ ${answers.existing_privacy_policy.length > 50000 ? answers.existing_privacy_poli
 
 Update the above policy to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
+${buildIndustryRestrictionSection(answers)}
 Generate the COMPLETE privacy policy in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
 
 CRITICAL A2P requirements to include:
@@ -231,6 +254,7 @@ ${answers.existing_terms.length > 50000 ? answers.existing_terms.substring(0, 50
 
 Update the above terms to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
+${buildIndustryRestrictionSection(answers)}
 Generate the COMPLETE terms & conditions in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
 
 CRITICAL A2P requirements to include:
@@ -299,7 +323,8 @@ OPT-IN DETAILS:
 - Support Email: ${answers.support_email || "N/A"}
 - STOP/HELP Number: ${answers.stop_help_number || "N/A"}
 ${buildWebsiteSection(answers, websiteContent)}
-Generate the JSON with all 7 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.`;
+${buildIndustryRestrictionSection(answers)}
+Generate the JSON with all 7 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.${isRestrictedIndustry(answers) ? " IMPORTANT: Because this is a restricted industry, both sample messages must be transactional (no promotional content). The opt_in_message and checkbox texts must reflect transactional-only consent. Remove the marketing_consent_checkbox or write it as transactional-only consent." : ""}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -327,6 +352,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "You've reached the maximum number of regenerations for this document. Please contact support at support@geta2papproved.com for assistance." },
         { status: 429 }
+      );
+    }
+
+    // Block fully prohibited industries
+    if (isProhibitedIndustry(answers)) {
+      return NextResponse.json(
+        { error: "This business operates in an industry that is fully prohibited from A2P 10DLC registration by carriers and the CTIA. Document generation is not available for this industry type." },
+        { status: 403 }
       );
     }
 
