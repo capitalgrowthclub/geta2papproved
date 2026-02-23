@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import DocCopyButtons from "./DocCopyButtons";
 import SubmissionShareFields from "./SubmissionShareFields";
 
@@ -23,6 +23,33 @@ async function getDoc(token: string): Promise<DocData | null> {
   }
 }
 
+function getTypeLabel(type: string) {
+  if (type === "privacy_policy") return "Privacy Policy";
+  if (type === "terms_conditions") return "Terms & Conditions";
+  return "A2P Submission Language";
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ token: string }>;
+}): Promise<Metadata> {
+  const { token } = await params;
+  const data = await getDoc(token);
+  if (!data) return { title: "Document Not Found" };
+
+  const typeLabel = getTypeLabel(data.document.type);
+  const title = data.projectName ? `${data.projectName} - ${typeLabel}` : typeLabel;
+  const description = `View and copy the A2P-compliant ${typeLabel.toLowerCase()} for ${data.projectName || "this project"}.`;
+
+  return {
+    title,
+    description,
+    openGraph: { title, description },
+    twitter: { title, description },
+  };
+}
+
 export default async function DocSharePage({
   params,
 }: {
@@ -43,12 +70,7 @@ export default async function DocSharePage({
   }
 
   const { document: doc, projectName } = data;
-  const typeLabel =
-    doc.type === "privacy_policy"
-      ? "Privacy Policy"
-      : doc.type === "terms_conditions"
-      ? "Terms & Conditions"
-      : "A2P Submission Language";
+  const typeLabel = getTypeLabel(doc.type);
 
   const isSubmission = doc.type === "submission_language";
 
