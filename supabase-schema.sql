@@ -25,9 +25,15 @@ CREATE TABLE IF NOT EXISTS projects (
   name TEXT NOT NULL,
   business_name TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'waiting_for_client', 'in_progress', 'completed')),
+  disclaimer_acknowledged BOOLEAN DEFAULT FALSE,
+  disclaimer_acknowledged_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Migration: add disclaimer columns to existing projects (run if table already exists)
+-- ALTER TABLE projects ADD COLUMN IF NOT EXISTS disclaimer_acknowledged BOOLEAN DEFAULT FALSE;
+-- ALTER TABLE projects ADD COLUMN IF NOT EXISTS disclaimer_acknowledged_at TIMESTAMPTZ;
 
 -- Questionnaire responses table
 CREATE TABLE IF NOT EXISTS questionnaire_responses (

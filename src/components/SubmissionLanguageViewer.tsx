@@ -19,6 +19,7 @@ interface SubmissionLanguageViewerProps {
   version: number;
   createdAt: string;
   projectId: string;
+  isRestricted?: boolean;
   onRegenerate?: () => void;
   regenerating?: boolean;
 }
@@ -79,11 +80,17 @@ const COMPLIANCE_CHECKLIST = [
   "My website does not reference purchased, rented, or affiliate lead lists.",
 ];
 
+function isRestrictedNotice(value: string | undefined | null): boolean {
+  if (!value) return false;
+  return value.startsWith("Not applicable") || value.startsWith("N/A");
+}
+
 export default function SubmissionLanguageViewer({
   content,
   version,
   createdAt,
   projectId,
+  isRestricted,
   onRegenerate,
   regenerating,
 }: SubmissionLanguageViewerProps) {
@@ -218,7 +225,7 @@ export default function SubmissionLanguageViewer({
             </div>
           </div>
 
-          {(fields.marketing_consent_checkbox || fields.transactional_consent_checkbox) && (
+          {(fields.marketing_consent_checkbox || fields.transactional_consent_checkbox || isRestricted) && (
             <div>
               <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
                 <span className="w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">4</span>
@@ -228,11 +235,21 @@ export default function SubmissionLanguageViewer({
                 Place these texts next to two separate, unchecked checkboxes on every form that collects a phone number. Both checkboxes must be unchecked by default.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 ml-8">
-                {fields.marketing_consent_checkbox && (
-                  <CopyField
-                    label="Marketing Consent Checkbox"
-                    value={fields.marketing_consent_checkbox}
-                  />
+                {/* Marketing consent — show restriction notice for restricted industries */}
+                {(isRestricted || fields.marketing_consent_checkbox) && (
+                  isRestrictedNotice(fields.marketing_consent_checkbox) || (isRestricted && !fields.marketing_consent_checkbox) ? (
+                    <div className="border border-amber-200 rounded-lg p-4 bg-amber-50">
+                      <h4 className="text-sm font-semibold text-amber-800 mb-2">Marketing Consent Checkbox</h4>
+                      <p className="text-sm text-amber-700">
+                        <strong>Not applicable for this business.</strong> This business operates in a regulated industry that is restricted to transactional messages only per CTIA and carrier guidelines. Promotional or marketing SMS is not permitted — do not include a marketing consent checkbox on your opt-in forms.
+                      </p>
+                    </div>
+                  ) : (
+                    <CopyField
+                      label="Marketing Consent Checkbox"
+                      value={fields.marketing_consent_checkbox!}
+                    />
+                  )
                 )}
                 {fields.transactional_consent_checkbox && (
                   <CopyField

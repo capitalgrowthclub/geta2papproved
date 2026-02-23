@@ -39,6 +39,8 @@ export interface Project {
   name: string;
   business_name: string;
   status: "draft" | "waiting_for_client" | "in_progress" | "completed" | "error";
+  disclaimer_acknowledged: boolean;
+  disclaimer_acknowledged_at: string | null;
   created_at: string;
   updated_at: string;
 }
