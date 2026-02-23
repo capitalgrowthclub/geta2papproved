@@ -29,19 +29,32 @@ export default function ProjectDetailPage() {
   const [errorPrivacy, setErrorPrivacy] = useState("");
   const [errorTerms, setErrorTerms] = useState("");
   const [errorSubmission, setErrorSubmission] = useState("");
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [elapsedPrivacy, setElapsedPrivacy] = useState(0);
+  const [elapsedTerms, setElapsedTerms] = useState(0);
+  const [elapsedSubmission, setElapsedSubmission] = useState(0);
 
-  // Timer for generation elapsed time
+  function formatElapsed(s: number): string {
+    if (s < 60) return `${s}s`;
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  }
+
   useEffect(() => {
-    if (!generatingPrivacy && !generatingTerms && !generatingSubmission) {
-      setElapsedSeconds(0);
-      return;
-    }
-    const interval = setInterval(() => {
-      setElapsedSeconds((s) => s + 1);
-    }, 1000);
+    if (!generatingPrivacy) { setElapsedPrivacy(0); return; }
+    const interval = setInterval(() => setElapsedPrivacy((s) => s + 1), 1000);
     return () => clearInterval(interval);
-  }, [generatingPrivacy, generatingTerms, generatingSubmission]);
+  }, [generatingPrivacy]);
+
+  useEffect(() => {
+    if (!generatingTerms) { setElapsedTerms(0); return; }
+    const interval = setInterval(() => setElapsedTerms((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [generatingTerms]);
+
+  useEffect(() => {
+    if (!generatingSubmission) { setElapsedSubmission(0); return; }
+    const interval = setInterval(() => setElapsedSubmission((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [generatingSubmission]);
 
   // Client link form state
   const [showLinkForm, setShowLinkForm] = useState(false);
@@ -197,6 +210,7 @@ export default function ProjectDetailPage() {
     type: DocumentType,
     doc: GeneratedDocument | undefined,
     isGenerating: boolean,
+    elapsed: number,
     tabKey: "privacy" | "terms" | "submission",
     error?: string
   ) {
@@ -233,8 +247,8 @@ export default function ProjectDetailPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-900">Writing your {label.toLowerCase()}... ({elapsedSeconds}s)</p>
-                <p className="text-xs text-slate-500">This usually takes 60-90 seconds. Please don&apos;t close this page.</p>
+                <p className="text-sm font-medium text-slate-900">Writing your {label.toLowerCase()}... ({formatElapsed(elapsed)})</p>
+                <p className="text-xs text-slate-500">This can take 2–10 minutes. Please don&apos;t close this page.</p>
               </div>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -492,9 +506,9 @@ export default function ProjectDetailPage() {
 
           {/* Document Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {renderDocCard("Privacy Policy", "privacy_policy", privacyDoc, generatingPrivacy, "privacy", errorPrivacy)}
-            {renderDocCard("Terms & Conditions", "terms_conditions", termsDoc, generatingTerms, "terms", errorTerms)}
-            {renderDocCard("A2P Submission Language", "submission_language", submissionDoc, generatingSubmission, "submission", errorSubmission)}
+            {renderDocCard("Privacy Policy", "privacy_policy", privacyDoc, generatingPrivacy, elapsedPrivacy, "privacy", errorPrivacy)}
+            {renderDocCard("Terms & Conditions", "terms_conditions", termsDoc, generatingTerms, elapsedTerms, "terms", errorTerms)}
+            {renderDocCard("A2P Submission Language", "submission_language", submissionDoc, generatingSubmission, elapsedSubmission, "submission", errorSubmission)}
           </div>
 
           {/* Legal Disclaimer */}
@@ -538,8 +552,8 @@ export default function ProjectDetailPage() {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
                   </div>
-                  <p className="text-slate-900 font-medium mb-1">Writing your privacy policy... ({elapsedSeconds}s)</p>
-                  <p className="text-sm text-slate-500">This usually takes 60-90 seconds. Please don&apos;t close this page.</p>
+                  <p className="text-slate-900 font-medium mb-1">Writing your privacy policy... ({formatElapsed(elapsedPrivacy)})</p>
+                  <p className="text-sm text-slate-500">This can take 2–10 minutes. Please don&apos;t close this page.</p>
                 </div>
               ) : (
                 <>
@@ -585,8 +599,8 @@ export default function ProjectDetailPage() {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
                   </div>
-                  <p className="text-slate-900 font-medium mb-1">Writing your terms &amp; conditions... ({elapsedSeconds}s)</p>
-                  <p className="text-sm text-slate-500">This usually takes 60-90 seconds. Please don&apos;t close this page.</p>
+                  <p className="text-slate-900 font-medium mb-1">Writing your terms &amp; conditions... ({formatElapsed(elapsedTerms)})</p>
+                  <p className="text-sm text-slate-500">This can take 2–10 minutes. Please don&apos;t close this page.</p>
                 </div>
               ) : (
                 <>
@@ -631,8 +645,8 @@ export default function ProjectDetailPage() {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
                   </div>
-                  <p className="text-slate-900 font-medium mb-1">Generating your A2P submission language... ({elapsedSeconds}s)</p>
-                  <p className="text-sm text-slate-500">This usually takes 30-60 seconds. Please don&apos;t close this page.</p>
+                  <p className="text-slate-900 font-medium mb-1">Generating your A2P submission language... ({formatElapsed(elapsedSubmission)})</p>
+                  <p className="text-sm text-slate-500">This can take 2–10 minutes. Please don&apos;t close this page.</p>
                 </div>
               ) : (
                 <>

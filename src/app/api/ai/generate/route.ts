@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase";
 
+export const maxDuration = 900; // 15 minutes
+
 function getAnthropic() {
   return new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
@@ -334,12 +336,13 @@ export async function POST(req: NextRequest) {
         ? buildSubmissionLanguagePrompt(answers, websiteContent)
         : buildTermsPrompt(answers, websiteContent);
 
-    const message = await getAnthropic().messages.create({
+    const stream = getAnthropic().messages.stream({
       model: "claude-sonnet-4-6",
       max_tokens: isSubmissionLanguage ? 4000 : 64000,
       system: isSubmissionLanguage ? SUBMISSION_SYSTEM_PROMPT : SYSTEM_PROMPT,
       messages: [{ role: "user", content: prompt }],
     });
+    const message = await stream.finalMessage();
 
     // If the model hit the token limit, the document is incomplete — don't save it
     if (message.stop_reason === "max_tokens") {
@@ -410,6 +413,8 @@ export async function POST(req: NextRequest) {
         message = "AI service is temporarily overloaded. Please try again in a few minutes.";
       } else if (error.message.includes("authentication")) {
         message = "AI service configuration error. Please contact support.";
+      } else if (error.message.includes("Streaming is required")) {
+        message = "Document generation failed due to a configuration issue. Please contact support.";
       }
     }
 
