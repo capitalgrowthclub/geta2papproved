@@ -130,7 +130,7 @@ ${answers.existing_privacy_policy ? `
 EXISTING PRIVACY POLICY TO UPDATE:
 The user has an existing privacy policy they want updated for A2P compliance. Keep their existing language and structure where appropriate, but ADD all the required SMS/messaging sections and A2P-specific language. Here is their current policy:
 
-${answers.existing_privacy_policy}
+${answers.existing_privacy_policy.length > 10000 ? answers.existing_privacy_policy.substring(0, 10000) + "\n\n[Document truncated for length — continue generating a complete policy incorporating the above content plus all A2P requirements]" : answers.existing_privacy_policy}
 
 Update the above policy to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
@@ -200,7 +200,7 @@ ${answers.existing_terms ? `
 EXISTING TERMS & CONDITIONS TO UPDATE:
 The user has existing terms & conditions they want updated for A2P compliance. Keep their existing language and structure where appropriate, but ADD all the required SMS/messaging sections and A2P-specific language. Here is their current document:
 
-${answers.existing_terms}
+${answers.existing_terms.length > 10000 ? answers.existing_terms.substring(0, 10000) + "\n\n[Document truncated for length — continue generating complete terms incorporating the above content plus all A2P requirements]" : answers.existing_terms}
 
 Update the above terms to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
@@ -316,11 +316,19 @@ export async function POST(req: NextRequest) {
         : buildTermsPrompt(answers, websiteContent);
 
     const message = await getAnthropic().messages.create({
-      model: "claude-sonnet-4-5-20250929",
-      max_tokens: isSubmissionLanguage ? 4000 : 16000,
+      model: "claude-sonnet-4-6",
+      max_tokens: isSubmissionLanguage ? 4000 : 32000,
       system: isSubmissionLanguage ? SUBMISSION_SYSTEM_PROMPT : SYSTEM_PROMPT,
       messages: [{ role: "user", content: prompt }],
     });
+
+    // If the model hit the token limit, the document is incomplete — don't save it
+    if (message.stop_reason === "max_tokens") {
+      return NextResponse.json(
+        { error: "The document was too long to generate completely. Try removing or shortening any existing policy content you pasted in, then regenerate. If the issue persists, contact support@geta2papproved.com." },
+        { status: 422 }
+      );
+    }
 
     const content = message.content[0];
     if (content.type !== "text") {
