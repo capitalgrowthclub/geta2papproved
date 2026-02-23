@@ -334,6 +334,37 @@ Write the SMS/messaging sections of all documents to strictly reflect these rest
 `;
 }
 
+function stripHtmlToText(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildPrivacyPolicyReferenceSection(privacyContent: string | null): string {
+  if (!privacyContent) return "";
+  const text = stripHtmlToText(privacyContent);
+  const truncated = text.length > 6000 ? text.substring(0, 6000) + "... [truncated for length]" : text;
+  return `
+PREVIOUSLY GENERATED PRIVACY POLICY — CROSS-DOCUMENT CONSISTENCY REQUIRED:
+The Privacy Policy for this business has already been generated. The Terms & Conditions MUST be consistent with it on every point where the documents overlap. Specifically:
+  - Data retention periods must match exactly (do not state a different number of years for SMS opt-in records or any other data category)
+  - Governing law and jurisdiction must match the Privacy Policy's stated jurisdiction
+  - Any consent language, opt-out procedures, and STOP/HELP responses described must be consistent
+  - When cross-referencing the Privacy Policy (e.g., for data retention), use the same section names or describe the same terms
+  - Do NOT contradict any policy statement from the Privacy Policy
+
+Privacy Policy content (use for reference and consistency — do not copy it verbatim into the Terms):
+${truncated}
+`;
+}
+
 interface ConsentCheckboxes {
   marketing?: string | null;
   transactional?: string | null;
@@ -457,7 +488,7 @@ CRITICAL A2P requirements to include:
 12. Contact information`;
 }
 
-function buildTermsPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null): string {
+function buildTermsPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null, privacyPolicyContent: string | null = null): string {
   const restricted = isRestrictedIndustry(answers);
   return `Generate comprehensive Terms & Conditions for A2P 10DLC compliance based on the following information:
 
@@ -505,7 +536,7 @@ ${answers.existing_terms.length > 50000 ? answers.existing_terms.substring(0, 50
 
 Update the above terms to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
-${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}
+${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}${buildPrivacyPolicyReferenceSection(privacyPolicyContent)}
 Generate the COMPLETE terms & conditions in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
 
 CRITICAL A2P requirements to include:
@@ -619,11 +650,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch website content and (for PP/T&C) existing submission language in parallel
+    // Fetch website content and prior documents in parallel based on generation type
     const websiteUrl = answers.primary_website || "";
     const isPPorTC = type === "privacy_policy" || type === "terms_conditions";
+    const isTC = type === "terms_conditions";
 
-    const [websiteContent, submissionDoc] = await Promise.all([
+    const [websiteContent, submissionDoc, privacyDoc] = await Promise.all([
       websiteUrl ? fetchWebsiteContent(websiteUrl) : Promise.resolve(""),
       isPPorTC
         ? supabaseCheck
@@ -631,6 +663,16 @@ export async function POST(req: NextRequest) {
             .select("content")
             .eq("project_id", project_id)
             .eq("type", "submission_language")
+            .order("version", { ascending: false })
+            .limit(1)
+            .then(({ data }) => data?.[0] ?? null)
+        : Promise.resolve(null),
+      isTC
+        ? supabaseCheck
+            .from("generated_documents")
+            .select("content")
+            .eq("project_id", project_id)
+            .eq("type", "privacy_policy")
             .order("version", { ascending: false })
             .limit(1)
             .then(({ data }) => data?.[0] ?? null)
@@ -658,7 +700,7 @@ export async function POST(req: NextRequest) {
         ? buildPrivacyPolicyPrompt(answers, websiteContent, today, consentCheckboxes)
         : type === "submission_language"
         ? buildSubmissionLanguagePrompt(answers, websiteContent, today)
-        : buildTermsPrompt(answers, websiteContent, today, consentCheckboxes);
+        : buildTermsPrompt(answers, websiteContent, today, consentCheckboxes, privacyDoc?.content ?? null);
 
     const stream = getAnthropic().messages.stream({
       model: "claude-sonnet-4-6",

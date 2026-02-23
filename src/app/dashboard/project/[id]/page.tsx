@@ -262,7 +262,8 @@ export default function ProjectDetailPage() {
     elapsed: number,
     tabKey: "privacy" | "terms" | "submission",
     error?: string,
-    isLocked?: boolean
+    isLocked?: boolean,
+    lockedMessage?: string
   ) {
     return (
       <Card className="p-6 flex flex-col">
@@ -345,7 +346,7 @@ export default function ProjectDetailPage() {
           </>
         ) : isLocked ? (
           <p className="text-sm text-slate-500 flex-1">
-            Generate your <strong>A2P Submission Language</strong> first. The consent checkbox text it produces will be quoted verbatim in this document to ensure your policy matches your opt-in form exactly.
+            {lockedMessage || "Generate your A2P Submission Language first. The consent checkbox text it produces will be quoted verbatim in this document to ensure your policy matches your opt-in form exactly."}
           </p>
         ) : isQuestionnaireComplete && industryIsProhibited ? (
           <p className="text-sm text-red-600">
@@ -665,11 +666,23 @@ export default function ProjectDetailPage() {
             </div>
           )}
 
-          {/* Document Cards — Submission Language must be generated first */}
+          {/* Document Cards — strict generation order: Submission Language → Privacy Policy → Terms */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {renderDocCard("A2P Submission Language", "submission_language", submissionDoc, generatingSubmission, elapsedSubmission, "submission", errorSubmission)}
             {renderDocCard("Privacy Policy", "privacy_policy", privacyDoc, generatingPrivacy, elapsedPrivacy, "privacy", errorPrivacy, !submissionDoc)}
-            {renderDocCard("Terms & Conditions", "terms_conditions", termsDoc, generatingTerms, elapsedTerms, "terms", errorTerms, !submissionDoc)}
+            {renderDocCard(
+              "Terms & Conditions",
+              "terms_conditions",
+              termsDoc,
+              generatingTerms,
+              elapsedTerms,
+              "terms",
+              errorTerms,
+              !submissionDoc || !privacyDoc,
+              !submissionDoc
+                ? "Generate your A2P Submission Language first. The consent checkbox text it produces will be quoted verbatim in this document."
+                : "Generate your Privacy Policy first. The Terms & Conditions will read your privacy policy to mirror its data retention periods, consent language, and governing law — keeping all three documents fully consistent."
+            )}
           </div>
 
           {/* Legal Disclaimer */}
@@ -779,11 +792,19 @@ export default function ProjectDetailPage() {
                   <p className="text-slate-900 font-medium mb-1">Writing your terms &amp; conditions... ({formatElapsed(elapsedTerms)})</p>
                   <p className="text-sm text-slate-500">This can take 2–10 minutes. Please don&apos;t close this page.</p>
                 </div>
+              ) : !submissionDoc ? (
+                <p className="text-slate-500">
+                  Generate your <strong>A2P Submission Language</strong> first, then your <strong>Privacy Policy</strong>, before generating Terms &amp; Conditions.
+                </p>
+              ) : !privacyDoc ? (
+                <p className="text-slate-500">
+                  Generate your <strong>Privacy Policy</strong> first. The Terms &amp; Conditions will read it to stay consistent with your data retention periods and consent language.
+                </p>
               ) : (
                 <>
                   <p className="text-slate-500 mb-4">
                     {isQuestionnaireComplete
-                      ? "Questionnaire complete. Generate your terms & conditions."
+                      ? "Privacy Policy is ready. Generate your terms & conditions now."
                       : "Complete the A2P compliance questionnaire first."}
                   </p>
                   {isQuestionnaireComplete ? (
