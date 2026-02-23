@@ -80,7 +80,15 @@ CRITICAL REQUIREMENTS:
 9. Every paragraph must be fully written out with complete legal language — no paraphrasing, no summarizing, no "etc."
 10. The document should be COMPREHENSIVE and PRODUCTION-READY — the user should be able to copy-paste it directly onto their website with zero edits needed
 11. STAFF TRAINING CLAUSE: Whenever mentioning staff training in any data use or data processing section, include this exact sentence: "Staff training uses anonymized or aggregated data and does not involve the disclosure of individual client personal information to unauthorized personnel." This prevents reviewers from questioning whether real client SMS data is used in AI or automated training systems.
-12. VERBATIM CONSENT LANGUAGE: The SMS/Text Messaging section of the Privacy Policy MUST include a quoted example of the actual consent checkbox language users see at the point of opt-in. Format it as a blockquote or indented paragraph labeled "Consent Disclosure" and write representative consent language based on the business information provided. Example format: 'The consent disclosure presented to users at the point of opt-in reads as follows: "By checking this box, you consent to receive [message type] text messages from [Business Name] regarding [purpose]. Message frequency varies / Up to [X] messages per month. Msg &amp; data rates may apply. Reply STOP to opt out or HELP for help. SMS opt-in data is never shared with third parties."' IMPORTANT: The frequency you state in this consent disclosure must exactly match the frequency values from the questionnaire data — use the same number everywhere.
+12. VERBATIM CONSENT LANGUAGE — STRICT REQUIREMENTS: The SMS/Text Messaging section MUST include a subsection labeled "Consent Disclosure" containing the exact quoted text users see at the point of opt-in. This quoted block MUST contain ALL SIX of the following elements — every one is mandatory, no exceptions, no omissions:
+    (a) The specific message type and business name
+    (b) Message frequency — exact number from questionnaire data
+    (c) "Msg &amp; data rates may apply."
+    (d) "Reply STOP to opt out." — MANDATORY inside the quoted consent block
+    (e) "Reply HELP for info." — MANDATORY inside the quoted consent block. This is a CTIA requirement. It MUST appear in the consent disclosure. Do NOT omit it, do NOT move it to a different section.
+    (f) "SMS opt-in data is never shared with third parties." — MANDATORY inside the quoted consent block. Carriers specifically require this at the point of consent. It MUST appear inside the quoted consent block, not just in surrounding prose.
+    EXAMPLE FORMAT (follow this exactly, substituting real business details): 'The consent disclosure presented to users at the point of opt-in reads as follows: "By checking this box, I agree to receive [message type] text messages from [Business Name] regarding [purpose]. [Frequency]. Msg &amp; data rates may apply. Reply STOP to opt out. Reply HELP for info. SMS opt-in data is never shared with third parties."'
+    CRITICAL: If consent checkbox text is provided above (from the A2P Submission Language), quote it verbatim AND ensure all six elements are present — add any missing mandatory elements (especially HELP and no-third-party) to the quoted text in the policy even if the original checkbox text was shorter.
 13. HTML ENCODING: Always write "Msg &amp; data rates may apply" — use the HTML entity &amp; for the ampersand so it renders correctly in browsers and in raw page source alike. Never use a bare & in HTML text content.
 14. CARRIER LIST: When listing supported US wireless carriers, use ONLY: AT&amp;T, Verizon, T-Mobile, Boost Mobile, MetroPCS, and U.S. Cellular. Do NOT include Sprint — Sprint was fully absorbed into T-Mobile and no longer exists as a separate carrier. Never list Sprint.
 15. FREQUENCY CONSISTENCY: The message frequency you state anywhere in a document — in the SMS section, consent disclosures, frequency tables — must exactly match the frequency values from the questionnaire data (Transactional Frequency and Marketing Frequency fields). Use the exact number or range provided. Never substitute "varies" when a specific frequency is given.
@@ -320,7 +328,7 @@ function buildConsentAnchorSection(checkboxes: ConsentCheckboxes | null, restric
   if (!checkboxes) {
     return `
 CONSENT LANGUAGE NOTE:
-No A2P Submission Language has been generated yet for this project. Write representative consent checkbox language in the "Consent Disclosure" blockquote that is consistent with the business information above. Ideally the user should generate A2P Submission Language first, then regenerate this document so the consent language can be quoted verbatim.
+No A2P Submission Language has been generated yet for this project. Write representative consent disclosure language in the "Consent Disclosure" blockquote consistent with the business information above. The quoted block MUST include all mandatory elements: message type, frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", and "SMS opt-in data is never shared with third parties." — all six inside the quoted block.
 `;
   }
 
@@ -335,13 +343,17 @@ No A2P Submission Language has been generated yet for this project. Write repres
     : "";
 
   return `
-CONSENT CHECKBOX TEXT — ALREADY GENERATED FOR THIS BUSINESS — QUOTE VERBATIM:
-The following consent checkbox texts are the exact words that appear on this business's opt-in forms. The Privacy Policy SMS section MUST quote these word-for-word as the "Consent Disclosure" blockquote. Do not paraphrase or rewrite them.
+CONSENT CHECKBOX TEXT — ALREADY GENERATED FOR THIS BUSINESS:
+The following consent checkbox texts are the words that appear on this business's opt-in forms. Use these as the basis for the "Consent Disclosure" blockquote in the Privacy Policy SMS section.
 
 ${marketingLine}
 ${transactionalLine}
 
-Include both texts (as applicable) in the SMS/Text Messaging section's "Consent Disclosure" block exactly as written above.
+CRITICAL: When quoting these texts in the Privacy Policy "Consent Disclosure" block, you MUST ensure ALL mandatory elements are present inside the quoted block — even if the checkbox text above is shorter than required:
+  - "Reply STOP to opt out." — must be inside the quoted block
+  - "Reply HELP for info." — must be inside the quoted block (add it if missing from the checkbox text above)
+  - "SMS opt-in data is never shared with third parties." — must be inside the quoted block (add it if missing from the checkbox text above)
+Augment the quoted text as needed to include all three. Do not move them to surrounding prose.
 `;
 }
 
@@ -516,8 +528,8 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
 - "sample_message_2": A realistic sample marketing/promotional message from the business (min 20 chars, max 1024 chars). Must include the business name, a different message type than sample 1, and "Reply STOP to unsubscribe."
 - "opt_in_description": Concise description of how contacts opt in (min 40 chars, max 2048 chars). Keep it to 2-3 sentences. Must mention: specific opt-in method, that the form includes SMS consent language, and the website URL.
 - "opt_in_message": The confirmation message sent after someone opts in (max 320 chars). Must include: business name, what they signed up for, message frequency note, "Msg & data rates may apply", "Reply STOP to opt out", "Reply HELP for help."
-- "marketing_consent_checkbox": SHORT checkbox text for marketing SMS consent. Keep it to 1-2 concise sentences max. Must mention: consent to marketing texts from the business, msg frequency, "Msg & data rates may apply", "Reply STOP to cancel", consent not required for purchase. Example: "I agree to receive marketing texts from [Business Name]. Up to [X] msgs/mo. Msg & data rates may apply. Reply STOP to cancel. Consent not required for purchase."
-- "transactional_consent_checkbox": SHORT checkbox text for transactional SMS consent. Keep it to 1-2 concise sentences max. Must mention: consent to service texts from the business (e.g. reminders, updates), "Msg & data rates may apply", "Reply STOP to cancel". Example: "I agree to receive service texts from [Business Name] (e.g. appointment reminders, updates). Msg frequency varies. Msg & data rates may apply. Reply STOP to cancel."
+- "marketing_consent_checkbox": Checkbox text for marketing SMS consent. Must include ALL of: consent to marketing texts from the business, msg frequency, "Msg & data rates may apply.", "Reply STOP to cancel.", "Reply HELP for info.", "Consent not required for purchase.", "SMS opt-in data is never shared with third parties." Example: "I agree to receive marketing texts from [Business Name]. Up to [X] msgs/mo. Msg & data rates may apply. Reply STOP to cancel. Reply HELP for info. Consent not required for purchase. SMS opt-in data is never shared with third parties."
+- "transactional_consent_checkbox": Checkbox text for transactional SMS consent. Must include ALL of: consent to service/transactional texts from the business (e.g. reminders, updates, confirmations), msg frequency, "Msg & data rates may apply.", "Reply STOP to cancel.", "Reply HELP for info.", "SMS opt-in data is never shared with third parties." Example: "I agree to receive service texts from [Business Name] (e.g. appointment reminders, updates). [Frequency]. Msg & data rates may apply. Reply STOP to cancel. Reply HELP for info. SMS opt-in data is never shared with third parties."
 
 FREQUENCY CONSISTENCY: The message frequency stated in sample_message_1, sample_message_2, opt_in_message, marketing_consent_checkbox, and transactional_consent_checkbox must all match the exact frequency values from the business data provided. Use the exact number — do not substitute "varies" when a specific frequency number is provided.
 
