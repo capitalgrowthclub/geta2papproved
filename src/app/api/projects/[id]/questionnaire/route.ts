@@ -1,5 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase";
 
 export async function GET(
@@ -7,15 +7,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const supabase = createServiceClient();
+    const db = createServiceClient();
 
-    const { data: responses } = await supabase
+    const { data: responses } = await db
       .from("questionnaire_responses")
       .select("*")
       .eq("project_id", id);
@@ -32,18 +33,18 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
     const { section, questions_answers, completed } = await req.json();
 
-    const supabase = createServiceClient();
+    const db = createServiceClient();
 
-    // Upsert questionnaire response
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("questionnaire_responses")
       .upsert(
         {
@@ -62,9 +63,8 @@ export async function POST(
       return NextResponse.json({ error: "Failed to save" }, { status: 500 });
     }
 
-    // Update project status
     if (completed) {
-      await supabase
+      await db
         .from("projects")
         .update({ status: "in_progress", updated_at: new Date().toISOString() })
         .eq("id", id);

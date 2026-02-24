@@ -1,5 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase";
 import { randomUUID } from "crypto";
 
@@ -8,8 +8,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string; type: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -19,20 +20,9 @@ export async function POST(
       return NextResponse.json({ error: "Invalid document type" }, { status: 400 });
     }
 
-    const supabase = createServiceClient();
+    const db = createServiceClient();
 
-    // Verify project belongs to this user
-    const { data: user } = await supabase
-      .from("users")
-      .select("id")
-      .eq("clerk_id", userId)
-      .single();
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const { data: project } = await supabase
+    const { data: project } = await db
       .from("projects")
       .select("id")
       .eq("id", projectId)
@@ -43,8 +33,7 @@ export async function POST(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    // Verify the document has been generated
-    const { data: doc } = await supabase
+    const { data: doc } = await db
       .from("generated_documents")
       .select("id")
       .eq("project_id", projectId)
@@ -59,16 +48,14 @@ export async function POST(
       );
     }
 
-    // Insert a new share link, or do nothing if one already exists for this project+type
-    await supabase
+    await db
       .from("document_share_links")
       .upsert(
         { project_id: projectId, type, token: randomUUID() },
         { onConflict: "project_id,type", ignoreDuplicates: true }
       );
 
-    // Always fetch the canonical token (handles both new and existing)
-    const { data: link } = await supabase
+    const { data: link } = await db
       .from("document_share_links")
       .select("token")
       .eq("project_id", projectId)

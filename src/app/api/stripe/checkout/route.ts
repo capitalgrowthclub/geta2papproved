@@ -1,15 +1,16 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { getStripe } from "@/lib/stripe";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase";
+import { getStripe } from "@/lib/stripe";
 import { getPriceId, isSubscription, type PlanKey } from "@/lib/pricing";
 
 const VALID_PLANS: PlanKey[] = ["single_credit", "monthly_pro", "annual_unlimited"];
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -19,19 +20,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
     }
 
-    const user = await currentUser();
-    const email = user?.emailAddresses[0]?.emailAddress;
+    const db = createServiceClient();
 
-    const supabase = createServiceClient();
+    // Ensure user record exists
+    await db.from("users").upsert(
+      {
+        id: user.id,
+        email: user.email || "",
+        plan_type: "none",
+        is_paid: false,
+        credits_remaining: 0,
+      },
+      { onConflict: "id", ignoreDuplicates: true }
+    );
 
-    // Get or create user record
-    const { data: existingUser } = await supabase
+    const { data: existingUser } = await db
       .from("users")
-      .select("*")
-      .eq("clerk_id", userId)
+      .select("stripe_customer_id")
+      .eq("id", user.id)
       .single();
 
-    // Create or retrieve Stripe customer
     let customerId = existingUser?.stripe_customer_id;
 
     // Verify the stored customer ID is valid in the current Stripe mode
@@ -39,7 +47,6 @@ export async function POST(req: NextRequest) {
       try {
         await getStripe().customers.retrieve(customerId);
       } catch {
-        // Customer doesn't exist in this mode (e.g. test→live migration) — create a new one
         console.log("Stored customer ID invalid, creating new customer:", customerId);
         customerId = null;
       }
@@ -47,32 +54,19 @@ export async function POST(req: NextRequest) {
 
     if (!customerId) {
       const customer = await getStripe().customers.create({
-        email: email || undefined,
-        metadata: { clerk_id: userId },
+        email: user.email || undefined,
+        metadata: { supabase_user_id: user.id },
       });
       customerId = customer.id;
 
-      const { error: upsertError } = await supabase.from("users").upsert({
-        clerk_id: userId,
-        email: email || "",
-        first_name: user?.firstName || "",
-        last_name: user?.lastName || "",
-        stripe_customer_id: customerId,
-        is_paid: false,
-      }, { onConflict: "clerk_id" });
-
-      if (upsertError) {
-        console.error("Error upserting user in checkout:", upsertError);
-      }
+      await db
+        .from("users")
+        .update({ stripe_customer_id: customerId })
+        .eq("id", user.id);
     }
 
     const priceId = getPriceId(plan as PlanKey);
     const mode = isSubscription(plan as PlanKey) ? "subscription" : "payment";
-
-    // Ensure Stripe customer email matches Clerk email
-    if (email && customerId) {
-      await getStripe().customers.update(customerId, { email });
-    }
 
     const session = await getStripe().checkout.sessions.create({
       customer: customerId,
@@ -83,7 +77,7 @@ export async function POST(req: NextRequest) {
       allow_promotion_codes: true,
       success_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard?payment=success`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/dashboard?payment=cancelled`,
-      metadata: { clerk_id: userId, plan, quantity: String(quantity) },
+      metadata: { supabase_user_id: user.id, plan, quantity: String(quantity) },
     });
 
     return NextResponse.json({ url: session.url });

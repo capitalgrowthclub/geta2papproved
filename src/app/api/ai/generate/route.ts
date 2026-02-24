@@ -1,5 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase";
 import { isProhibitedIndustry, isRestrictedIndustry, getSelectedRestricted } from "@/lib/questionnaires/a2p-compliance";
@@ -618,8 +618,9 @@ Generate the JSON with all 7 fields. Use "${answers.legal_business_name || "the 
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -732,9 +733,7 @@ export async function POST(req: NextRequest) {
       generatedContent = generatedContent.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
     }
 
-    const supabase = createServiceClient();
-
-    const { data: existing } = await supabase
+    const { data: existing } = await supabaseCheck
       .from("generated_documents")
       .select("version")
       .eq("project_id", project_id)
@@ -744,7 +743,7 @@ export async function POST(req: NextRequest) {
 
     const nextVersion = existing && existing.length > 0 ? existing[0].version + 1 : 1;
 
-    const { data: doc, error } = await supabase
+    const { data: doc, error } = await supabaseCheck
       .from("generated_documents")
       .insert({
         project_id,
@@ -761,7 +760,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Update project status
-    await supabase
+    await supabaseCheck
       .from("projects")
       .update({ status: "completed", updated_at: new Date().toISOString() })
       .eq("id", project_id);

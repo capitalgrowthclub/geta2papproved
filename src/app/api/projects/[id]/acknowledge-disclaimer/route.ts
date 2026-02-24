@@ -1,5 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase";
 
 export async function POST(
@@ -7,26 +7,16 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const supabase = createServiceClient();
+    const db = createServiceClient();
 
-    // Verify the project belongs to this user
-    const { data: user } = await supabase
-      .from("users")
-      .select("id")
-      .eq("clerk_id", userId)
-      .single();
-
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    const { data: project } = await supabase
+    const { data: project } = await db
       .from("projects")
       .select("id, user_id, disclaimer_acknowledged")
       .eq("id", id)
@@ -37,12 +27,11 @@ export async function POST(
       return NextResponse.json({ error: "Project not found" }, { status: 404 });
     }
 
-    // Acknowledgment is permanent — if already acknowledged, just return success
     if (project.disclaimer_acknowledged) {
       return NextResponse.json({ success: true });
     }
 
-    const { error } = await supabase
+    const { error } = await db
       .from("projects")
       .update({
         disclaimer_acknowledged: true,

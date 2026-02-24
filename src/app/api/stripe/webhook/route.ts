@@ -24,46 +24,38 @@ export async function POST(req: NextRequest) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const clerkId = session.metadata?.clerk_id;
+    const supabaseUserId = session.metadata?.supabase_user_id;
     const plan = session.metadata?.plan as PlanKey | undefined;
     const customerEmail = session.customer_details?.email || "";
-    const customerName = session.customer_details?.name || "";
-    const [firstName, ...lastParts] = customerName.split(" ");
-    const lastName = lastParts.join(" ");
 
-    console.log("Webhook checkout.session.completed:", { clerkId, plan, customerEmail, customerName });
+    console.log("Webhook checkout.session.completed:", { supabaseUserId, plan, customerEmail });
 
-    if (clerkId && plan) {
+    if (supabaseUserId && plan) {
       // Ensure user record exists before updating plan data
       const { error: upsertError } = await supabase.from("users").upsert(
         {
-          clerk_id: clerkId,
+          id: supabaseUserId,
           email: customerEmail,
-          first_name: firstName || "",
-          last_name: lastName || "",
           stripe_customer_id: session.customer as string,
           is_paid: false,
         },
-        { onConflict: "clerk_id", ignoreDuplicates: true }
+        { onConflict: "id", ignoreDuplicates: true }
       );
       console.log("Webhook upsert result:", { upsertError });
 
       if (plan === "single_credit") {
-        // One-time payment: add credits (supports multi-quantity)
         const quantity = parseInt(session.metadata?.quantity || "1", 10) || 1;
 
-        // Get current user to check existing plan and credits
         const { data: currentUser, error: selectError } = await supabase
           .from("users")
           .select("plan_type, credits_remaining, stripe_subscription_id")
-          .eq("clerk_id", clerkId)
+          .eq("id", supabaseUserId)
           .single();
 
         console.log("Webhook single_credit - user lookup:", { currentUser, selectError });
         const currentCredits = currentUser?.credits_remaining || 0;
         const hasSubscription = !!currentUser?.stripe_subscription_id;
 
-        // Only set plan_type to single_credit if user doesn't have an active subscription
         const updateData: Record<string, unknown> = {
           is_paid: true,
           credits_remaining: currentCredits + quantity,
@@ -76,13 +68,12 @@ export async function POST(req: NextRequest) {
         const { error: updateError } = await supabase
           .from("users")
           .update(updateData)
-          .eq("clerk_id", clerkId);
+          .eq("id", supabaseUserId);
 
         if (updateError) {
           console.error("Error updating single credit:", updateError);
         }
       } else {
-        // Subscription: set plan type and period
         const now = new Date();
         const expiresAt = new Date(now);
         if (plan === "monthly_pro") {
@@ -91,11 +82,10 @@ export async function POST(req: NextRequest) {
           expiresAt.setFullYear(expiresAt.getFullYear() + 1);
         }
 
-        // Preserve any existing single credits when upgrading to a subscription
         const { data: existingUser, error: selectError2 } = await supabase
           .from("users")
           .select("credits_remaining")
-          .eq("clerk_id", clerkId)
+          .eq("id", supabaseUserId)
           .single();
 
         console.log("Webhook subscription - user lookup:", { existingUser, selectError2 });
@@ -113,18 +103,17 @@ export async function POST(req: NextRequest) {
             projects_used_this_period: 0,
             period_reset_at: now.toISOString(),
           })
-          .eq("clerk_id", clerkId);
+          .eq("id", supabaseUserId);
 
         if (updateError) {
           console.error("Error updating subscription:", updateError);
         }
       }
-    } else if (clerkId) {
-      // Legacy fallback: no plan metadata
+    } else if (supabaseUserId) {
       await supabase
         .from("users")
         .update({ is_paid: true })
-        .eq("clerk_id", clerkId);
+        .eq("id", supabaseUserId);
     }
   }
 
@@ -133,7 +122,6 @@ export async function POST(req: NextRequest) {
     const subscriptionId = invoice.parent?.subscription_details?.subscription as string | undefined;
 
     if (subscriptionId) {
-      // Reset period usage on renewal
       const now = new Date();
       const { data: user } = await supabase
         .from("users")

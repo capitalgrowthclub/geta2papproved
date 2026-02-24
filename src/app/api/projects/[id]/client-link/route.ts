@@ -1,5 +1,5 @@
-import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase";
 import crypto from "crypto";
 
@@ -8,15 +8,16 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id } = await params;
-    const supabase = createServiceClient();
+    const db = createServiceClient();
 
-    const { data: links } = await supabase
+    const { data: links } = await db
       .from("client_intake_links")
       .select("*")
       .eq("project_id", id)
@@ -34,8 +35,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -46,10 +48,10 @@ export async function POST(
       return NextResponse.json({ error: "Section required" }, { status: 400 });
     }
 
-    const supabase = createServiceClient();
+    const db = createServiceClient();
     const token = crypto.randomUUID();
 
-    const { data: link, error } = await supabase
+    const { data: link, error } = await db
       .from("client_intake_links")
       .insert({
         project_id: id,
@@ -67,8 +69,7 @@ export async function POST(
       return NextResponse.json({ error: "Failed to create link" }, { status: 500 });
     }
 
-    // Update project status
-    await supabase
+    await db
       .from("projects")
       .update({ status: "waiting_for_client", updated_at: new Date().toISOString() })
       .eq("id", id);

@@ -502,7 +502,7 @@ export default function Home() {
 
           <div className="text-center mt-12">
             <a
-              href={`${APP_URL}/sign-up`}
+              href={`${APP_URL}/join`}
               className="gradient-bg inline-block rounded-lg px-8 py-3.5 text-white font-semibold hover:opacity-90 transition-opacity shadow-md"
             >
               Get Started Now
@@ -608,7 +608,7 @@ export default function Home() {
                 ))}
               </ul>
               <a
-                href={`${APP_URL}/sign-up?plan=${tier.plan}`}
+                href={`${APP_URL}/join?plan=${tier.plan}`}
                 className={`block text-center rounded-lg px-6 py-3 font-semibold transition-all duration-200 ${
                   tier.highlighted
                     ? "gradient-bg text-white hover:opacity-90 shadow-md"
@@ -724,7 +724,7 @@ export default function Home() {
               language — in minutes.
             </p>
             <a
-              href={`${APP_URL}/sign-up`}
+              href={`${APP_URL}/join`}
               className="inline-block bg-white text-teal-700 font-semibold rounded-lg px-8 py-3.5 hover:bg-teal-50 transition-colors shadow-lg"
             >
               Get Started for $47

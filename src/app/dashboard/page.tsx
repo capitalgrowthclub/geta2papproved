@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { useUser } from "@clerk/nextjs";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/ui/Card";
@@ -27,7 +26,6 @@ export default function DashboardPage() {
 }
 
 function DashboardContent() {
-  const { user } = useUser();
   const searchParams = useSearchParams();
   const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -95,7 +93,7 @@ function DashboardContent() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-            Welcome{user?.firstName ? `, ${user.firstName}` : ""}
+            Welcome back
           </h1>
           <p className="text-slate-500 mt-1 text-sm sm:text-base">
             Manage your A2P registration projects

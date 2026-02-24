@@ -1,42 +1,19 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase";
 import { canCreateProject, consumeCredit } from "@/lib/pricing";
 
 export async function GET() {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const supabase = createServiceClient();
+    const db = createServiceClient();
 
-    // Ensure user exists
-    const clerkUser = await currentUser();
-    await supabase.from("users").upsert(
-      {
-        clerk_id: userId,
-        email: clerkUser?.emailAddresses[0]?.emailAddress || "",
-        first_name: clerkUser?.firstName || "",
-        last_name: clerkUser?.lastName || "",
-        is_paid: false,
-      },
-      { onConflict: "clerk_id", ignoreDuplicates: true }
-    );
-
-    // Get user's internal id
-    const { data: user } = await supabase
-      .from("users")
-      .select("id")
-      .eq("clerk_id", userId)
-      .single();
-
-    if (!user) {
-      return NextResponse.json({ projects: [] });
-    }
-
-    const { data: projects } = await supabase
+    const { data: projects } = await db
       .from("projects")
       .select("*")
       .eq("user_id", user.id)
@@ -51,8 +28,9 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -61,44 +39,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Project name required" }, { status: 400 });
     }
 
-    const supabase = createServiceClient();
+    const db = createServiceClient();
 
-    // Ensure user exists
-    const clerkUser = await currentUser();
-    await supabase.from("users").upsert(
-      {
-        clerk_id: userId,
-        email: clerkUser?.emailAddresses[0]?.emailAddress || "",
-        first_name: clerkUser?.firstName || "",
-        last_name: clerkUser?.lastName || "",
-        is_paid: false,
-      },
-      { onConflict: "clerk_id", ignoreDuplicates: true }
-    );
-
-    const { data: user } = await supabase
+    const { data: userData } = await db
       .from("users")
       .select("*")
-      .eq("clerk_id", userId)
+      .eq("id", user.id)
       .single();
 
-    if (!user) {
+    if (!userData) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Check if user can create a project
     const check = canCreateProject({
-      plan_type: user.plan_type || "none",
-      credits_remaining: user.credits_remaining || 0,
-      projects_used_this_period: user.projects_used_this_period || 0,
-      plan_expires_at: user.plan_expires_at,
+      plan_type: userData.plan_type || "none",
+      credits_remaining: userData.credits_remaining || 0,
+      projects_used_this_period: userData.projects_used_this_period || 0,
+      plan_expires_at: userData.plan_expires_at,
     });
 
     if (!check.allowed) {
       return NextResponse.json({ error: check.reason }, { status: 403 });
     }
 
-    const { data: project, error } = await supabase
+    const { data: project, error } = await db
       .from("projects")
       .insert({
         user_id: user.id,
@@ -114,8 +78,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Failed to create project" }, { status: 500 });
     }
 
-    // Consume credit after successful creation
-    await consumeCredit(supabase, user.id);
+    await consumeCredit(db, user.id);
 
     return NextResponse.json({ project });
   } catch (error) {

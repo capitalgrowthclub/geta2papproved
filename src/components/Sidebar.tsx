@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { UserButton } from "@clerk/nextjs";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 interface PlanInfo {
   plan_type: string;
@@ -46,20 +46,33 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [plan, setPlan] = useState<PlanInfo | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserEmail(user.email || null);
+    });
+
     fetch("/api/user/plan")
       .then((res) => res.json())
       .then((data) => setPlan(data))
       .catch(() => {});
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/sign-in");
+    router.refresh();
+  }
 
   function getPlanStatusText() {
     if (!plan || plan.plan_type === "none") return null;
@@ -122,14 +135,23 @@ export default function Sidebar() {
       {/* User Profile */}
       <div className="p-4 border-t border-slate-200">
         <div className="flex items-center gap-3 px-3 py-2">
-          <UserButton
-            appearance={{
-              elements: {
-                avatarBox: "w-8 h-8",
-              },
-            }}
-          />
-          <span className="text-sm text-slate-600">Account</span>
+          <div className="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0">
+            <span className="text-teal-700 text-xs font-semibold">
+              {userEmail ? userEmail[0].toUpperCase() : "?"}
+            </span>
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-slate-500 truncate">{userEmail || "Account"}</p>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+            title="Sign out"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+            </svg>
+          </button>
         </div>
       </div>
     </>
