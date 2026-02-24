@@ -747,10 +747,12 @@ export default function Home() {
             <p className="text-sm text-slate-400">
               &copy; {new Date().getFullYear()} GetA2PApproved. All rights reserved.
             </p>
-            <div className="flex gap-6 text-sm text-slate-400">
+            <div className="flex flex-wrap gap-6 text-sm text-slate-400">
               <a href={`${APP_URL}/sign-in`} className="hover:text-slate-600 transition-colors">Sign In</a>
               <a href="#pricing" className="hover:text-slate-600 transition-colors">Pricing</a>
               <a href="/eligibility" className="hover:text-slate-600 transition-colors">Eligibility</a>
+              <a href="/privacy" className="hover:text-slate-600 transition-colors">Privacy Policy</a>
+              <a href="/terms" className="hover:text-slate-600 transition-colors">Terms &amp; Conditions</a>
             </div>
           </div>
         </div>

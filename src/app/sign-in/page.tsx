@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import PublicFooter from "@/components/PublicFooter";
 
 type Step = "credentials" | "verify-phone";
 
@@ -86,7 +87,8 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12">
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-bold gradient-text">
@@ -192,6 +194,8 @@ export default function SignInPage() {
 
         </div>
       </div>
+      </div>
+      <PublicFooter />
     </div>
   );
 }

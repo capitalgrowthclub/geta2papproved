@@ -4,6 +4,7 @@ import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import PublicFooter from "@/components/PublicFooter";
 
 const PLANS: Record<string, { name: string; price: string; period: string; description: string }> = {
   single_credit: {
@@ -80,6 +81,8 @@ function JoinContent() {
   const [phone, setPhone] = useState("");
   const [formattedPhone, setFormattedPhone] = useState("");
   const [otp, setOtp] = useState("");
+  const [marketingConsent, setMarketingConsent] = useState(false);
+  const [serviceConsent, setServiceConsent] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -163,15 +166,16 @@ function JoinContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-4xl">
-        <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold gradient-text">
-            GetA2PApproved
-          </Link>
-        </div>
+    <div className="min-h-screen bg-slate-50 flex flex-col">
+      <div className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-4xl">
+          <div className="text-center mb-8">
+            <Link href="/" className="text-2xl font-bold gradient-text">
+              GetA2PApproved
+            </Link>
+          </div>
 
-        <div className="grid lg:grid-cols-2 gap-8 items-start">
+          <div className="grid lg:grid-cols-2 gap-8 items-start">
           {/* Plan summary */}
           <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-teal-600 mb-2">You selected</p>
@@ -285,6 +289,33 @@ function JoinContent() {
                     />
                     <p className="text-xs text-slate-400 mt-1">US numbers only. We&apos;ll send a verification code via SMS.</p>
                   </div>
+
+                  {/* SMS Consent Checkboxes */}
+                  <div className="space-y-3 pt-1">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={marketingConsent}
+                        onChange={(e) => setMarketingConsent(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 flex-shrink-0 cursor-pointer"
+                      />
+                      <span className="text-xs text-slate-500 leading-relaxed">
+                        I agree to receive marketing texts from GetA2PApproved LLC (e.g. offers, new features, compliance tips). Up to 8 msgs/mo. Msg &amp; data rates may apply. Reply STOP to cancel. Reply HELP for info. Consent not required for purchase. SMS opt-in data is never shared with third parties.
+                      </span>
+                    </label>
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={serviceConsent}
+                        onChange={(e) => setServiceConsent(e.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 flex-shrink-0 cursor-pointer"
+                      />
+                      <span className="text-xs text-slate-500 leading-relaxed">
+                        I agree to receive service texts from GetA2PApproved LLC (e.g. order confirmations, payment receipts, document delivery, project status updates). Msgs sent only when triggered by account activity. Msg &amp; data rates may apply. Reply STOP to cancel. Reply HELP for info. SMS opt-in data is never shared with third parties.
+                      </span>
+                    </label>
+                  </div>
+
                   {error && (
                     <div className="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">{error}</div>
                   )}
@@ -301,6 +332,12 @@ function JoinContent() {
                   <Link href="/sign-in" className="text-teal-600 font-medium hover:text-teal-700 transition-colors">
                     Sign in
                   </Link>
+                </p>
+                <p className="mt-4 text-center text-xs text-slate-400">
+                  By creating an account you agree to our{" "}
+                  <Link href="/privacy" className="underline hover:text-slate-600 transition-colors">Privacy Policy</Link>
+                  {" "}and{" "}
+                  <Link href="/terms" className="underline hover:text-slate-600 transition-colors">Terms &amp; Conditions</Link>.
                 </p>
               </>
             )}
@@ -353,6 +390,8 @@ function JoinContent() {
           </div>
         </div>
       </div>
+      </div>
+      <PublicFooter />
     </div>
   );
 }
