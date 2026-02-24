@@ -139,10 +139,13 @@ export default function Sidebar() {
         </button>
         <div className="flex gap-3 px-3">
           <Link href="/privacy" className="text-xs text-slate-400 hover:text-teal-600 transition-colors">
-            Privacy Policy
+            Privacy
           </Link>
           <Link href="/terms" className="text-xs text-slate-400 hover:text-teal-600 transition-colors">
             Terms
+          </Link>
+          <Link href="/refund" className="text-xs text-slate-400 hover:text-teal-600 transition-colors">
+            Refund
           </Link>
         </div>
       </div>
