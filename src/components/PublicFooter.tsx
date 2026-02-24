@@ -12,12 +12,15 @@ export default function PublicFooter() {
               support@geta2papproved.com
             </a>
           </div>
-          <div className="flex gap-5 text-sm">
+          <div className="flex flex-wrap gap-5 text-sm">
             <Link href="/privacy" className="text-slate-500 hover:text-teal-600 transition-colors">
               Privacy Policy
             </Link>
             <Link href="/terms" className="text-slate-500 hover:text-teal-600 transition-colors">
               Terms &amp; Conditions
+            </Link>
+            <Link href="/refund" className="text-slate-500 hover:text-teal-600 transition-colors">
+              Refund Policy
             </Link>
           </div>
         </div>
