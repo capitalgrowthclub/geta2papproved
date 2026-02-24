@@ -104,9 +104,13 @@ export async function consumeCredit(supabase: SupabaseClient, userId: string): P
   if (!user) return;
 
   if (user.plan_type === "single_credit") {
+    const newCredits = Math.max(0, user.credits_remaining - 1);
     await supabase
       .from("users")
-      .update({ credits_remaining: Math.max(0, user.credits_remaining - 1) })
+      .update({
+        credits_remaining: newCredits,
+        ...(newCredits === 0 ? { plan_type: "none" } : {}),
+      })
       .eq("id", userId);
   } else {
     // Subscription: use single credits first, then subscription quota
