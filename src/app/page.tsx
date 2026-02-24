@@ -203,6 +203,10 @@ export default function Home() {
           <span className="text-xl font-bold gradient-text tracking-tight">
             GetA2PApproved
           </span>
+          <div className="sm:hidden flex items-center gap-3">
+            <a href={`${APP_URL}/sign-in`} className="text-sm text-slate-600 font-medium">Sign In</a>
+            <a href="#pricing" className="gradient-bg rounded-lg px-4 py-2 text-white text-sm font-medium hover:opacity-90 transition-opacity">Get Started</a>
+          </div>
           <nav className="hidden sm:flex items-center gap-6 text-sm">
             <a href="#problem" className="text-slate-500 hover:text-slate-900 transition-colors">
               Why Us
@@ -308,7 +312,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6 max-w-6xl mx-auto">
           {painPoints.map((point) => (
             <div
               key={point.title}
@@ -421,7 +425,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
           <div className="p-6 rounded-xl border border-slate-200 bg-white">
             <div className="w-10 h-10 rounded-lg gradient-bg flex items-center justify-center mb-4">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -484,7 +488,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8">
             {steps.map((step) => (
               <div key={step.number} className="relative">
                 <div className="text-5xl font-black text-teal-100 mb-4 select-none">
@@ -525,7 +529,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
           {features.map((feature) => (
             <div key={feature.title} className="p-6 rounded-xl border border-slate-200 bg-white">
               <div className="w-8 h-8 rounded-md gradient-bg flex items-center justify-center mb-4">
@@ -542,7 +546,7 @@ export default function Home() {
 
       {/* Social Proof / Stats */}
       <section className="px-6 py-16 bg-slate-50">
-        <div className="max-w-4xl mx-auto grid sm:grid-cols-3 gap-8 text-center">
+        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-8 text-center">
           <div>
             <p className="text-4xl font-bold gradient-text">100%</p>
             <p className="text-sm text-slate-500 mt-1">Compliant Documents</p>
@@ -572,7 +576,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="grid sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto">
           {pricingTiers.map((tier) => (
             <div
               key={tier.plan}
@@ -710,7 +714,7 @@ export default function Home() {
 
       {/* Final CTA */}
       <section className="px-6 py-20">
-        <div className="max-w-4xl mx-auto rounded-2xl gradient-bg p-12 sm:p-16 text-center relative overflow-hidden">
+        <div className="max-w-4xl mx-auto rounded-2xl gradient-bg p-8 sm:p-12 lg:p-16 text-center relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 

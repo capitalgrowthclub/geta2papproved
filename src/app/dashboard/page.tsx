@@ -139,7 +139,7 @@ function DashboardContent() {
                             of {plan.project_limit} projects remaining
                           </span>
                         </div>
-                        <div className="w-48 bg-white rounded-full h-2 mt-2 border border-slate-200">
+                        <div className="w-full max-w-xs sm:w-48 bg-white rounded-full h-2 mt-2 border border-slate-200">
                           <div
                             className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all"
                             style={{ width: `${Math.min((plan.projects_used_this_period / plan.project_limit) * 100, 100)}%` }}

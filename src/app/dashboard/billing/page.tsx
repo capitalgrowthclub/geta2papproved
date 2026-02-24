@@ -195,7 +195,7 @@ export default function BillingPage() {
       <h2 className="text-lg font-semibold text-slate-900 mb-4">
         {plan?.plan_type === "none" ? "Choose a Plan" : "Change Plan"}
       </h2>
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {plans.map((tier) => {
           const isCurrentPlan = plan?.plan_type === tier.key && tier.key !== "single_credit";
           return (
@@ -243,7 +243,7 @@ export default function BillingPage() {
                   <button
                     type="button"
                     onClick={() => setCreditQty(Math.max(1, creditQty - 1))}
-                    className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+                    className="w-10 h-10 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
                   >
                     -
                   </button>
@@ -251,7 +251,7 @@ export default function BillingPage() {
                   <button
                     type="button"
                     onClick={() => setCreditQty(Math.min(10, creditQty + 1))}
-                    className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
+                    className="w-10 h-10 rounded-full border border-slate-300 flex items-center justify-center text-slate-600 hover:bg-slate-50 transition-colors"
                   >
                     +
                   </button>

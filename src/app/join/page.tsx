@@ -175,9 +175,9 @@ function JoinContent() {
             </Link>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
           {/* Plan summary */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-8 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wider text-teal-600 mb-2">You selected</p>
             <h2 className="text-2xl font-bold text-slate-900 mb-1">{plan.name}</h2>
             <div className="flex items-baseline gap-1 mb-3">
@@ -206,7 +206,7 @@ function JoinContent() {
           </div>
 
           {/* Right panel */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+          <div className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-8 shadow-sm">
 
             {step === "signup" && (
               <>
@@ -215,7 +215,7 @@ function JoinContent() {
                   We&apos;ll verify your phone number before creating your account.
                 </p>
                 <form onSubmit={handleSignup} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label htmlFor="firstName" className="block text-sm font-medium text-slate-700 mb-1">
                         First name
@@ -367,7 +367,7 @@ function JoinContent() {
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                       placeholder="000000"
-                      className="w-full px-4 py-3 rounded-lg border border-slate-300 text-slate-900 text-2xl font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
+                      className="w-full px-4 py-3 rounded-lg border border-slate-300 text-slate-900 text-xl sm:text-2xl font-mono tracking-widest text-center focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent transition"
                     />
                   </div>
                   {error && (

@@ -161,7 +161,7 @@ export default function Sidebar() {
         </Link>
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 text-slate-600 hover:text-slate-900 cursor-pointer"
+          className="p-3 text-slate-600 hover:text-slate-900 cursor-pointer"
         >
           {mobileOpen ? (
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
