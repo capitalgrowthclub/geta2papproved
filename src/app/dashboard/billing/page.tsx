@@ -51,6 +51,7 @@ export default function BillingPage() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [creditQty, setCreditQty] = useState(1);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [portalError, setPortalError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/user/plan")
@@ -88,14 +89,17 @@ export default function BillingPage() {
 
   async function handleManageSubscription() {
     setPortalLoading(true);
+    setPortalError(null);
     try {
       const res = await fetch("/api/stripe/portal", { method: "POST" });
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        setPortalError(data.error || "Failed to open billing portal. Please try again.");
       }
     } catch {
-      // Silent failure
+      setPortalError("Something went wrong. Please try again.");
     } finally {
       setPortalLoading(false);
     }
@@ -178,6 +182,12 @@ export default function BillingPage() {
       {checkoutError && (
         <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
           {checkoutError}
+        </div>
+      )}
+
+      {portalError && (
+        <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+          {portalError}
         </div>
       )}
 
