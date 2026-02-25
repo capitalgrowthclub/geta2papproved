@@ -34,6 +34,10 @@ export default function ProjectDetailPage() {
   const [elapsedTerms, setElapsedTerms] = useState(0);
   const [elapsedSubmission, setElapsedSubmission] = useState(0);
 
+  // Domino-effect stale flags: set when an upstream doc is regenerated
+  const [stalePrivacy, setStalePrivacy] = useState(false);
+  const [staleTerms, setStaleTerms] = useState(false);
+
   // Disclaimer acknowledgment
   const [disclaimerAcknowledged, setDisclaimerAcknowledged] = useState(false);
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
@@ -158,7 +162,17 @@ export default function ProjectDetailPage() {
       });
       if (res.ok) {
         const data = await res.json();
-        setDocuments((prev) => [data.document, ...prev]);
+        setDocuments((prev) => [data.document, ...prev.filter((d) => d.type !== data.document.type)]);
+        // Domino effect: lock downstream documents that need to be regenerated for consistency
+        if (type === "submission_language") {
+          if (privacyDoc) setStalePrivacy(true);
+          if (termsDoc) setStaleTerms(true);
+        } else if (type === "privacy_policy") {
+          setStalePrivacy(false);
+          if (termsDoc) setStaleTerms(true);
+        } else if (type === "terms_conditions") {
+          setStaleTerms(false);
+        }
       } else {
         const data = await res.json().catch(() => ({ error: "Unknown error" }));
         const errMsg = data.error || "Generation failed. Please try again.";
@@ -263,7 +277,9 @@ export default function ProjectDetailPage() {
     tabKey: "privacy" | "terms" | "submission",
     error?: string,
     isLocked?: boolean,
-    lockedMessage?: string
+    lockedMessage?: string,
+    isStale?: boolean,
+    staleMessage?: string
   ) {
     return (
       <Card className="p-6 flex flex-col">
@@ -279,8 +295,6 @@ export default function ProjectDetailPage() {
             </span>
           ) : error ? (
             <span className="text-xs text-red-600 font-medium">Error</span>
-          ) : doc ? (
-            <span className="text-xs text-emerald-600 font-medium">Complete</span>
           ) : isLocked ? (
             <span className="text-xs text-slate-400 flex items-center gap-1">
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -288,6 +302,15 @@ export default function ProjectDetailPage() {
               </svg>
               Locked
             </span>
+          ) : isStale && doc ? (
+            <span className="text-xs text-amber-600 font-medium flex items-center gap-1">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9.303 3.376c-.866 1.5.217 3.374-1.948 3.374H2.645c-1.73 0-2.813-1.874-1.948-3.374L10.05 3.378c.866-1.5 3.032-1.5 3.898 0l7.355 12.748Z" />
+              </svg>
+              Needs Update
+            </span>
+          ) : doc ? (
+            <span className="text-xs text-emerald-600 font-medium">Complete</span>
           ) : isQuestionnaireComplete ? (
             <span className="text-xs text-amber-600 font-medium">Ready to Generate</span>
           ) : (
@@ -323,6 +346,34 @@ export default function ProjectDetailPage() {
               Try Again
             </Button>
           </div>
+        ) : isLocked ? (
+          <p className="text-sm text-slate-500 flex-1">
+            {lockedMessage || "Generate your A2P Submission Language first. The consent checkbox text it produces will be quoted verbatim in this document to ensure your policy matches your opt-in form exactly."}
+          </p>
+        ) : isStale && doc ? (
+          <>
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 mb-4 flex-1">
+              <p className="text-sm text-amber-800 font-medium mb-1">Regeneration Required</p>
+              <p className="text-xs text-amber-700">
+                {staleMessage || "An upstream document was regenerated. Regenerate this document to keep all three consistent."}
+              </p>
+            </div>
+            <div className="flex gap-2 mt-auto">
+              <Button variant="secondary" size="sm" onClick={() => setActiveTab(tabKey)}>
+                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                </svg>
+                View Old Version
+              </Button>
+              <Button size="sm" onClick={() => handleGenerate(type)}>
+                <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+                </svg>
+                Regenerate Now
+              </Button>
+            </div>
+          </>
         ) : doc ? (
           <>
             <p className="text-sm text-slate-500 mb-4 flex-1">
@@ -344,10 +395,6 @@ export default function ProjectDetailPage() {
               </Button>
             </div>
           </>
-        ) : isLocked ? (
-          <p className="text-sm text-slate-500 flex-1">
-            {lockedMessage || "Generate your A2P Submission Language first. The consent checkbox text it produces will be quoted verbatim in this document to ensure your policy matches your opt-in form exactly."}
-          </p>
         ) : isQuestionnaireComplete && industryIsProhibited ? (
           <p className="text-sm text-red-600">
             Generation unavailable — this industry is prohibited from A2P 10DLC registration.
@@ -668,8 +715,28 @@ export default function ProjectDetailPage() {
 
           {/* Document Cards — strict generation order: Submission Language → Privacy Policy → Terms */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {renderDocCard("A2P Submission Language", "submission_language", submissionDoc, generatingSubmission, elapsedSubmission, "submission", errorSubmission)}
-            {renderDocCard("Privacy Policy", "privacy_policy", privacyDoc, generatingPrivacy, elapsedPrivacy, "privacy", errorPrivacy, !submissionDoc)}
+            {renderDocCard(
+              "A2P Submission Language",
+              "submission_language",
+              submissionDoc,
+              generatingSubmission,
+              elapsedSubmission,
+              "submission",
+              errorSubmission
+            )}
+            {renderDocCard(
+              "Privacy Policy",
+              "privacy_policy",
+              privacyDoc,
+              generatingPrivacy,
+              elapsedPrivacy,
+              "privacy",
+              errorPrivacy,
+              !submissionDoc,   // isLocked: prerequisite missing
+              undefined,
+              stalePrivacy && !!privacyDoc,  // isStale: submission was regenerated
+              "Your A2P Submission Language was regenerated. Regenerate your Privacy Policy to keep all three documents consistent."
+            )}
             {renderDocCard(
               "Terms & Conditions",
               "terms_conditions",
@@ -678,10 +745,14 @@ export default function ProjectDetailPage() {
               elapsedTerms,
               "terms",
               errorTerms,
-              !submissionDoc || !privacyDoc,
+              !submissionDoc || !privacyDoc || stalePrivacy,  // isLocked: prerequisite missing OR privacy needs regen first
               !submissionDoc
                 ? "Generate your A2P Submission Language first. The consent checkbox text it produces will be quoted verbatim in this document."
-                : "Generate your Privacy Policy first. The Terms & Conditions will read your privacy policy to mirror its data retention periods, consent language, and governing law — keeping all three documents fully consistent."
+                : !privacyDoc
+                ? "Generate your Privacy Policy first. The Terms & Conditions will read your privacy policy to mirror its data retention periods, consent language, and governing law — keeping all three documents fully consistent."
+                : "Your Privacy Policy needs to be regenerated first. Regenerate it before updating Terms & Conditions.",
+              staleTerms && !stalePrivacy && !!termsDoc,  // isStale: privacy was regenerated (and privacy is done)
+              "Your Privacy Policy was regenerated. Regenerate your Terms & Conditions to keep all three documents consistent."
             )}
           </div>
 
