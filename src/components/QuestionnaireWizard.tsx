@@ -241,15 +241,20 @@ function QuestionRenderer({
     </div>
   );
 
-  const isMarketingRestricted =
-    question.id === "marketing_use_case" && isRestrictedIndustry(answers);
+  const MARKETING_QUESTION_IDS = ["marketing_use_case", "marketing_message_types", "marketing_frequency"];
+  const isMarketingQuestion = MARKETING_QUESTION_IDS.includes(question.id);
+  const isMarketingRestricted = isMarketingQuestion && isRestrictedIndustry(answers);
+
+  const restrictedNotice = isMarketingRestricted && (
+    <div className="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-lg">
+      <p className="text-xs text-amber-800">
+        <span className="font-semibold">Leave this blank.</span> Your industry is restricted to transactional SMS only — promotional messaging is not permitted. Skip to the next question.
+      </p>
+    </div>
+  );
 
   const aiButton = question.aiSuggest && !value && (
-    isMarketingRestricted ? (
-      <p className="text-xs text-amber-600">
-        AI suggestions are not available for promotional SMS — your industry is restricted to transactional messages only.
-      </p>
-    ) : (
+    isMarketingRestricted ? null : (
       <button
         type="button"
         onClick={handleAiSuggest}
@@ -288,6 +293,7 @@ function QuestionRenderer({
           required={question.required}
         />
         {recommendationTip}
+        {restrictedNotice}
         {aiButton}
       </div>
     );
@@ -305,6 +311,7 @@ function QuestionRenderer({
           required={question.required}
         />
         {recommendationTip}
+        {restrictedNotice}
         {aiButton}
       </div>
     );
@@ -350,6 +357,7 @@ function QuestionRenderer({
           <p className="text-xs text-slate-500">{question.helperText}</p>
         )}
         {recommendationTip}
+        {restrictedNotice}
       </div>
     );
   }
@@ -426,6 +434,7 @@ function QuestionRenderer({
           <p className="text-xs text-slate-500">{question.helperText}</p>
         )}
         {recommendationTip}
+        {restrictedNotice}
       </div>
     );
   }
