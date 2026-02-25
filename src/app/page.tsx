@@ -757,6 +757,7 @@ export default function Home() {
               <a href="/eligibility" className="hover:text-slate-600 transition-colors">Eligibility</a>
               <a href="/privacy" className="hover:text-slate-600 transition-colors">Privacy Policy</a>
               <a href="/terms" className="hover:text-slate-600 transition-colors">Terms &amp; Conditions</a>
+              <a href="/refund" className="hover:text-slate-600 transition-colors">Refund Policy</a>
             </div>
           </div>
         </div>

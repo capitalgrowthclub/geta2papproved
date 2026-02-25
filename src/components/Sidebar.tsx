@@ -185,7 +185,7 @@ export default function Sidebar() {
 
       {/* Mobile Slide-out Sidebar */}
       <aside
-        className={`lg:hidden fixed top-[57px] left-0 bottom-0 z-30 w-64 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-200 ${
+        className={`lg:hidden fixed top-[73px] left-0 bottom-0 z-30 w-64 bg-white border-r border-slate-200 flex flex-col transform transition-transform duration-200 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
