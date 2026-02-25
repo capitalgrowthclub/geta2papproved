@@ -89,19 +89,36 @@ export async function POST(req: NextRequest) {
       ? `\n\nWEBSITE CONTENT (fetched from ${siteCount} of the business's listed URLs — synthesize ALL of them):\n${websiteContent}\n\nIMPORTANT: Read ALL of the website sections above, not just the first one. Combine and synthesize information from every site to form a complete picture of the business before answering. Do NOT ignore any site.`
       : "";
 
-    const message = await getAnthropic().messages.create({
+    const anthropic = getAnthropic();
+    const messageParams = {
       model: "claude-sonnet-4-6",
       max_tokens: 2000,
       system: `You help businesses fill out A2P 10DLC compliance questionnaires. Given a question and business context, write a short, realistic answer that would help them get approved. The business may operate multiple websites — synthesize information from ALL of them to give an accurate, combined answer. Do NOT focus on just one site. Reply with ONLY the answer text — no quotes, no preamble, no explanation.`,
       messages: [
         {
-          role: "user",
+          role: "user" as const,
           content: `Business context:\n${contextLines || "No context yet"}${websiteSection}\n\nQuestion: ${question}\n\nWrite a realistic answer for this business:`,
         },
       ],
-    });
+    };
 
-    const content = message.content[0];
+    // Retry up to 2 times on 529 overload (temporary capacity issue)
+    let message;
+    for (let attempt = 0; attempt <= 2; attempt++) {
+      try {
+        message = await anthropic.messages.create(messageParams);
+        break;
+      } catch (err: unknown) {
+        const status = (err as { status?: number }).status;
+        if (status === 529 && attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 1500 * (attempt + 1)));
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    const content = message!.content[0];
     if (content.type !== "text") {
       return NextResponse.json({ error: "Unexpected response" }, { status: 500 });
     }
