@@ -14,9 +14,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.geta2papproved.com"),
   title: "GetA2PApproved - AI Tool That Generates Your A2P 10DLC Compliance Documents",
   description:
     "Stop getting rejected. GetA2PApproved generates the exact privacy policy, terms & conditions, and submission language you need to get your A2P 10DLC campaign approved by carriers.",
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     title: "GetA2PApproved - AI Tool That Generates Your A2P 10DLC Compliance Documents",
     description:

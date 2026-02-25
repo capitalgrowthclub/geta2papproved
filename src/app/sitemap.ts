@@ -9,7 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: "https://www.geta2papproved.com/sign-up",
+      url: "https://www.geta2papproved.com/join",
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.8,
@@ -19,6 +19,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.5,
+    },
+    {
+      url: "https://www.geta2papproved.com/privacy",
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+    {
+      url: "https://www.geta2papproved.com/terms",
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.3,
+    },
+    {
+      url: "https://www.geta2papproved.com/refund",
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.3,
     },
   ];
 }
