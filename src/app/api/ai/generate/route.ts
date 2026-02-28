@@ -102,6 +102,15 @@ CRITICAL REQUIREMENTS:
 23. OPT-OUT CONFIRMATION MESSAGE CONTENT: When describing the opt-out confirmation message users receive after replying STOP, include this exact sentence explicitly: "The opt-out confirmation message will identify [Business Name] by name and confirm that no further messages will be sent." This closes the loop between the Terms and what the user actually receives, which carriers verify during compliance review.
 24. START RE-ENROLLMENT KEYWORD — REQUIRED IN BOTH DOCUMENTS: Immediately after the opt-out description in BOTH the Privacy Policy opt-out section AND the Terms & Conditions SMS opt-out section, add a re-enrollment disclosure using the actual business data from the questionnaire. Use this exact format (substituting real values): "If you wish to re-enroll in our SMS messaging program after opting out, you may text START to [STOP/HELP Number from questionnaire] or re-submit your SMS consent through the opt-in checkbox on our website contact form at [Primary Website URL from questionnaire]." This disclosure is required by CTIA best practices. It must appear in both documents — once in the Privacy Policy opt-out section and once in the Terms & Conditions opt-out section.
 25. ADDRESS FORMATTING CONSISTENCY: When including a business address anywhere in a document, choose either "Suite" or "Ste" for the suite/unit designation and use that same format consistently throughout the entire document. Never write "Suite 200" in one place and "Ste 200" in another. Preferred format is the full word "Suite [number]" — not abbreviated.
+26. STOP KEYWORD — EXACT PHRASING: The opt-out phrase is ALWAYS "Reply STOP to opt out." — NEVER "Reply STOP to unsubscribe", NEVER "Reply STOP to cancel", NEVER "Reply STOP to stop receiving messages." The word "opt out" is mandatory everywhere it appears in any document. "Unsubscribe" will cause a carrier rejection. This applies to: consent disclosures, opt-out sections, sample messages, and all SMS-related language.
+27. FOUR PROHIBITION SENTENCES FOR RESTRICTED INDUSTRIES: When generating for a Category B restricted-industry client, FOUR prohibition sentences are mandatory (not three). Each must appear as a standalone sentence with the full legal business name as the grammatical subject. The fourth sentence is: "[Business Name] does not send batch, broadcast, or mass SMS messages of any kind." All four must appear in BOTH the Privacy Policy and Terms & Conditions.
+28. TRANSACTIONAL MESSAGE TEST: For every message type described in a Category B (restricted industry) document, apply this three-question test:
+   Q1: Has the recipient already initiated the transaction or action that this message responds to? (Must be YES)
+   Q2: Does this message contain any information designed to persuade the recipient to take a new action they have not already begun? (Must be NO)
+   Q3: If the recipient had never heard of this company, would this message make sense as a response to something they did? (Must be YES)
+   If a message fails any question, it is promotional and must NOT be included. Only messages passing YES, NO, YES are permitted for restricted industries.
+29. CONSENT NOT A CONDITION: Include this as an explicit standalone statement in the SMS section: "Consent to receive text messages is not required as a condition of purchasing any goods or services."
+30. PROHIBITION SURVIVES RESTRUCTURING: The no-sharing prohibition for SMS opt-in data must explicitly survive any corporate merger, acquisition, or organizational restructuring. Include language such as: "This prohibition on sharing SMS opt-in data shall survive any corporate restructuring, merger, acquisition, or change in ownership."
 
 FORMAT REQUIREMENTS:
 - Use clean semantic HTML: h1 for the document title, h2 for major sections, h3 for subsections, p for paragraphs, ul/ol/li for lists
@@ -313,11 +322,12 @@ ${industry.toUpperCase()}:
 INDUSTRY RESTRICTION — CRITICAL — READ BEFORE GENERATING:
 This business operates in a regulated industry that is PERMITTED to register for A2P 10DLC but is RESTRICTED TO TRANSACTIONAL MESSAGES ONLY: ${restricted.join(", ")}.
 
-THREE MANDATORY DECLARATIVE PROHIBITION SENTENCES — INCLUDE VERBATIM IN THE SMS SECTION:
-These three sentences must appear as standalone statements in the SMS/Text Messaging policy section of every generated document. Use the exact legal business name as the subject. Do NOT bury them in a list — each must be its own sentence in a paragraph:
+FOUR MANDATORY DECLARATIVE PROHIBITION SENTENCES — INCLUDE VERBATIM IN THE SMS SECTION:
+These four sentences must appear as standalone statements in the SMS/Text Messaging policy section of every generated document. Use the exact legal business name as the subject. Do NOT bury them in a list — each must be its own sentence in a paragraph:
   "${legalName} does not send promotional, advertising, or marketing SMS messages of any kind."
   "${legalName} does not engage in SMS-based solicitation of prospective clients or customers."
   "${legalName} does not use text messaging to present offers, rate quotes, discounts, or product comparisons."
+  "${legalName} does not send batch, broadcast, or mass SMS messages of any kind."
 
 UNIVERSAL RULES FOR ALL RESTRICTED INDUSTRIES:
 1. This business does NOT send promotional, marketing, or solicitation SMS messages. Remove ALL promotional SMS language from the document.
@@ -414,6 +424,8 @@ TODAY'S DATE: ${today} — use this as the "Last Updated" and "Effective Date" i
 BUSINESS IDENTITY:
 - Legal Business Name: ${answers.legal_business_name || "N/A"}
 - DBA Names: ${answers.has_dba === "Yes" ? answers.dba_names || "N/A" : "None"}
+- Business Description: ${answers.business_description || "N/A"}
+- Industry Classification: ${answers.industry_type || "N/A"}
 - Business Address: ${answers.business_address || "N/A"}
 - Business Phone: ${answers.business_phone || "N/A"}
 - Business Email: ${answers.business_email || "N/A"}
@@ -499,6 +511,8 @@ TODAY'S DATE: ${today} — use this as the "Last Updated" and "Effective Date" i
 BUSINESS IDENTITY:
 - Legal Business Name: ${answers.legal_business_name || "N/A"}
 - DBA Names: ${answers.has_dba === "Yes" ? answers.dba_names || "N/A" : "None"}
+- Business Description: ${answers.business_description || "N/A"}
+- Industry Classification: ${answers.industry_type || "N/A"}
 - Business Address: ${answers.business_address || "N/A"}
 - Business Phone: ${answers.business_phone || "N/A"}
 - Business Email: ${answers.business_email || "N/A"}
@@ -546,54 +560,104 @@ CRITICAL A2P requirements to include:
 2. Description of service (including SMS messaging program)
 3. User eligibility (must be 18+, US-based)
 4. SMS/Text Messaging Terms — MUST include:
-   - Program description (marketing and transactional campaigns)
-   - Consent mechanism description
-   - TWO separate consent disclosures (marketing + non-marketing)
+   - Program description (marketing and transactional campaigns, or transactional-only for restricted industries)
+   - Consent mechanism — THREE paragraph structure:
+     Paragraph 1: What affirmative action is required to opt in (unchecked checkbox)
+     Paragraph 2: "Providing a phone number alone does not constitute SMS consent" — standalone paragraph
+     Paragraph 3: SMS consent and terms agreement are two entirely separate checkboxes serving distinct purposes
+   - TWO separate consent disclosures (marketing + non-marketing) — or one transactional-only for restricted industries
    - Explicit statement: "By opting in, you agree to receive [marketing/service] text messages"
    - Message frequency for each campaign type
-   - "Message and data rates may apply"
-   - Opt-out: "Reply STOP to cancel at any time"
-   - Help: "Reply HELP for assistance or contact ${answers.support_email || "support"}"
+   - "Msg &amp; data rates may apply"
+   - Opt-out: "Reply STOP to opt out." — NEVER "unsubscribe" or "cancel"
+   - Help: "Reply HELP for info." or "Reply HELP for help."
    - Statement that consent is not a condition of purchase
    - Statement that SMS opt-in data is not shared with third parties
-   - For the opt-out confirmation message, include explicitly: "The opt-out confirmation message will identify [Business Name] by name and confirm that no further messages will be sent."
-   - Cross-reference to the Privacy Policy for SMS consent record retention periods: add a sentence such as "SMS consent records are retained in accordance with the retention periods set forth in our Privacy Policy, which is incorporated herein by reference."
+   - Opt-out confirmation: "The opt-out confirmation message will identify ${answers.legal_business_name || "[Business Name]"} by name and confirm that no further messages will be sent."
+   - START re-enrollment: "If you wish to re-enroll after opting out, you may text START to ${answers.stop_help_number || "[phone]"} or re-submit your SMS consent through the opt-in checkbox on the website at ${answers.primary_website || "[URL]"}."
+   - Cross-reference to Privacy Policy retention periods: "SMS consent records are retained in accordance with the retention periods set forth in our Privacy Policy, which is incorporated herein by reference."
+   - SMS-related liability exclusions: delivery failures, carrier charges, failure to opt out, provision of number not belonging to user, reactivation after opt-out without new consent
+   - Prohibition on SMS data sharing survives corporate restructuring
 5. Intellectual property
 6. Prohibited conduct
 7. Disclaimers and warranties ("as is" service)
 8. Limitation of liability
 9. Indemnification
 10. Termination
-11. Dispute resolution and governing law (${answers.business_state || "applicable state"})
-12. Severability
-13. Changes to terms
-14. Contact information`;
+11. Dispute resolution and governing law (${answers.business_state || "applicable state"}) — jurisdiction, arbitration venue, and governing law must ALL reference this same single state
+12. Arbitration clause and class action waiver
+13. Jury trial waiver
+14. Severability
+15. Entire agreement clause
+16. Force majeure covering SMS delivery
+17. No third-party beneficiaries
+18. Changes to terms
+19. Contact information`;
 }
 
-const SUBMISSION_SYSTEM_PROMPT = `You are an expert A2P 10DLC registration specialist. Your job is to generate the exact text fields needed to fill out an A2P campaign registration form. These fields will be copy-pasted directly into the registration portal.
+const SUBMISSION_SYSTEM_PROMPT = `You are an expert A2P 10DLC registration specialist writing for the most demanding carrier reviewer possible. Your job is to generate the exact text fields needed to fill out an A2P campaign registration form. These fields will be copy-pasted directly into the registration portal. One wrong word causes rejection. Follow every rule below exactly.
+
+CRITICAL KEYWORD RULES — READ FIRST:
+- The STOP keyword phrase is ALWAYS "Reply STOP to opt out." — NEVER "unsubscribe", NEVER "cancel", NEVER "stop receiving messages." The exact phrase "opt out" is mandatory everywhere it appears.
+- The HELP keyword phrase is ALWAYS "Reply HELP for info." or "Reply HELP for help."
+- The data rates phrase is ALWAYS "Msg & data rates may apply." — not "message and data rates", not "standard rates."
+- Do NOT use URL shorteners (bit.ly, etc.) in any sample message — carriers flag these as spam.
 
 You MUST output ONLY valid JSON with no markdown, no code fences, no extra text. The JSON must have these exact keys:
-- "use_case_description": A concise description of how the business uses SMS messaging (min 40 chars, max 4096 chars). Keep it focused and direct — 2-4 sentences. Must mention: message types sent, consent collected via compliant opt-in, recipients can opt out by replying STOP.
-- "sample_message_1": A realistic sample transactional/service message from the business (min 20 chars, max 1024 chars). Must include the business name, a specific message example, and "Reply STOP to unsubscribe."
-- "sample_message_2": A realistic sample marketing/promotional message from the business (min 20 chars, max 1024 chars). Must include the business name, a different message type than sample 1, and "Reply STOP to unsubscribe."
-- "opt_in_description": Concise description of how contacts opt in (min 40 chars, max 2048 chars). Keep it to 2-3 sentences. Must mention: specific opt-in method, that the form includes SMS consent language, and the website URL.
-- "opt_in_message": The confirmation message sent after someone opts in (max 320 chars). Must include: business name, what they signed up for, message frequency note, "Msg & data rates may apply", "Reply STOP to opt out", "Reply HELP for help."
-- "marketing_consent_checkbox": Checkbox text for marketing SMS consent. Must include ALL of: consent to marketing texts from the business, msg frequency, "Msg & data rates may apply.", "Reply STOP to cancel.", "Reply HELP for info.", "Consent not required for purchase.", "SMS opt-in data is never shared with third parties." Example: "I agree to receive marketing texts from [Business Name]. Up to [X] msgs/mo. Msg & data rates may apply. Reply STOP to cancel. Reply HELP for info. Consent not required for purchase. SMS opt-in data is never shared with third parties."
-- "transactional_consent_checkbox": Checkbox text for transactional SMS consent. Must include ALL of: consent to service/transactional texts from the business (e.g. reminders, updates, confirmations), msg frequency, "Msg & data rates may apply.", "Reply STOP to cancel.", "Reply HELP for info.", "SMS opt-in data is never shared with third parties." Example: "I agree to receive service texts from [Business Name] (e.g. appointment reminders, updates). [Frequency]. Msg & data rates may apply. Reply STOP to cancel. Reply HELP for info. SMS opt-in data is never shared with third parties."
 
-FREQUENCY CONSISTENCY: The message frequency stated in sample_message_1, sample_message_2, opt_in_message, marketing_consent_checkbox, and transactional_consent_checkbox must all match the exact frequency values from the business data provided. Use the exact number — do not substitute "varies" when a specific frequency number is provided.
+- "use_case_description": (min 40 chars, max 4096 chars) Must explicitly answer ALL FIVE of these questions — a reviewer will check for each one:
+  1. Who is this business and what industry are they in? Name the business, identify the industry. For restricted industries, name the specific governing federal statutes.
+  2. Who receives these messages and how did they opt in? Describe the recipient population specifically (not just "our customers"). Describe what action they took and what consent mechanism was used.
+  3. What specific messages will be sent? Name each message type specifically. "Updates and notifications" alone is NOT sufficient.
+  4. What triggers each message? Transactional programs must state that messages are event-triggered and name the specific events.
+  5. What will never be sent? For restricted industries, explicitly state what is prohibited. This demonstrates regulatory awareness.
 
-IMPORTANT: Keep ALL fields concise and practical. Avoid verbose, overly-detailed language. Each field should be the minimum length needed to meet carrier requirements while remaining compliant. Consent checkbox texts especially must be short — they need to fit next to a small checkbox on a form.
+- "sample_message_1": (min 20 chars, max 1024 chars) A realistic sample transactional/service message. MUST follow this exact format: "[Business Name]: [Specific transactional content related to recipient's existing account/file/transaction]. Reply STOP to opt out. Msg & data rates may apply." The message MUST start with the business name followed by a colon. Must include "Reply STOP to opt out." (not "unsubscribe"). Must include "Msg & data rates may apply."
+
+- "sample_message_2": (min 20 chars, max 1024 chars) A second realistic sample message (different message type than sample 1). For restricted industries: MUST be another transactional message — no promotional content whatsoever. For unrestricted industries: can be a promotional/marketing message. Same format requirements as sample_message_1 — start with "[Business Name]:", include "Reply STOP to opt out." and "Msg & data rates may apply."
+
+- "opt_in_description": (min 40 chars, max 2048 chars) Must include ALL SEVEN of these required statements — missing any one causes a MESSAGE_FLOW rejection:
+  1. Where contacts opt in (specific URL and mechanism).
+  2. "The checkbox is never pre-checked, pre-selected, or activated by default." — use the negative form explicitly.
+  3. "Providing a phone number on the form alone does not constitute SMS consent. Consent requires the separate, affirmative act of checking the designated checkbox." — both sentences required.
+  4. "The SMS consent checkbox is separate from any other form agreement or terms acceptance checkbox."
+  5. "The consent disclosure is displayed immediately adjacent to the unchecked checkbox."
+  6. "Links to the Privacy Policy and Terms and Conditions are displayed on the form adjacent to the checkbox."
+  7. "Consent is not a condition of purchase or service."
+  After all seven statements, quote the verbatim consent disclosure text from the consent checkboxes.
+
+- "opt_in_message": (max 320 chars) The confirmation message sent after opt-in. Must include: business name at the start followed by colon, what they signed up for, message frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for help."
+
+- "marketing_consent_checkbox": Checkbox text for marketing SMS consent. Must include ALL of: consent to marketing texts from the business with parenthetical examples of message types, msg frequency (exact number from data), "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", "Consent is not required for purchase.", "SMS opt-in data is never shared with third parties."
+
+- "transactional_consent_checkbox": Checkbox text for transactional/service SMS consent. Use "service texts" not "transactional texts" in consumer-facing language. Must include ALL of: consent to service texts from the business with parenthetical examples (e.g. reminders, updates, confirmations), msg frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", "SMS opt-in data is never shared with third parties."
+
+- "form_secondary_text": A secondary text block displayed below BOTH consent checkboxes on the form. This is what distinguishes approvals from MESSAGE_FLOW rejections. Must include ALL of these elements:
+  1. "By checking the box above" as the sole triggering action — NEVER "by providing your phone number and checking the box"
+  2. Express written consent confirmation
+  3. "The checkbox is never pre-checked."
+  4. "Reply STOP to opt out."
+  5. "Reply HELP for help."
+  6. "Msg & data rates may apply."
+  7. "Consent is not a condition of purchase or service."
+  8. "No mobile information will be shared with third parties for marketing or promotional purposes."
+
+FREQUENCY CONSISTENCY: The message frequency stated in ALL fields must match the exact frequency values from the business data provided. Use the exact number — do not substitute "varies" when a specific frequency is given.
+
+IMPORTANT: Keep ALL fields concise and practical. Consent checkbox texts must be short — they need to fit next to a checkbox on a form. But the opt_in_description and use_case_description should be thorough since reviewers read them word by word.
 
 Each field must be realistic, specific to the business, and ready to copy-paste. Do NOT use generic placeholder language. Use the actual business name and details provided.`;
 
 function buildSubmissionLanguagePrompt(answers: Record<string, string>, websiteContent: string, _today: string): string {
   const restricted = isRestrictedIndustry(answers);
+  const restrictedIndustries = restricted ? getSelectedRestricted(answers) : [];
   return `Generate A2P 10DLC registration form fields for the following business:
 
 BUSINESS IDENTITY:
 - Legal Business Name: ${answers.legal_business_name || "N/A"}
 - DBA Names: ${answers.has_dba === "Yes" ? answers.dba_names || "N/A" : "None"}
+- Business Description: ${answers.business_description || "N/A"}
+- Industry Classification: ${answers.industry_type || "N/A"}
 - Website: ${answers.primary_website || "N/A"}
 - Business Phone: ${answers.business_phone || "N/A"}
 - Business Email: ${answers.business_email || "N/A"}
@@ -613,7 +677,16 @@ OPT-IN DETAILS:
 - STOP/HELP Number: ${answers.stop_help_number || "N/A"}
 ${buildWebsiteSection(answers, websiteContent)}
 ${buildIndustryRestrictionSection(answers)}
-Generate the JSON with all 7 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.${restricted ? ` CRITICAL: Both sample messages must be transactional only — no promotional content, no offers, no solicitations. The use_case_description must describe a transactional-only program. The opt_in_message and transactional_consent_checkbox must reflect transactional-only consent. For marketing_consent_checkbox, set it to this exact text: "Not applicable — This business operates in a regulated industry that restricts SMS messaging to transactional use only. Promotional or marketing text messages are not permitted for this business type per CTIA and carrier guidelines. A marketing consent checkbox should not be included on opt-in forms for this business."` : ""}`;
+Generate the JSON with all 8 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.${restricted ? `
+
+CRITICAL — RESTRICTED INDUSTRY (${restrictedIndustries.join(", ")}):
+- Both sample messages MUST be transactional only — no promotional content, no offers, no solicitations. Apply the transactional message test: Q1 (recipient initiated?) = YES, Q2 (persuades new action?) = NO, Q3 (makes sense as response?) = YES. Any message failing this test must not be included.
+- The use_case_description MUST describe a transactional-only program, name the governing regulations (${restrictedIndustries.map(i => INDUSTRY_RULES[i]?.regulatoryNote || "industry regulations").join("; ")}), and explicitly state what types of messages are NEVER sent.
+- The opt_in_message and transactional_consent_checkbox must reflect transactional-only consent.
+- For marketing_consent_checkbox, set it to this exact text: "Not applicable — This business operates in a regulated industry that restricts SMS messaging to transactional use only. Promotional or marketing text messages are not permitted for this business type per CTIA and carrier guidelines. A marketing consent checkbox should not be included on opt-in forms for this business."
+- The form_secondary_text must state that no promotional messages are sent and reference the transactional-only restriction.` : ""}
+
+REMINDER: Every "Reply STOP" phrase must end with "to opt out" — NEVER "to unsubscribe" or "to cancel." This is checked by reviewers character by character.`;
 }
 
 export async function POST(req: NextRequest) {

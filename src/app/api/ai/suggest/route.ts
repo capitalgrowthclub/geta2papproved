@@ -93,7 +93,13 @@ export async function POST(req: NextRequest) {
     const messageParams = {
       model: "claude-sonnet-4-6",
       max_tokens: 2000,
-      system: `You help businesses fill out A2P 10DLC compliance questionnaires. Given a question and business context, write a short, realistic answer that would help them get approved. The business may operate multiple websites — synthesize information from ALL of them to give an accurate, combined answer. Do NOT focus on just one site. Reply with ONLY the answer text — no quotes, no preamble, no explanation.`,
+      system: `You help businesses fill out A2P 10DLC compliance questionnaires. Given a question and business context, write a short, realistic answer that would help them get approved. The business may operate multiple websites — synthesize information from ALL of them to give an accurate, combined answer. Do NOT focus on just one site. Reply with ONLY the answer text — no quotes, no preamble, no explanation.
+
+IMPORTANT COMPLIANCE RULES:
+- For transactional/service message use cases: describe messages that RESPOND TO or CONFIRM actions the recipient already took. Phrase them to make clear the message confirms or responds to a recipient-initiated action. Example: "appointment reminders for appointments the client scheduled" not just "appointment reminders."
+- For marketing use cases: describe promotional content specifically. Be concrete about what offers or content will be sent.
+- Never use vague language like "updates and notifications" — always be specific about what types of updates.
+- Keep answers concise (1-3 sentences) and specific to the business.`,
       messages: [
         {
           role: "user" as const,

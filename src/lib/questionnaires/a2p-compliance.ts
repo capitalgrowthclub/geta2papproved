@@ -170,6 +170,16 @@ export const a2pComplianceQuestions: QuestionSection[] = [
         clientFacing: true,
       },
       {
+        id: "business_description",
+        question: "Describe what your business does and who you serve",
+        type: "textarea",
+        placeholder: "e.g., We are a mortgage lending company serving first-time homebuyers in Florida and Georgia. We originate residential mortgage loans and guide borrowers through the application, underwriting, and closing process.",
+        helperText: "WHY THIS MATTERS: Carriers review your campaign description to make sure it accurately describes your business. A vague description gets rejected. Be specific about: what your business does, who your customers are, and what geography you operate in. This will be used to generate your campaign registration description.",
+        required: true,
+        clientFacing: true,
+        aiSuggest: true,
+      },
+      {
         id: "primary_website",
         question: "List all website URLs where you collect customer opt-ins or send SMS messaging",
         type: "textarea",

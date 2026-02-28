@@ -10,6 +10,7 @@ interface SubmissionFields {
   opt_in_message: string;
   marketing_consent_checkbox?: string;
   transactional_consent_checkbox?: string;
+  form_secondary_text?: string;
 }
 
 function CopyField({ label, value, charLimit }: { label: string; value: string; charLimit?: string }) {
@@ -123,6 +124,21 @@ export default function SubmissionShareFields({ content }: { content: string }) 
               {fields.transactional_consent_checkbox && (
                 <CopyField label="Transactional Consent Checkbox" value={fields.transactional_consent_checkbox} />
               )}
+            </div>
+          </div>
+        )}
+
+        {fields.form_secondary_text && (
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">5</span>
+              Form Secondary Text
+            </h3>
+            <p className="text-xs text-slate-500 mb-3 ml-8">
+              Place this text block below both consent checkboxes on your opt-in forms.
+            </p>
+            <div className="ml-8">
+              <CopyField label="Secondary Disclosure Text (Below Checkboxes)" value={fields.form_secondary_text} />
             </div>
           </div>
         )}
