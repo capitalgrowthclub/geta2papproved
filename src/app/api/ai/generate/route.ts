@@ -111,6 +111,7 @@ CRITICAL REQUIREMENTS:
    If a message fails any question, it is promotional and must NOT be included. Only messages passing YES, NO, YES are permitted for restricted industries.
 29. CONSENT NOT A CONDITION: Include this as an explicit standalone statement in the SMS section: "Consent to receive text messages is not required as a condition of purchasing any goods or services."
 30. PROHIBITION SURVIVES RESTRUCTURING: The no-sharing prohibition for SMS opt-in data must explicitly survive any corporate merger, acquisition, or organizational restructuring. Include language such as: "This prohibition on sharing SMS opt-in data shall survive any corporate restructuring, merger, acquisition, or change in ownership."
+31. CROSS-DOCUMENT CONSENT TEXT — CHARACTER-FOR-CHARACTER MATCH: When consent checkbox texts are provided (from the A2P Submission Language), every document that quotes them MUST use the EXACT SAME wording, character for character. The Privacy Policy "Consent Disclosure" blockquote, the Terms & Conditions consent disclosure section, and the opt-in description field must all quote the identical text. Do NOT paraphrase, reorder words, add/remove commas, change capitalization, or substitute synonyms. If the checkbox says "service texts" do not write "service messages." If it says "promotional texts" do not write "marketing messages." Copy the text verbatim. A compliance reviewer will diff the consent language across all three documents — any discrepancy, no matter how small, is flagged as an inconsistency.
 
 FORMAT REQUIREMENTS:
 - Use clean semantic HTML: h1 for the document title, h2 for major sections, h3 for subsections, p for paragraphs, ul/ol/li for lists
@@ -412,6 +413,8 @@ CRITICAL: When quoting these texts in the Privacy Policy "Consent Disclosure" bl
   - "Reply HELP for info." — must be inside the quoted block (add it if missing from the checkbox text above)
   - "SMS opt-in data is never shared with third parties." — must be inside the quoted block (add it if missing from the checkbox text above)
 Augment the quoted text as needed to include all three. Do not move them to surrounding prose.
+
+VERBATIM CONSISTENCY REQUIREMENT: When quoting the consent checkbox text in this document, use the EXACT text provided above — character for character. Do NOT paraphrase, reorder, change capitalization, swap synonyms, or alter punctuation. A compliance reviewer will compare the consent language in this document against the submission language and the other generated document. Any difference — even a single changed word — is flagged as an inconsistency and can cause rejection.
 `;
 }
 
@@ -601,7 +604,7 @@ CRITICAL KEYWORD RULES — READ FIRST:
 - The STOP keyword phrase is ALWAYS "Reply STOP to opt out." — NEVER "unsubscribe", NEVER "cancel", NEVER "stop receiving messages." The exact phrase "opt out" is mandatory everywhere it appears.
 - The HELP keyword phrase is ALWAYS "Reply HELP for info." or "Reply HELP for help."
 - The data rates phrase is ALWAYS "Msg & data rates may apply." — not "message and data rates", not "standard rates."
-- Do NOT use URL shorteners (bit.ly, etc.) in any sample message — carriers flag these as spam.
+- Do NOT include ANY URLs or links in sample messages — not shortened URLs (bit.ly), not full URLs, not even the business's own website. Carriers flag URLs in sample messages as spam and will reject the campaign. Sample messages must contain only plain text content with no web addresses whatsoever.
 
 You MUST output ONLY valid JSON with no markdown, no code fences, no extra text. The JSON must have these exact keys:
 
@@ -610,11 +613,11 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
   2. Who receives these messages and how did they opt in? Describe the recipient population specifically (not just "our customers"). Describe what action they took and what consent mechanism was used.
   3. What specific messages will be sent? Name each message type specifically. "Updates and notifications" alone is NOT sufficient.
   4. What triggers each message? Transactional programs must state that messages are event-triggered and name the specific events.
-  5. What will never be sent? For restricted industries, explicitly state what is prohibited. This demonstrates regulatory awareness.
+  5. What will never be sent? For restricted industries, explicitly state what is prohibited. For unrestricted dual-program businesses (marketing + transactional), include a statement that prohibited content categories (SHAFT: sex, hate, alcohol, firearms, tobacco/drugs) are never included in messages across BOTH programs — e.g., "Neither the promotional nor the service messaging program includes content related to [prohibited categories]." This demonstrates regulatory awareness to the reviewer.
 
-- "sample_message_1": (min 20 chars, max 1024 chars) A realistic sample transactional/service message. MUST follow this exact format: "[Business Name]: [Specific transactional content related to recipient's existing account/file/transaction]. Reply STOP to opt out. Msg & data rates may apply." The message MUST start with the business name followed by a colon. Must include "Reply STOP to opt out." (not "unsubscribe"). Must include "Msg & data rates may apply."
+- "sample_message_1": (min 20 chars, max 1024 chars) A realistic sample transactional/service message. MUST follow this exact format: "[Business Name]: [Specific transactional content related to recipient's existing account/file/transaction]. Reply STOP to opt out. Msg & data rates may apply." The message MUST start with the business name followed by a colon. Must include "Reply STOP to opt out." (not "unsubscribe"). Must include "Msg & data rates may apply." MUST NOT contain any URLs or web links — carriers flag URLs in sample messages as spam.
 
-- "sample_message_2": (min 20 chars, max 1024 chars) A second realistic sample message (different message type than sample 1). For restricted industries: MUST be another transactional message — no promotional content whatsoever. For unrestricted industries: can be a promotional/marketing message. Same format requirements as sample_message_1 — start with "[Business Name]:", include "Reply STOP to opt out." and "Msg & data rates may apply."
+- "sample_message_2": (min 20 chars, max 1024 chars) A second realistic sample message (different message type than sample 1). For restricted industries: MUST be another transactional message — no promotional content whatsoever. For unrestricted industries: can be a promotional/marketing message. Same format requirements as sample_message_1 — start with "[Business Name]:", include "Reply STOP to opt out." and "Msg & data rates may apply." MUST NOT contain any URLs or web links.
 
 - "opt_in_description": (min 40 chars, max 2048 chars) Must include ALL SEVEN of these required statements — missing any one causes a MESSAGE_FLOW rejection:
   1. Where contacts opt in (specific URL and mechanism).
@@ -626,14 +629,14 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
   7. "Consent is not a condition of purchase or service."
   After all seven statements, quote the verbatim consent disclosure text from the consent checkboxes.
 
-- "opt_in_message": (max 320 chars) The confirmation message sent after opt-in. Must include: business name at the start followed by colon, what they signed up for, message frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for help."
+- "opt_in_message": (max 320 chars) The confirmation message sent after opt-in. Must include: business name at the start followed by colon, what they signed up for, message frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for help." DUAL-PROGRAM REQUIREMENT: For unrestricted businesses with BOTH marketing and transactional programs, the opt-in message MUST reference both program types — e.g., "You're now signed up for promotional and service texts from [Business Name]." Do NOT describe only one program when the business has two. For restricted (transactional-only) businesses, reference only service/transactional texts.
 
 - "marketing_consent_checkbox": Checkbox text for marketing SMS consent. Must include ALL of: consent to marketing texts from the business with parenthetical examples of message types, msg frequency (exact number from data), "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", "Consent is not required for purchase.", "SMS opt-in data is never shared with third parties."
 
 - "transactional_consent_checkbox": Checkbox text for transactional/service SMS consent. Use "service texts" not "transactional texts" in consumer-facing language. Must include ALL of: consent to service texts from the business with parenthetical examples (e.g. reminders, updates, confirmations), msg frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", "SMS opt-in data is never shared with third parties."
 
 - "form_secondary_text": A secondary text block displayed below BOTH consent checkboxes on the form. This is what distinguishes approvals from MESSAGE_FLOW rejections. Must include ALL of these elements:
-  1. "By checking the box above" as the sole triggering action — NEVER "by providing your phone number and checking the box"
+  1. For unrestricted businesses with TWO consent checkboxes (marketing + transactional): use "By checking the boxes above" (PLURAL) as the triggering action. For restricted businesses with only ONE checkbox (transactional only): use "By checking the box above" (SINGULAR). NEVER use "by providing your phone number and checking the box."
   2. Express written consent confirmation
   3. "The checkbox is never pre-checked."
   4. "Reply STOP to opt out."

@@ -8,6 +8,8 @@ import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import DocumentViewer from "@/components/DocumentViewer";
 import SubmissionLanguageViewer from "@/components/SubmissionLanguageViewer";
+import ComplianceAnalysis from "@/components/ComplianceAnalysis";
+import type { AnalysisResult } from "@/components/ComplianceAnalysis";
 import type { Project, QuestionnaireResponse, GeneratedDocument, ClientIntakeLink } from "@/lib/supabase";
 import { isProhibitedIndustry, isRestrictedIndustry, getSelectedProhibited, getSelectedRestricted } from "@/lib/questionnaires/a2p-compliance";
 
@@ -38,6 +40,14 @@ export default function ProjectDetailPage() {
   const [stalePrivacy, setStalePrivacy] = useState(false);
   const [staleTerms, setStaleTerms] = useState(false);
 
+  // Compliance analysis state
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+  const [analysisError, setAnalysisError] = useState("");
+  const [elapsedAnalysis, setElapsedAnalysis] = useState(0);
+  const [fixing, setFixing] = useState(false);
+  const [fixProgress, setFixProgress] = useState("");
+
   // Disclaimer acknowledgment
   const [disclaimerAcknowledged, setDisclaimerAcknowledged] = useState(false);
   const [showDisclaimerModal, setShowDisclaimerModal] = useState(false);
@@ -67,6 +77,12 @@ export default function ProjectDetailPage() {
     const interval = setInterval(() => setElapsedSubmission((s) => s + 1), 1000);
     return () => clearInterval(interval);
   }, [generatingSubmission]);
+
+  useEffect(() => {
+    if (!analyzing) { setElapsedAnalysis(0); return; }
+    const interval = setInterval(() => setElapsedAnalysis((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [analyzing]);
 
   // Client link form state
   const [showLinkForm, setShowLinkForm] = useState(false);
@@ -141,6 +157,10 @@ export default function ProjectDetailPage() {
   async function handleGenerateCore(type: DocumentType) {
     if (!response) return;
 
+    // Clear stale analysis when any document is regenerated
+    setAnalysisResult(null);
+    setAnalysisError("");
+
     if (type === "privacy_policy") {
       setGeneratingPrivacy(true);
       setErrorPrivacy("");
@@ -191,6 +211,63 @@ export default function ProjectDetailPage() {
       if (type === "terms_conditions") setGeneratingTerms(false);
       if (type === "submission_language") setGeneratingSubmission(false);
     }
+  }
+
+  async function handleAnalyze() {
+    setAnalyzing(true);
+    setAnalysisError("");
+    setAnalysisResult(null);
+    try {
+      const res = await fetch("/api/ai/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project_id: id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAnalysisResult(data.analysis);
+      } else {
+        const data = await res.json().catch(() => ({ error: "Unknown error" }));
+        setAnalysisError(data.error || "Analysis failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Error analyzing:", error);
+      setAnalysisError("Something went wrong. Please try again.");
+    } finally {
+      setAnalyzing(false);
+    }
+  }
+
+  async function handleFixForMe() {
+    if (!analysisResult || analysisResult.issues.length === 0) return;
+
+    setFixing(true);
+
+    // Collect unique affected document types from all issues
+    const affectedSet = new Set<DocumentType>();
+    for (const issue of analysisResult.issues) {
+      for (const docType of issue.affected_documents) {
+        affectedSet.add(docType as DocumentType);
+      }
+    }
+
+    // Sort in dependency order: submission_language → privacy_policy → terms_conditions
+    const ORDER: DocumentType[] = ["submission_language", "privacy_policy", "terms_conditions"];
+    const toRegenerate = ORDER.filter((t) => affectedSet.has(t));
+
+    for (let i = 0; i < toRegenerate.length; i++) {
+      const type = toRegenerate[i];
+      const label = type === "submission_language"
+        ? "Submission Language"
+        : type === "privacy_policy"
+        ? "Privacy Policy"
+        : "Terms & Conditions";
+      setFixProgress(`Regenerating ${label}... (${i + 1}/${toRegenerate.length})`);
+      await handleGenerateCore(type);
+    }
+
+    setFixing(false);
+    setFixProgress("");
   }
 
   async function handleCreateClientLink() {
@@ -248,6 +325,10 @@ export default function ProjectDetailPage() {
   const industryIsRestricted = isRestrictedIndustry(answers);
   const prohibitedList = getSelectedProhibited(answers);
   const restrictedList = getSelectedRestricted(answers);
+
+  const canAnalyze = !!(submissionDoc && privacyDoc && termsDoc)
+    && !stalePrivacy && !staleTerms
+    && !generatingPrivacy && !generatingTerms && !generatingSubmission;
 
   if (loading) {
     return (
@@ -755,6 +836,61 @@ export default function ProjectDetailPage() {
               "Your Privacy Policy was regenerated. Regenerate your Terms & Conditions to keep all three documents consistent."
             )}
           </div>
+
+          {/* Compliance Analysis */}
+          {canAnalyze && (
+            <Card className="p-6">
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <h3 className="font-semibold text-slate-900">Compliance Analysis</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Cross-document consistency check and carrier compliance review
+                  </p>
+                </div>
+                {!analysisResult && !analyzing && (
+                  <Button size="sm" onClick={handleAnalyze} disabled={analyzing}>
+                    <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5" />
+                    </svg>
+                    Analyze with AI
+                  </Button>
+                )}
+              </div>
+
+              {analyzing && (
+                <div className="py-8 text-center">
+                  <div className="w-10 h-10 mx-auto mb-3 rounded-full bg-teal-50 flex items-center justify-center">
+                    <svg className="animate-spin w-5 h-5 text-teal-600" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-slate-700">Analyzing all documents...</p>
+                  <p className="text-xs text-slate-400 mt-1">{formatElapsed(elapsedAnalysis)}</p>
+                </div>
+              )}
+
+              {analysisError && !analyzing && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-lg mt-3">
+                  <p className="text-sm text-red-700">{analysisError}</p>
+                  <Button size="sm" variant="outline" className="mt-2" onClick={handleAnalyze}>
+                    Try Again
+                  </Button>
+                </div>
+              )}
+
+              {analysisResult && !analyzing && (
+                <div className="mt-3">
+                  <ComplianceAnalysis
+                    result={analysisResult}
+                    onFixForMe={handleFixForMe}
+                    isFixing={fixing}
+                    fixingProgress={fixProgress}
+                  />
+                </div>
+              )}
+            </Card>
+          )}
 
           {/* Legal Disclaimer */}
           {disclaimerAcknowledged ? (
