@@ -7,6 +7,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Bypass middleware for embed API (public, CORS-enabled)
+  if (request.nextUrl.pathname.startsWith("/api/embed/")) {
+    return NextResponse.next();
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

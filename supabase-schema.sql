@@ -81,6 +81,18 @@ CREATE TABLE IF NOT EXISTS document_share_links (
   UNIQUE(project_id, type)
 );
 
+-- Analysis history table
+-- Stores every compliance analysis run for feedback loop into regeneration
+CREATE TABLE IF NOT EXISTS analysis_history (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  overall_risk TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  issues JSONB NOT NULL DEFAULT '[]',
+  checks_passed JSONB NOT NULL DEFAULT '[]',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_users_clerk_id ON users(clerk_id);
 CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
@@ -88,6 +100,7 @@ CREATE INDEX IF NOT EXISTS idx_questionnaire_project_id ON questionnaire_respons
 CREATE INDEX IF NOT EXISTS idx_documents_project_id ON generated_documents(project_id);
 CREATE INDEX IF NOT EXISTS idx_client_intake_token ON client_intake_links(token);
 CREATE INDEX IF NOT EXISTS idx_share_links_token ON document_share_links(token);
+CREATE INDEX IF NOT EXISTS idx_analysis_history_project_id ON analysis_history(project_id);
 
 -- Row Level Security (RLS)
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -106,3 +119,6 @@ CREATE POLICY "Service role full access" ON client_intake_links FOR ALL USING (t
 
 ALTER TABLE document_share_links ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Service role full access" ON document_share_links FOR ALL USING (true);
+
+ALTER TABLE analysis_history ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Service role full access" ON analysis_history FOR ALL USING (true);

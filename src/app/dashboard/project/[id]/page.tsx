@@ -93,11 +93,12 @@ export default function ProjectDetailPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [projRes, questRes, docRes, linkRes] = await Promise.all([
+        const [projRes, questRes, docRes, linkRes, analysisRes] = await Promise.all([
           fetch(`/api/projects/${id}`),
           fetch(`/api/projects/${id}/questionnaire`),
           fetch(`/api/projects/${id}/documents`),
           fetch(`/api/projects/${id}/client-link`),
+          fetch(`/api/projects/${id}/analysis`),
         ]);
 
         if (projRes.ok) {
@@ -114,6 +115,10 @@ export default function ProjectDetailPage() {
         }
         if (docRes.ok) setDocuments((await docRes.json()).documents || []);
         if (linkRes.ok) setClientLinks((await linkRes.json()).links || []);
+        if (analysisRes.ok) {
+          const data = await analysisRes.json();
+          if (data.analysis) setAnalysisResult(data.analysis);
+        }
       } catch (error) {
         console.error("Error loading project:", error);
       } finally {

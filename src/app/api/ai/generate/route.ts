@@ -112,16 +112,24 @@ CRITICAL REQUIREMENTS:
 29. CONSENT NOT A CONDITION: Include this as an explicit standalone statement in the SMS section: "Consent to receive text messages is not required as a condition of purchasing any goods or services."
 30. PROHIBITION SURVIVES RESTRUCTURING: The no-sharing prohibition for SMS opt-in data must explicitly survive any corporate merger, acquisition, or organizational restructuring. Include language such as: "This prohibition on sharing SMS opt-in data shall survive any corporate restructuring, merger, acquisition, or change in ownership."
 31. CROSS-DOCUMENT CONSENT TEXT — CHARACTER-FOR-CHARACTER MATCH: When consent checkbox texts are provided (from the A2P Submission Language), every document that quotes them MUST use the EXACT SAME wording, character for character. The Privacy Policy "Consent Disclosure" blockquote, the Terms & Conditions consent disclosure section, and the opt-in description field must all quote the identical text. Do NOT paraphrase, reorder words, add/remove commas, change capitalization, or substitute synonyms. If the checkbox says "service texts" do not write "service messages." If it says "promotional texts" do not write "marketing messages." Copy the text verbatim. A compliance reviewer will diff the consent language across all three documents — any discrepancy, no matter how small, is flagged as an inconsistency.
+32. VERBATIM SECTIONS — COPY, DO NOT REWRITE: When the prompt provides sections labeled "VERBATIM" or "COPY EXACTLY", you MUST reproduce them character-for-character in the appropriate location in the document. Do not rewrite, paraphrase, "improve", or edit them in any way. They have already been reviewed for compliance. Your only job is to place them correctly in the document structure. This includes consent blockquotes, opt-out confirmation text, START re-enrollment text, carrier lists, and any other text explicitly marked as verbatim. A compliance reviewer will programmatically diff these sections across documents — any difference causes rejection.
 
 FORMAT REQUIREMENTS:
 - Use clean semantic HTML: h1 for the document title, h2 for major sections, h3 for subsections, p for paragraphs, ul/ol/li for lists
 - Include proper section numbering in headings (e.g. "1. Information We Collect")
 - Write every section completely — this is a real legal document, not a template
-- CRITICAL: Do NOT use any style="" attributes or inline CSS on any element whatsoever
-- CRITICAL: Do NOT wrap the document in a <div> with max-width, width, margin, padding, or font-family styles
-- CRITICAL: Do NOT include any <style> tags or font-family declarations anywhere
+- CRITICAL: Every element MUST have inline margin styles for site-builder compatibility. Many website builders strip default CSS margins, so spacing must be baked into the HTML:
+  - <h1 style="margin-top: 0; margin-bottom: 0.5em;">
+  - <h2 style="margin-top: 1.5em; margin-bottom: 0.5em;">
+  - <h3 style="margin-top: 1.2em; margin-bottom: 0.4em;">
+  - <p style="margin-top: 0; margin-bottom: 1em;">
+  - <ul style="margin-top: 0; margin-bottom: 1em; padding-left: 1.5em;"> and <ol style="margin-top: 0; margin-bottom: 1em; padding-left: 1.5em;">
+  - <li style="margin-bottom: 0.3em;">
+  - <blockquote style="margin: 1em 0; padding-left: 1em; border-left: 3px solid #d1d5db;">
+- CRITICAL: Do NOT add any other styles beyond the margin/padding listed above — no font-family, font-size, color, max-width, width, or background styles
+- CRITICAL: Do NOT wrap the document in a <div> with layout styles
+- CRITICAL: Do NOT include any <style> tags
 - Output the document content directly — start with <h1> for the title, then proceed with sections
-- The styling is handled externally — just output clean, unstyled semantic HTML
 
 Do NOT include any markdown formatting. Output ONLY valid HTML content (no <html>, <head>, <body>, or <style> tags — just the document content starting with <h1>).`;
 
@@ -362,6 +370,11 @@ function stripHtmlToText(html: string): string {
 
 function buildPrivacyPolicyReferenceSection(privacyContent: string | null): string {
   if (!privacyContent) return "";
+
+  // Extract specific verbatim sections for mechanical consistency
+  const anchors = extractConsistencyAnchors(privacyContent);
+  const verbatimSection = buildVerbatimAnchorsSection(anchors);
+
   const text = stripHtmlToText(privacyContent);
   const truncated = text.length > 60000 ? text.substring(0, 60000) + "... [truncated for length]" : text;
   return `
@@ -375,12 +388,14 @@ The Privacy Policy for this business has already been generated. The Terms & Con
 
 Privacy Policy content (use for reference and consistency — do not copy it verbatim into the Terms):
 ${truncated}
-`;
+${verbatimSection}`;
 }
 
 interface ConsentCheckboxes {
   marketing?: string | null;
   transactional?: string | null;
+  optInMessage?: string | null;
+  formSecondaryText?: string | null;
 }
 
 function buildConsentAnchorSection(checkboxes: ConsentCheckboxes | null, restricted: boolean): string {
@@ -415,10 +430,150 @@ CRITICAL: When quoting these texts in the Privacy Policy "Consent Disclosure" bl
 Augment the quoted text as needed to include all three. Do not move them to surrounding prose.
 
 VERBATIM CONSISTENCY REQUIREMENT: When quoting the consent checkbox text in this document, use the EXACT text provided above — character for character. Do NOT paraphrase, reorder, change capitalization, swap synonyms, or alter punctuation. A compliance reviewer will compare the consent language in this document against the submission language and the other generated document. Any difference — even a single changed word — is flagged as an inconsistency and can cause rejection.
+${checkboxes.optInMessage ? `
+VERBATIM — OPT-IN CONFIRMATION MESSAGE (from Submission Language):
+"${checkboxes.optInMessage}"
+When describing the opt-in confirmation message in this document, use the EXACT text above. Do not rewrite it.` : ""}
+${checkboxes.formSecondaryText ? `
+VERBATIM — FORM SECONDARY TEXT (from Submission Language):
+"${checkboxes.formSecondaryText}"
+When referencing the form secondary text or sub-checkbox disclosure, use the EXACT text above.` : ""}
 `;
 }
 
-function buildPrivacyPolicyPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null, existingPolicyContent: string = ""): string {
+interface ConsistencyAnchors {
+  consentBlockquote: string | null;
+  optOutConfirmation: string | null;
+  startReenrollment: string | null;
+  carrierList: string | null;
+  governingLawState: string | null;
+}
+
+function extractConsistencyAnchors(ppHtml: string): ConsistencyAnchors {
+  const anchors: ConsistencyAnchors = {
+    consentBlockquote: null,
+    optOutConfirmation: null,
+    startReenrollment: null,
+    carrierList: null,
+    governingLawState: null,
+  };
+
+  // Extract blockquote content (consent disclosure)
+  const bqMatch = ppHtml.match(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/i);
+  if (bqMatch) {
+    anchors.consentBlockquote = stripHtmlToText(bqMatch[1]);
+  }
+
+  const text = stripHtmlToText(ppHtml);
+
+  // Extract opt-out confirmation sentence
+  const optOutMatch = text.match(/(The opt-out confirmation message will identify[^.]+\.)/i);
+  if (optOutMatch) {
+    anchors.optOutConfirmation = optOutMatch[1].trim();
+  }
+
+  // Extract START re-enrollment sentence
+  const startMatch = text.match(/(If you wish to re-enroll[^.]+\.)/i);
+  if (startMatch) {
+    anchors.startReenrollment = startMatch[1].trim();
+  }
+
+  // Extract carrier list sentence
+  const carrierMatch = text.match(/((?:Supported|Participating|Major)[^.]*(?:AT&T|AT&amp;T)[^.]*\.)/i);
+  if (carrierMatch) {
+    anchors.carrierList = carrierMatch[1].trim();
+  }
+
+  // Extract governing law state
+  const lawMatch = text.match(/governed by.*?laws of.*?(?:the )?(?:State of )?(\w+(?:\s\w+)?)/i);
+  if (lawMatch) {
+    anchors.governingLawState = lawMatch[1].trim();
+  }
+
+  return anchors;
+}
+
+function buildVerbatimAnchorsSection(anchors: ConsistencyAnchors): string {
+  const sections: string[] = [];
+
+  if (anchors.consentBlockquote) {
+    sections.push(`1. CONSENT DISCLOSURE BLOCKQUOTE (VERBATIM — COPY EXACTLY):
+"${anchors.consentBlockquote}"`);
+  }
+
+  if (anchors.optOutConfirmation) {
+    sections.push(`2. OPT-OUT CONFIRMATION TEXT (VERBATIM — COPY EXACTLY):
+"${anchors.optOutConfirmation}"`);
+  }
+
+  if (anchors.startReenrollment) {
+    sections.push(`3. START RE-ENROLLMENT DISCLOSURE (VERBATIM — COPY EXACTLY):
+"${anchors.startReenrollment}"`);
+  }
+
+  if (anchors.carrierList) {
+    sections.push(`4. CARRIER LIST (VERBATIM — COPY EXACTLY):
+"${anchors.carrierList}"`);
+  }
+
+  if (anchors.governingLawState) {
+    sections.push(`5. GOVERNING LAW STATE: ${anchors.governingLawState}
+All governing law, arbitration venue, and jurisdiction references must use this state.`);
+  }
+
+  if (sections.length === 0) return "";
+
+  return `
+VERBATIM SECTIONS FROM PRIVACY POLICY — COPY EXACTLY INTO TERMS & CONDITIONS:
+The following sections were extracted from the already-generated Privacy Policy. They MUST appear character-for-character identical in the Terms & Conditions. Do NOT rewrite, paraphrase, or "improve" them. Place them in the correct location in the document structure.
+
+${sections.join("\n\n")}
+`;
+}
+
+async function buildAnalysisHistorySection(supabase: ReturnType<typeof createServiceClient>, projectId: string): Promise<string> {
+  const { data } = await supabase
+    .from("analysis_history")
+    .select("issues, summary, overall_risk, created_at")
+    .eq("project_id", projectId)
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (!data || data.length === 0) return "";
+
+  const latest = data[0];
+  const issues = latest.issues as Array<{
+    severity: string;
+    title: string;
+    description: string;
+    affected_documents: string[];
+    recommendation: string;
+  }>;
+
+  if (!issues || issues.length === 0) return "";
+
+  const issueLines = issues.map((issue, i) =>
+    `${i + 1}. [${issue.severity.toUpperCase()}] ${issue.title}
+   Problem: ${issue.description}
+   Affects: ${issue.affected_documents.join(", ")}
+   Fix: ${issue.recommendation}`
+  ).join("\n\n");
+
+  return `
+PREVIOUS COMPLIANCE ISSUES — DO NOT REPEAT THESE MISTAKES:
+A compliance analysis was run on the previously generated documents and found the following issues. You are now regenerating to fix these. You MUST address every issue listed below. Do NOT introduce the same errors again.
+
+Previous analysis summary: ${latest.summary}
+Previous risk level: ${latest.overall_risk}
+
+Issues found (fix ALL of these):
+${issueLines}
+
+CRITICAL: The above issues are the SPECIFIC reasons this document is being regenerated. Address every single one. If an issue says text was inconsistent, use the EXACT verbatim text provided elsewhere in this prompt. If an issue says something was missing, include it. If an issue says something was wrong, correct it.
+`;
+}
+
+function buildPrivacyPolicyPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null, existingPolicyContent: string = "", analysisHistory: string = ""): string {
   const restricted = isRestrictedIndustry(answers);
   return `Generate a comprehensive Privacy Policy for A2P 10DLC compliance based on the following business information:
 
@@ -479,7 +634,7 @@ ${existingPolicyContent}
 
 Update the above policy to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
-${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}
+${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}${analysisHistory}
 Generate the COMPLETE privacy policy in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
 
 CRITICAL A2P requirements to include:
@@ -505,7 +660,7 @@ CRITICAL A2P requirements to include:
 12. Contact information`;
 }
 
-function buildTermsPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null, privacyPolicyContent: string | null = null, existingTermsContent: string = ""): string {
+function buildTermsPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null, privacyPolicyContent: string | null = null, existingTermsContent: string = "", analysisHistory: string = ""): string {
   const restricted = isRestrictedIndustry(answers);
   return `Generate comprehensive Terms & Conditions for A2P 10DLC compliance based on the following information:
 
@@ -555,7 +710,7 @@ ${existingTermsContent}
 
 Update the above terms to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
-${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}${buildPrivacyPolicyReferenceSection(privacyPolicyContent)}
+${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}${buildPrivacyPolicyReferenceSection(privacyPolicyContent)}${analysisHistory}
 Generate the COMPLETE terms & conditions in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
 
 CRITICAL A2P requirements to include:
@@ -651,7 +806,7 @@ IMPORTANT: Keep ALL fields concise and practical. Consent checkbox texts must be
 
 Each field must be realistic, specific to the business, and ready to copy-paste. Do NOT use generic placeholder language. Use the actual business name and details provided.`;
 
-function buildSubmissionLanguagePrompt(answers: Record<string, string>, websiteContent: string, _today: string): string {
+function buildSubmissionLanguagePrompt(answers: Record<string, string>, websiteContent: string, _today: string, analysisHistory: string = ""): string {
   const restricted = isRestrictedIndustry(answers);
   const restrictedIndustries = restricted ? getSelectedRestricted(answers) : [];
   return `Generate A2P 10DLC registration form fields for the following business:
@@ -689,7 +844,7 @@ CRITICAL — RESTRICTED INDUSTRY (${restrictedIndustries.join(", ")}):
 - For marketing_consent_checkbox, set it to this exact text: "Not applicable — This business operates in a regulated industry that restricts SMS messaging to transactional use only. Promotional or marketing text messages are not permitted for this business type per CTIA and carrier guidelines. A marketing consent checkbox should not be included on opt-in forms for this business."
 - The form_secondary_text must state that no promotional messages are sent and reference the transactional-only restriction.` : ""}
 
-REMINDER: Every "Reply STOP" phrase must end with "to opt out" — NEVER "to unsubscribe" or "to cancel." This is checked by reviewers character by character.`;
+REMINDER: Every "Reply STOP" phrase must end with "to opt out" — NEVER "to unsubscribe" or "to cancel." This is checked by reviewers character by character.${analysisHistory}`;
 }
 
 export async function POST(req: NextRequest) {
@@ -736,7 +891,7 @@ export async function POST(req: NextRequest) {
     const existingPPUrl = answers.existing_privacy_policy_url || "";
     const existingTermsUrl = answers.existing_terms_url || "";
 
-    const [websiteContent, submissionDoc, privacyDoc, existingPPContent, existingTermsContent] = await Promise.all([
+    const [websiteContent, submissionDoc, privacyDoc, existingPPContent, existingTermsContent, analysisHistory] = await Promise.all([
       websiteUrl ? fetchWebsiteContent(websiteUrl) : Promise.resolve(""),
       isPPorTC
         ? supabaseCheck
@@ -760,9 +915,11 @@ export async function POST(req: NextRequest) {
         : Promise.resolve(null),
       (type === "privacy_policy" && existingPPUrl) ? fetchSingleUrl(existingPPUrl) : Promise.resolve(""),
       (type === "terms_conditions" && existingTermsUrl) ? fetchSingleUrl(existingTermsUrl) : Promise.resolve(""),
+      // Fetch latest analysis history for feedback loop
+      buildAnalysisHistorySection(supabaseCheck, project_id),
     ]);
 
-    // Extract consent checkbox texts from submission language if it exists
+    // Extract consent checkbox texts and other verbatim fields from submission language
     let consentCheckboxes: ConsentCheckboxes | null = null;
     if (submissionDoc) {
       try {
@@ -770,6 +927,8 @@ export async function POST(req: NextRequest) {
         consentCheckboxes = {
           marketing: parsed.marketing_consent_checkbox ?? null,
           transactional: parsed.transactional_consent_checkbox ?? null,
+          optInMessage: parsed.opt_in_message ?? null,
+          formSecondaryText: parsed.form_secondary_text ?? null,
         };
       } catch {
         // Malformed JSON — proceed without consent anchoring
@@ -780,10 +939,10 @@ export async function POST(req: NextRequest) {
     const isSubmissionLanguage = type === "submission_language";
     const prompt =
       type === "privacy_policy"
-        ? buildPrivacyPolicyPrompt(answers, websiteContent, today, consentCheckboxes, existingPPContent)
+        ? buildPrivacyPolicyPrompt(answers, websiteContent, today, consentCheckboxes, existingPPContent, analysisHistory)
         : type === "submission_language"
-        ? buildSubmissionLanguagePrompt(answers, websiteContent, today)
-        : buildTermsPrompt(answers, websiteContent, today, consentCheckboxes, privacyDoc?.content ?? null, existingTermsContent);
+        ? buildSubmissionLanguagePrompt(answers, websiteContent, today, analysisHistory)
+        : buildTermsPrompt(answers, websiteContent, today, consentCheckboxes, privacyDoc?.content ?? null, existingTermsContent, analysisHistory);
 
     const stream = getAnthropic().messages.stream({
       model: "claude-sonnet-4-6",
@@ -811,6 +970,12 @@ export async function POST(req: NextRequest) {
     // Strip markdown code fences if the AI wraps JSON in them
     if (isSubmissionLanguage) {
       generatedContent = generatedContent.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
+    }
+
+    // Append SEO attribution footer to Privacy Policy and Terms & Conditions
+    if (!isSubmissionLanguage) {
+      generatedContent = generatedContent.trimEnd() +
+        '\n\n<p style="margin-top: 2em; font-size: 0.85em; color: #6b7280; text-align: center;"><em>This document was generated by <a href="https://geta2papproved.com" target="_blank" rel="noopener noreferrer">GetA2PApproved.com</a></em></p>';
     }
 
     const { data: existing } = await supabaseCheck

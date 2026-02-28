@@ -262,6 +262,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Save analysis to history for feedback loop into future regenerations
+    await supabaseService
+      .from("analysis_history")
+      .insert({
+        project_id,
+        overall_risk: analysis.overall_risk || "needs_attention",
+        summary: analysis.summary || "",
+        issues: analysis.issues || [],
+        checks_passed: analysis.checks_passed || [],
+      });
+
     return NextResponse.json({ analysis });
   } catch (error: unknown) {
     console.error("AI analysis error:", error);

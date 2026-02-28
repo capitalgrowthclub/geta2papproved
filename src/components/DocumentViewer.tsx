@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import EmbedCodeModal from "@/components/EmbedCodeModal";
 
 interface DocumentViewerProps {
   content: string;
@@ -28,6 +29,9 @@ export default function DocumentViewer({
   const [copied, setCopied] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [shareCopied, setShareCopied] = useState(false);
+  const [embedToken, setEmbedToken] = useState<string | null>(null);
+  const [showEmbedModal, setShowEmbedModal] = useState(false);
+  const [loadingEmbed, setLoadingEmbed] = useState(false);
 
   async function handleShare() {
     setSharing(true);
@@ -45,6 +49,32 @@ export default function DocumentViewer({
       // silently fail
     } finally {
       setSharing(false);
+    }
+  }
+
+  async function handleEmbed() {
+    if (embedToken) {
+      setShowEmbedModal(true);
+      return;
+    }
+    setLoadingEmbed(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}/share-doc/${docType}`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.url) {
+        // Extract token from URL (last path segment)
+        const urlToken = data.url.split("/").pop();
+        if (urlToken) {
+          setEmbedToken(urlToken);
+          setShowEmbedModal(true);
+        }
+      }
+    } catch {
+      // silently fail
+    } finally {
+      setLoadingEmbed(false);
     }
   }
 
@@ -132,6 +162,12 @@ export default function DocumentViewer({
               </>
             )}
           </Button>
+          <Button variant="outline" size="sm" onClick={handleEmbed} disabled={loadingEmbed}>
+            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
+            </svg>
+            {loadingEmbed ? "Loading..." : "Embed Code"}
+          </Button>
           {onRegenerate && (
             <Button size="sm" onClick={onRegenerate} disabled={regenerating}>
               {regenerating ? (
@@ -162,6 +198,15 @@ export default function DocumentViewer({
           dangerouslySetInnerHTML={{ __html: content }}
         />
       </Card>
+
+      {/* Embed Code Modal */}
+      {showEmbedModal && embedToken && (
+        <EmbedCodeModal
+          token={embedToken}
+          docType={docType}
+          onClose={() => setShowEmbedModal(false)}
+        />
+      )}
     </div>
   );
 }

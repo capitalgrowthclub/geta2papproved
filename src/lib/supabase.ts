@@ -74,3 +74,24 @@ export interface GeneratedDocument {
   version: number;
   created_at: string;
 }
+
+export interface AnalysisHistoryRow {
+  id: string;
+  project_id: string;
+  overall_risk: string;
+  summary: string;
+  issues: Array<{
+    id: string;
+    severity: string;
+    category: string;
+    title: string;
+    description: string;
+    affected_documents: string[];
+    recommendation: string;
+  }>;
+  checks_passed: Array<{
+    title: string;
+    description: string;
+  }>;
+  created_at: string;
+}
