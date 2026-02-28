@@ -257,8 +257,12 @@ function QuestionRenderer({
     </div>
   );
 
+  const hasWebsite = Boolean(answers.primary_website?.trim());
+
   const aiButton = question.aiSuggest && !value && (
-    isMarketingRestricted ? null : (
+    isMarketingRestricted ? null : !hasWebsite ? (
+      <p className="text-xs text-slate-400 italic">Enter your business website first — AI uses it to write accurate responses.</p>
+    ) : (
       <div className="flex flex-col gap-1">
         <button
           type="button"
