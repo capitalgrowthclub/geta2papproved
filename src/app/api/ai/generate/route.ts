@@ -415,7 +415,7 @@ Augment the quoted text as needed to include all three. Do not move them to surr
 `;
 }
 
-function buildPrivacyPolicyPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null): string {
+function buildPrivacyPolicyPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null, existingPolicyContent: string = ""): string {
   const restricted = isRestrictedIndustry(answers);
   return `Generate a comprehensive Privacy Policy for A2P 10DLC compliance based on the following business information:
 
@@ -468,11 +468,11 @@ PLATFORM:
 - Additional Platforms: ${answers.additional_sms_platforms || "N/A"}
 - Additional Platform Details: ${answers.additional_platform_details || "N/A"}
 ${buildWebsiteSection(answers, websiteContent)}
-${answers.existing_privacy_policy ? `
+${existingPolicyContent ? `
 EXISTING PRIVACY POLICY TO UPDATE:
-The user has an existing privacy policy they want updated for A2P compliance. Keep their existing language and structure where appropriate, but ADD all the required SMS/messaging sections and A2P-specific language. Here is their current policy:
+The user has an existing privacy policy they want updated for A2P compliance. Keep their existing language and structure where appropriate, but ADD all the required SMS/messaging sections and A2P-specific language. Here is their current policy (fetched from ${answers.existing_privacy_policy_url || "their website"}):
 
-${answers.existing_privacy_policy.length > 50000 ? answers.existing_privacy_policy.substring(0, 50000) + "\n\n[Document truncated for length — continue generating a complete policy incorporating the above content plus all A2P requirements]" : answers.existing_privacy_policy}
+${existingPolicyContent}
 
 Update the above policy to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
@@ -502,7 +502,7 @@ CRITICAL A2P requirements to include:
 12. Contact information`;
 }
 
-function buildTermsPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null, privacyPolicyContent: string | null = null): string {
+function buildTermsPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null, privacyPolicyContent: string | null = null, existingTermsContent: string = ""): string {
   const restricted = isRestrictedIndustry(answers);
   return `Generate comprehensive Terms & Conditions for A2P 10DLC compliance based on the following information:
 
@@ -544,11 +544,11 @@ CONFIRMATIONS:
 - Two Separate Consent Boxes: ${answers.understands_consent_boxes || "N/A"}
 - No Pre-checked Consent: ${answers.no_prechecked_consent || "N/A"}
 ${buildWebsiteSection(answers, websiteContent)}
-${answers.existing_terms ? `
+${existingTermsContent ? `
 EXISTING TERMS & CONDITIONS TO UPDATE:
-The user has existing terms & conditions they want updated for A2P compliance. Keep their existing language and structure where appropriate, but ADD all the required SMS/messaging sections and A2P-specific language. Here is their current document:
+The user has existing terms & conditions they want updated for A2P compliance. Keep their existing language and structure where appropriate, but ADD all the required SMS/messaging sections and A2P-specific language. Here is their current document (fetched from ${answers.existing_terms_url || "their website"}):
 
-${answers.existing_terms.length > 50000 ? answers.existing_terms.substring(0, 50000) + "\n\n[Document truncated for length — continue generating complete terms incorporating the above content plus all A2P requirements]" : answers.existing_terms}
+${existingTermsContent}
 
 Update the above terms to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
@@ -726,12 +726,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Fetch website content and prior documents in parallel based on generation type
+    // Fetch website content, existing policy URLs, and prior documents in parallel
     const websiteUrl = answers.primary_website || "";
     const isPPorTC = type === "privacy_policy" || type === "terms_conditions";
     const isTC = type === "terms_conditions";
+    const existingPPUrl = answers.existing_privacy_policy_url || "";
+    const existingTermsUrl = answers.existing_terms_url || "";
 
-    const [websiteContent, submissionDoc, privacyDoc] = await Promise.all([
+    const [websiteContent, submissionDoc, privacyDoc, existingPPContent, existingTermsContent] = await Promise.all([
       websiteUrl ? fetchWebsiteContent(websiteUrl) : Promise.resolve(""),
       isPPorTC
         ? supabaseCheck
@@ -753,6 +755,8 @@ export async function POST(req: NextRequest) {
             .limit(1)
             .then(({ data }) => data?.[0] ?? null)
         : Promise.resolve(null),
+      (type === "privacy_policy" && existingPPUrl) ? fetchSingleUrl(existingPPUrl) : Promise.resolve(""),
+      (type === "terms_conditions" && existingTermsUrl) ? fetchSingleUrl(existingTermsUrl) : Promise.resolve(""),
     ]);
 
     // Extract consent checkbox texts from submission language if it exists
@@ -773,10 +777,10 @@ export async function POST(req: NextRequest) {
     const isSubmissionLanguage = type === "submission_language";
     const prompt =
       type === "privacy_policy"
-        ? buildPrivacyPolicyPrompt(answers, websiteContent, today, consentCheckboxes)
+        ? buildPrivacyPolicyPrompt(answers, websiteContent, today, consentCheckboxes, existingPPContent)
         : type === "submission_language"
         ? buildSubmissionLanguagePrompt(answers, websiteContent, today)
-        : buildTermsPrompt(answers, websiteContent, today, consentCheckboxes, privacyDoc?.content ?? null);
+        : buildTermsPrompt(answers, websiteContent, today, consentCheckboxes, privacyDoc?.content ?? null, existingTermsContent);
 
     const stream = getAnthropic().messages.stream({
       model: "claude-sonnet-4-6",
@@ -789,7 +793,7 @@ export async function POST(req: NextRequest) {
     // If the model hit the token limit, the document is incomplete — don't save it
     if (message.stop_reason === "max_tokens") {
       return NextResponse.json(
-        { error: "The document was too long to generate completely. Try removing or shortening any existing policy content you pasted in, then regenerate. If the issue persists, contact support@geta2papproved.com." },
+        { error: "The document was too long to generate completely. If you linked an existing policy, try regenerating without it. If the issue persists, contact support@geta2papproved.com." },
         { status: 422 }
       );
     }
