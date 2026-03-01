@@ -12,6 +12,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Redirect non-www to www for canonical URL consistency (SEO)
+  const host = request.headers.get("host") || "";
+  if (host === "geta2papproved.com") {
+    const url = request.nextUrl.clone();
+    url.host = "www.geta2papproved.com";
+    return NextResponse.redirect(url, 301);
+  }
+
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

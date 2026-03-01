@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description:
     "Stop getting rejected. GetA2PApproved generates the exact privacy policy, terms & conditions, and submission language you need to get your A2P 10DLC campaign approved by carriers.",
   alternates: {
-    canonical: "/",
+    canonical: "./",
   },
   openGraph: {
     title: "GetA2PApproved - AI Tool That Generates Your A2P 10DLC Compliance Documents",

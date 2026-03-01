@@ -15,6 +15,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.8,
     },
     {
+      url: "https://www.geta2papproved.com/eligibility",
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    },
+    {
       url: "https://www.geta2papproved.com/sign-in",
       lastModified: new Date(),
       changeFrequency: "monthly",
