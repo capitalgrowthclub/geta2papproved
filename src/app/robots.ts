@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: ["/", "/sign-in", "/sign-up"],
-        disallow: ["/dashboard/", "/api/", "/client-intake/"],
+        allow: ["/", "/sign-in", "/join", "/eligibility", "/privacy", "/terms", "/refund"],
+        disallow: ["/dashboard/", "/api/", "/client-intake/", "/doc/"],
       },
     ],
     sitemap: "https://www.geta2papproved.com/sitemap.xml",
