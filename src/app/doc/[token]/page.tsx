@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import DocCopyButtons from "./DocCopyButtons";
 import SubmissionShareFields from "./SubmissionShareFields";
+import CopyProtectedContent from "./CopyProtectedContent";
 
 interface DocData {
   document: {
@@ -94,7 +95,7 @@ export default async function DocSharePage({
               {new Date(doc.created_at).toLocaleDateString()}
             </p>
           </div>
-          {!isSubmission && <DocCopyButtons content={doc.content} />}
+          {!isSubmission && <DocCopyButtons content={doc.content} token={token} />}
         </div>
 
         {/* Document content */}
@@ -102,10 +103,7 @@ export default async function DocSharePage({
           {isSubmission ? (
             <SubmissionShareFields content={doc.content} />
           ) : (
-            <div
-              className="document-render"
-              dangerouslySetInnerHTML={{ __html: doc.content }}
-            />
+            <CopyProtectedContent html={doc.content} />
           )}
         </div>
       </main>

@@ -104,12 +104,6 @@ export default function DocumentViewer({
     }
   }
 
-  function handleCopySource() {
-    navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -122,12 +116,6 @@ export default function DocumentViewer({
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleCopySource}>
-            <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
-            </svg>
-            Copy HTML
-          </Button>
           <Button variant="secondary" size="sm" onClick={handleCopy}>
             {copied ? (
               <>
@@ -191,10 +179,12 @@ export default function DocumentViewer({
         </div>
       </div>
 
-      {/* Document Content */}
+      {/* Document Content — selection disabled to enforce copy button usage */}
       <Card className="p-8 overflow-auto">
         <div
-          className="document-render"
+          className="document-render select-none"
+          style={{ WebkitUserSelect: "none", userSelect: "none" }}
+          onCopy={(e) => e.preventDefault()}
           dangerouslySetInnerHTML={{ __html: content }}
         />
       </Card>
