@@ -939,8 +939,16 @@ export default function ProjectDetailPage() {
               createdAt={privacyDoc.created_at}
               projectId={id}
               docType="privacy_policy"
+              documentId={privacyDoc.id}
               onRegenerate={() => handleGenerate("privacy_policy")}
               regenerating={generatingPrivacy}
+              onContentUpdated={(newContent) => {
+                setDocuments((prev) =>
+                  prev.map((d) =>
+                    d.id === privacyDoc.id ? { ...d, content: newContent } : d
+                  )
+                );
+              }}
             />
           ) : (
             <Card className="p-12 text-center">
@@ -988,8 +996,16 @@ export default function ProjectDetailPage() {
               createdAt={termsDoc.created_at}
               projectId={id}
               docType="terms_conditions"
+              documentId={termsDoc.id}
               onRegenerate={() => handleGenerate("terms_conditions")}
               regenerating={generatingTerms}
+              onContentUpdated={(newContent) => {
+                setDocuments((prev) =>
+                  prev.map((d) =>
+                    d.id === termsDoc.id ? { ...d, content: newContent } : d
+                  )
+                );
+              }}
             />
           ) : (
             <Card className="p-12 text-center">
@@ -1043,9 +1059,17 @@ export default function ProjectDetailPage() {
               version={submissionDoc.version}
               createdAt={submissionDoc.created_at}
               projectId={id}
+              documentId={submissionDoc.id}
               isRestricted={industryIsRestricted}
               onRegenerate={() => handleGenerate("submission_language")}
               regenerating={generatingSubmission}
+              onContentUpdated={(newContent) => {
+                setDocuments((prev) =>
+                  prev.map((d) =>
+                    d.id === submissionDoc.id ? { ...d, content: newContent } : d
+                  )
+                );
+              }}
             />
           ) : (
             <Card className="p-12 text-center">
