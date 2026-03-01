@@ -3,6 +3,8 @@ import PublicFooter from "@/components/PublicFooter";
 
 export const metadata = {
   title: "Refund Policy | GetA2PApproved",
+  description:
+    "GetA2PApproved refund policy. Learn about our satisfaction guarantee and refund process for A2P 10DLC compliance document packages.",
 };
 
 export default function RefundPage() {

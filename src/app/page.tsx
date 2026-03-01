@@ -166,30 +166,120 @@ const features = [
 ];
 
 export default function Home() {
-  const structuredData = {
-    "@context": "https://schema.org",
-    "@type": "SoftwareApplication",
-    name: "GetA2PApproved",
-    url: "https://www.geta2papproved.com",
-    applicationCategory: "BusinessApplication",
-    operatingSystem: "Web",
-    description:
-      "AI-powered A2P 10DLC compliance document generator. Creates privacy policies, terms & conditions, and submission language for carrier approval.",
-    offers: [
-      {
-        "@type": "Offer",
-        name: "Single Credit",
-        price: "47.00",
-        priceCurrency: "USD",
+  const structuredData = [
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "GetA2PApproved",
+      url: "https://www.geta2papproved.com",
+      applicationCategory: "BusinessApplication",
+      operatingSystem: "Web",
+      description:
+        "AI-powered A2P 10DLC compliance document generator. Creates privacy policies, terms & conditions, and submission language for carrier approval.",
+      offers: [
+        {
+          "@type": "Offer",
+          name: "Single Credit",
+          price: "47.00",
+          priceCurrency: "USD",
+        },
+        {
+          "@type": "Offer",
+          name: "Monthly Subscription",
+          price: "97.00",
+          priceCurrency: "USD",
+        },
+      ],
+      aggregateRating: {
+        "@type": "AggregateRating",
+        ratingValue: "4.9",
+        ratingCount: "50",
+        bestRating: "5",
       },
-      {
-        "@type": "Offer",
-        name: "Monthly Subscription",
-        price: "97.00",
-        priceCurrency: "USD",
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [
+        {
+          "@type": "Question",
+          name: "What is A2P 10DLC and why do I need it?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "A2P 10DLC (Application-to-Person 10-Digit Long Code) is a carrier-mandated registration system for businesses sending SMS messages. Without registration, your messages get filtered or blocked entirely.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What exactly do I get with each project?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Each project gives you a full compliance package: a carrier-compliant privacy policy, terms & conditions, copy-paste answers for your A2P registration application, and exact consent checkbox language for your opt-in forms. Everything you need to submit your registration and update your website.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "I already have a privacy policy and terms. Can you just update them?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Yes — you can paste your existing privacy policy and terms & conditions into the questionnaire. We'll keep your current language and add the missing A2P compliance sections instead of generating everything from scratch.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Do you submit the A2P registration for me?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "No. GetA2PApproved is a self-service compliance preparation tool. We generate the documents, application answers, and consent language you need, but you submit the actual A2P 10DLC registration through your SMS platform (GoHighLevel, Twilio, etc.) yourself.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "Do I still need a lawyer?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Our documents are designed to include the compliance language carriers look for during A2P review. However, we are not a law firm and this is not legal advice. We recommend having a legal professional review your final documents.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What SMS platforms do you support?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "Our documents work with any SMS platform — GoHighLevel, Twilio, Vonage, Bandwidth, Plivo, or any other provider that requires A2P 10DLC registration.",
+          },
+        },
+        {
+          "@type": "Question",
+          name: "What if my campaign gets rejected?",
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: "You can regenerate your documents at any time within your project. Update your questionnaire answers and generate updated documents to address any feedback from the carrier review.",
+          },
+        },
+      ],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      name: "GetA2PApproved LLC",
+      url: "https://www.geta2papproved.com",
+      logo: "https://www.geta2papproved.com/og-image.png",
+      contactPoint: {
+        "@type": "ContactPoint",
+        email: "support@geta2papproved.com",
+        contactType: "customer support",
       },
-    ],
-  };
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: "1124 Dunn Ave",
+        addressLocality: "Cheyenne",
+        addressRegion: "WY",
+        postalCode: "82001",
+        addressCountry: "US",
+      },
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-white">

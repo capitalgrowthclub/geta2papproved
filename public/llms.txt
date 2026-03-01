@@ -1,0 +1,45 @@
+# GetA2PApproved
+
+> AI-powered A2P 10DLC compliance document generator. Create carrier-compliant Privacy Policies, Terms & Conditions, and Submission Language for SMS campaign registration.
+
+## What is GetA2PApproved?
+
+GetA2PApproved is an AI-powered platform that helps businesses generate the compliance documents required for A2P 10DLC SMS campaign registration. A2P 10DLC (Application-to-Person 10-Digit Long Code) is the industry standard for business text messaging in the United States, regulated by The Campaign Registry (TCR) and enforced by carriers like AT&T, T-Mobile, and Verizon.
+
+Businesses that send SMS messages (appointment reminders, order updates, marketing texts, etc.) must register their campaigns through TCR, which requires specific compliance documents:
+
+1. **Privacy Policy** — Must disclose SMS data collection, consent practices, opt-out procedures, and carrier obligations.
+2. **Terms & Conditions** — Must outline messaging terms, frequency disclosures, STOP/HELP keywords, and carrier liability disclaimers.
+3. **Submission Language** — The exact text submitted to TCR describing the campaign's purpose, message content, and consent flow.
+
+These documents must be consistent with each other and meet specific carrier requirements. GetA2PApproved generates all three documents from a single questionnaire, ensuring cross-document consistency and compliance.
+
+## Key Features
+
+- AI-generated Privacy Policy, Terms & Conditions, and Submission Language
+- Cross-document consistency enforcement (consent text, frequencies, opt-out language match across all documents)
+- AI compliance analysis that checks documents against carrier requirements
+- Automatic fix-and-regenerate based on analysis findings
+- Live document hosting with JavaScript embed for client websites
+- Shareable document links for review and collaboration
+- Industry eligibility checker for A2P 10DLC registration
+
+## Pages
+
+- Homepage: https://www.geta2papproved.com/
+- Sign Up: https://www.geta2papproved.com/join
+- Sign In: https://www.geta2papproved.com/sign-in
+- Industry Eligibility Checker: https://www.geta2papproved.com/eligibility
+- Privacy Policy: https://www.geta2papproved.com/privacy
+- Terms & Conditions: https://www.geta2papproved.com/terms
+- Refund Policy: https://www.geta2papproved.com/refund
+
+## Pricing
+
+GetA2PApproved offers a one-time payment model (not a subscription) for generating A2P 10DLC compliance document packages.
+
+## Contact
+
+- Email: support@geta2papproved.com
+- Company: GetA2PApproved LLC
+- Address: 1124 Dunn Ave, Cheyenne, WY 82001

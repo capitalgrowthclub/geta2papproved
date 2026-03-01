@@ -3,6 +3,8 @@ import PublicFooter from "@/components/PublicFooter";
 
 export const metadata = {
   title: "Terms & Conditions | GetA2PApproved",
+  description:
+    "Terms and conditions for using GetA2PApproved. Understand your rights and obligations when using our A2P 10DLC compliance document generation platform.",
 };
 
 export default function TermsPage() {

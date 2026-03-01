@@ -13,6 +13,12 @@ export default function PublicFooter() {
             </a>
           </div>
           <div className="flex flex-wrap gap-5 text-sm">
+            <Link href="/eligibility" className="text-slate-500 hover:text-teal-600 transition-colors">
+              Eligibility
+            </Link>
+            <Link href="/join" className="text-slate-500 hover:text-teal-600 transition-colors">
+              Sign Up
+            </Link>
             <Link href="/privacy" className="text-slate-500 hover:text-teal-600 transition-colors">
               Privacy Policy
             </Link>

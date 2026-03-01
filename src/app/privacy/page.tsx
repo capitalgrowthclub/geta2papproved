@@ -3,6 +3,8 @@ import PublicFooter from "@/components/PublicFooter";
 
 export const metadata = {
   title: "Privacy Policy | GetA2PApproved",
+  description:
+    "Read the GetA2PApproved privacy policy. Learn how we collect, use, and protect your data when you use our A2P 10DLC compliance document generation service.",
 };
 
 export default function PrivacyPage() {
