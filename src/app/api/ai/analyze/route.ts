@@ -412,15 +412,31 @@ export async function POST(req: NextRequest) {
       restricted
     );
 
-    const stream = getAnthropic().messages.stream({
-      model: "claude-sonnet-4-6",
+    // Retry up to 2 times on overload errors
+    let message;
+    const streamParams = {
+      model: "claude-sonnet-4-6" as const,
       max_tokens: 16000,
       system: ANALYSIS_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: prompt }],
-    });
-    const message = await stream.finalMessage();
+      messages: [{ role: "user" as const, content: prompt }],
+    };
+    for (let attempt = 0; attempt <= 2; attempt++) {
+      try {
+        const stream = getAnthropic().messages.stream(streamParams);
+        message = await stream.finalMessage();
+        break;
+      } catch (err: unknown) {
+        const status = (err as { status?: number }).status;
+        const errorType = (err as { error?: { type?: string } }).error?.type;
+        if ((status === 529 || errorType === "overloaded_error") && attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)));
+          continue;
+        }
+        throw err;
+      }
+    }
 
-    const content = message.content[0];
+    const content = message!.content[0];
     if (content.type !== "text") {
       return NextResponse.json({ error: "Unexpected response type" }, { status: 500 });
     }
