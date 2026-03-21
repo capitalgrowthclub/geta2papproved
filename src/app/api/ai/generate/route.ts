@@ -882,7 +882,7 @@ CRITICAL KEYWORD RULES — READ FIRST:
 - The STOP keyword phrase is ALWAYS "Reply STOP to opt out." — NEVER "unsubscribe", NEVER "cancel", NEVER "stop receiving messages." The exact phrase "opt out" is mandatory everywhere it appears.
 - The HELP keyword phrase is ALWAYS "Reply HELP for info." or "Reply HELP for help."
 - The data rates phrase is ALWAYS "Msg & data rates may apply." — not "message and data rates", not "standard rates."
-- Do NOT include ANY URLs or links in sample messages — not shortened URLs (bit.ly), not full URLs, not even the business's own website. Carriers flag URLs in sample messages as spam and will reject the campaign. Sample messages must contain only plain text content with no web addresses whatsoever.
+- Do NOT include ANY URLs or web links in sample messages — not shortened URLs (bit.ly), not full URLs, not even the business's own website. Carriers flag URLs in sample messages as spam and will reject the campaign. HOWEVER, email addresses ARE allowed in sample messages — an email address (e.g., docs@example.com) is NOT a URL. If the business mentions an email address for document submission or support, include it in the sample message for specificity.
 
 CONSENT IS OPTIONAL — NEVER IMPLY IT'S REQUIRED TO SUBMIT THE FORM:
 SMS consent is optional. The user can submit the form and use the service WITHOUT checking the SMS checkbox. Checking it is their choice — if they check it, they consent to receive texts. If they don't, they can still submit and use the service.
@@ -914,7 +914,7 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
 
 - "sample_message_1": (min 20 chars, max 1024 chars) A realistic sample transactional/service message. MUST follow this exact format: "[Business Name]: [Specific transactional content related to recipient's existing account/file/transaction]. Reply STOP to opt out. Msg & data rates may apply." The message MUST start with the business name followed by a colon. Must include "Reply STOP to opt out." (not "unsubscribe"). Must include "Msg & data rates may apply." MUST NOT contain any URLs or web links — carriers flag URLs in sample messages as spam.
 
-- "sample_message_2": (min 20 chars, max 1024 chars) A second realistic sample message (different message type than sample 1). For restricted industries: MUST be another transactional message — no promotional content whatsoever. For unrestricted industries: can be a promotional/marketing message. Same format requirements as sample_message_1 — start with "[Business Name]:", include "Reply STOP to opt out." and "Msg & data rates may apply." MUST NOT contain any URLs or web links.
+- "sample_message_2": (min 20 chars, max 1024 chars) A second realistic sample message (different message type than sample 1). For restricted industries: MUST be another transactional message — no promotional content whatsoever. For unrestricted industries: can be a promotional/marketing message. Same format requirements as sample_message_1 — start with "[Business Name]:", include "Reply STOP to opt out." and "Msg & data rates may apply." MUST NOT contain any URLs or web links (email addresses ARE allowed — they are not URLs).
 
 - "opt_in_description": (min 40 chars, max 2048 chars) This field ONLY describes the process of how someone opts in. Nothing else. No consent language. No legal statements. No verbatim checkbox text. Just the journey.
 
@@ -949,7 +949,10 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
 
   Keep it short. A reviewer reading this should be able to open the website and follow these steps to find the consent checkbox.
 
-- "opt_in_message": (max 320 chars) The confirmation message sent after opt-in. Must include: business name at the start followed by colon, what they signed up for, message frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for help." DUAL-PROGRAM REQUIREMENT: For unrestricted businesses with BOTH marketing and transactional programs, the opt-in message MUST reference both program types — e.g., "You're now signed up for promotional and service texts from [Business Name]." Do NOT describe only one program when the business has two. For restricted (transactional-only) businesses, reference only service/transactional texts.
+- "opt_in_message": (max 320 chars) The confirmation text message sent to the user after they opt in. This is a TEXT MESSAGE, not a legal document. Keep it natural.
+  Must include: business name at the start followed by colon, what they signed up for, message frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for help."
+  Do NOT include "Consent is not required for purchase" or "Consent is not required for service" — that language belongs on forms and in legal documents, NOT in a confirmation text message. A real text message would never say that.
+  DUAL-PROGRAM REQUIREMENT: For unrestricted businesses with BOTH marketing and transactional programs, the opt-in message MUST reference both program types — e.g., "You're now signed up for promotional and service texts from [Business Name]." For restricted businesses, reference only service/transactional texts.
 
 - "marketing_consent_checkbox": Checkbox text for marketing SMS consent. Must include ALL of: consent to marketing texts from the business with parenthetical examples of message types, msg frequency (exact number from data), "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", "Consent is not required for purchase.", "SMS opt-in data is never shared with third parties."
 
