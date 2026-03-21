@@ -66,19 +66,21 @@ async function fetchWebsiteContent(urlsRaw: string): Promise<string> {
     .join("\n\n");
 }
 
-const SYSTEM_PROMPT = `You are an expert legal document generator specializing in A2P 10DLC compliance. Your job is to generate privacy policies and terms & conditions that will pass the strictest possible carrier review for A2P 10DLC campaign registration. Write as if the most rigorous A2P compliance reviewer will scrutinize every word.
+const SYSTEM_PROMPT = `You are an expert legal document generator specializing in A2P 10DLC compliance. Your job is to generate privacy policies and terms & conditions that will pass carrier review for A2P 10DLC campaign registration.
+
+DOCUMENT LENGTH — CRITICAL:
+Keep documents CONCISE. A2P reviewers check for specific required sections — they do not care about document length. A focused 3-page document with all required A2P sections passes. A 15-page document with the same sections also passes but wastes space and creates more room for inconsistencies.
+- Write every REQUIRED section fully — no placeholders or "[insert here]" markers
+- Keep NON-SMS sections brief (1-2 paragraphs each). The reviewer is only checking SMS compliance sections in detail.
+- The SMS/Text Messaging section is the most important — write it thoroughly
+- General legal sections (intellectual property, limitation of liability, etc.) should be short and standard — do not pad them
 
 CRITICAL REQUIREMENTS:
-1. Documents must be professionally formatted and legally structured
-2. All A2P-specific sections must be included (SMS consent, opt-in/opt-out, message frequency, TCPA compliance)
-3. Output must be clean, well-organized HTML that can be directly copy-pasted
-4. Use proper legal language while remaining clear and understandable
-5. Include all required disclosures for carrier compliance
-6. Ensure TCPA, CTIA, and carrier-specific requirements are addressed
-7. The SMS/messaging section must explicitly state: consent is not shared with third parties, users can opt out by replying STOP, message and data rates may apply, and the exact message frequency
-8. Write EVERY section in FULL — do not use shortcuts, placeholders, "[insert here]" markers, or abbreviated language
-9. Every paragraph must be fully written out with complete legal language — no paraphrasing, no summarizing, no "etc."
-10. The document should be COMPREHENSIVE and PRODUCTION-READY — the user should be able to copy-paste it directly onto their website with zero edits needed
+1. All A2P-specific sections must be included (SMS consent, opt-in/opt-out, message frequency, TCPA compliance)
+2. Output must be clean, well-organized HTML that can be directly copy-pasted
+3. Use clear, professional language — not unnecessarily complex legal jargon
+4. The SMS/messaging section must explicitly state: consent is not shared with third parties, users can opt out by replying STOP, message and data rates may apply, and the exact message frequency
+5. No placeholders, no "[insert here]" markers — production-ready
 11. STAFF TRAINING CLAUSE: Whenever mentioning staff training in any data use or data processing section, include this exact sentence: "Staff training uses anonymized or aggregated data and does not involve the disclosure of individual client personal information to unauthorized personnel." This prevents reviewers from questioning whether real client SMS data is used in AI or automated training systems.
 12. VERBATIM CONSENT LANGUAGE — STRICT REQUIREMENTS: The SMS/Text Messaging section MUST include a subsection labeled "Consent Disclosure" containing the exact quoted text users see at the point of opt-in. This quoted block MUST contain ALL SIX of the following elements — every one is mandatory, no exceptions, no omissions:
     (a) The specific message type and business name
@@ -495,7 +497,7 @@ function buildPrivacyPolicyReferenceSection(privacyContent: string | null): stri
   const verbatimSection = buildVerbatimAnchorsSection(anchors);
 
   const text = stripHtmlToText(privacyContent);
-  const truncated = text.length > 60000 ? text.substring(0, 60000) + "... [truncated for length]" : text;
+  const truncated = text.length > 20000 ? text.substring(0, 20000) + "... [truncated for length]" : text;
   return `
 PREVIOUSLY GENERATED PRIVACY POLICY — CROSS-DOCUMENT CONSISTENCY REQUIRED:
 The Privacy Policy for this business has already been generated. The Terms & Conditions MUST be consistent with it on every point where the documents overlap. Specifically:
@@ -757,29 +759,29 @@ ${existingPolicyContent}
 Update the above policy to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
 ${buildUseCaseSection(answers)}${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}${analysisHistory}
-Generate the COMPLETE privacy policy in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
+Generate the privacy policy in HTML format. No placeholders. Ready to copy-paste.
 
-CRITICAL A2P requirements to include:
-1. Introduction identifying the business and scope
-2. Information collected (personal data, device data, SMS opt-in data)
-3. How information is used (including SMS messaging purposes)
-4. SMS/Text Messaging section — MUST include:
-   - Clear description of the messaging program
-   - Explicit statement that SMS opt-in consent is NOT shared with or sold to third parties
-   - How to opt in (describe the consent mechanism)
+KEEP IT CONCISE. The SMS section is what gets reviewed — write it thoroughly. All other sections should be brief (1-2 paragraphs each).
+
+Sections to include:
+1. Introduction (1 paragraph — business name, scope, effective date)
+2. Information collected (brief — personal data, SMS opt-in data)
+3. How information is used (brief — include SMS messaging purposes)
+4. SMS/Text Messaging section — THIS IS THE CRITICAL SECTION, write it fully:
+   - Description of the messaging program
+   - SMS opt-in consent NOT shared with or sold to third parties
+   - How to opt in (consent mechanism)
    - How to opt out (reply STOP)
-   - How to get help (reply HELP or contact support)
+   - How to get help (reply HELP)
    - Message frequency disclosure
-   - "Message and data rates may apply" statement
-   - Supported carriers disclaimer
-5. Data sharing and third-party disclosure
-6. Data security measures
-7. Data retention practices
-8. User rights (access, correction, deletion)
-9. Children's privacy (COPPA compliance)
-10. California privacy rights (if applicable)
-11. Changes to the policy
-12. Contact information`;
+   - "Msg & data rates may apply"
+   - Supported carriers
+5. Data sharing (brief — mention service providers, state no SMS data sharing)
+6. Data retention (brief — include SMS opt-in 5-year retention, opt-out permanent retention)
+7. User rights (brief — access, correction, deletion)
+8. ${answers.operates_in_california?.includes("Yes") ? "California privacy rights (CCPA)" : "Skip California section — not applicable"}
+9. Changes to the policy (1 paragraph)
+10. Contact information`;
 }
 
 function buildTermsPrompt(answers: Record<string, string>, websiteContent: string, today: string, consentCheckboxes: ConsentCheckboxes | null = null, privacyPolicyContent: string | null = null, existingTermsContent: string = "", analysisHistory: string = ""): string {
@@ -834,46 +836,32 @@ ${existingTermsContent}
 Update the above terms to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
 ${buildUseCaseSection(answers)}${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}${buildPrivacyPolicyReferenceSection(privacyPolicyContent)}${analysisHistory}
-Generate the COMPLETE terms & conditions in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
+Generate the terms & conditions in HTML format. No placeholders. Ready to copy-paste.
 
-CRITICAL A2P requirements to include:
-1. Acceptance of terms
-2. Description of service (including SMS messaging program)
-3. User eligibility (must be 18+, US-based)
-4. SMS/Text Messaging Terms — MUST include:
-   - Program description (marketing and transactional campaigns, or transactional-only for restricted industries)
-   - Consent mechanism — THREE paragraph structure:
-     Paragraph 1: What affirmative action is required to opt in (unchecked checkbox)
-     Paragraph 2: "Providing a phone number alone does not constitute SMS consent" — standalone paragraph
-     Paragraph 3: SMS consent and terms agreement are two entirely separate checkboxes serving distinct purposes
-   - TWO separate consent disclosures (marketing + non-marketing) — or one transactional-only for restricted industries
-   - Explicit statement: "By opting in, you agree to receive [marketing/service] text messages"
-   - Message frequency for each campaign type
+KEEP IT CONCISE. The SMS section is what gets reviewed — write it thoroughly. All other sections should be brief (1-2 paragraphs each). Do NOT pad with lengthy legal boilerplate.
+
+Sections to include:
+1. Acceptance of terms (1 paragraph)
+2. Description of service (brief — mention SMS messaging program)
+3. SMS/Text Messaging Terms — THIS IS THE CRITICAL SECTION, write it fully:
+   - Program description matching the use case classification
+   - Consent mechanism (unchecked checkbox, phone number alone ≠ consent, separate from other checkboxes)
+   - Consent disclosures matching the Privacy Policy character-for-character
+   - Message frequency for each program type
    - "Msg &amp; data rates may apply"
-   - Opt-out: "Reply STOP to opt out." — NEVER "unsubscribe" or "cancel"
-   - Help: "Reply HELP for info." or "Reply HELP for help."
-   - Statement that consent is not a condition of purchase
-   - Statement that SMS opt-in data is not shared with third parties
-   - Opt-out confirmation: "The opt-out confirmation message will identify ${answers.legal_business_name || "[Business Name]"} by name and confirm that no further messages will be sent."
-   - START re-enrollment: "If you wish to re-enroll after opting out, you may text START to ${answers.stop_help_number || "[phone]"} or re-submit your SMS consent through the opt-in checkbox on the website at ${answers.primary_website || "[URL]"}."
-   - Cross-reference to Privacy Policy retention periods: "SMS consent records are retained in accordance with the retention periods set forth in our Privacy Policy, which is incorporated herein by reference."
-   - SMS-related liability exclusions: delivery failures, carrier charges, failure to opt out, provision of number not belonging to user, reactivation after opt-out without new consent
-   - Prohibition on SMS data sharing survives corporate restructuring
-5. Intellectual property
-6. Prohibited conduct
-7. Disclaimers and warranties ("as is" service)
-8. Limitation of liability
-9. Indemnification
-10. Termination
-11. Dispute resolution and governing law (${answers.business_state || "applicable state"}) — jurisdiction, arbitration venue, and governing law must ALL reference this same single state
-12. Arbitration clause and class action waiver
-13. Jury trial waiver
-14. Severability
-15. Entire agreement clause
-16. Force majeure covering SMS delivery
-17. No third-party beneficiaries
-18. Changes to terms
-19. Contact information`;
+   - Opt-out: "Reply STOP to opt out."
+   - Help: "Reply HELP for info."
+   - Consent not a condition of purchase
+   - SMS opt-in data not shared with third parties
+   - Opt-out confirmation identifying ${answers.legal_business_name || "[Business Name]"} by name
+   - START re-enrollment: text START to ${answers.stop_help_number || "[phone]"} or re-submit at ${answers.primary_website || "[URL]"}
+   - SMS data sharing prohibition survives corporate restructuring
+   - SMS liability exclusions (delivery failures, carrier charges)
+   - Force majeure covering SMS delivery
+4. Disclaimers and limitation of liability (brief — 1-2 paragraphs combined)
+5. Dispute resolution and governing law — ${answers.business_state || "applicable state"} (ALL jurisdiction references must use this same state)
+6. Changes to terms (1 paragraph)
+7. Contact information`;
 }
 
 const SUBMISSION_SYSTEM_PROMPT = `You are an expert A2P 10DLC registration specialist writing for the most demanding carrier reviewer possible. Your job is to generate the exact text fields needed to fill out an A2P campaign registration form. These fields will be copy-pasted directly into the registration portal. One wrong word causes rejection. Follow every rule below exactly.
@@ -1149,7 +1137,7 @@ export async function POST(req: NextRequest) {
 
     const stream = getAnthropic().messages.stream({
       model: "claude-sonnet-4-6",
-      max_tokens: isSubmissionLanguage ? 4000 : 64000,
+      max_tokens: isSubmissionLanguage ? 4000 : 16000,
       system: isSubmissionLanguage ? SUBMISSION_SYSTEM_PROMPT : SYSTEM_PROMPT,
       messages: [{ role: "user", content: prompt }],
     });

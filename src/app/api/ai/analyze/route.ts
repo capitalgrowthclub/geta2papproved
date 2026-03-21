@@ -274,8 +274,8 @@ function buildAnalysisPrompt(
   const ppText = stripHtmlToText(privacyContent);
   const tcText = stripHtmlToText(termsContent);
 
-  const ppTruncated = ppText.length > 60000 ? ppText.substring(0, 60000) + "... [truncated]" : ppText;
-  const tcTruncated = tcText.length > 60000 ? tcText.substring(0, 60000) + "... [truncated]" : tcText;
+  const ppTruncated = ppText.length > 20000 ? ppText.substring(0, 20000) + "... [truncated]" : ppText;
+  const tcTruncated = tcText.length > 20000 ? tcText.substring(0, 20000) + "... [truncated]" : tcText;
 
   const useCase = getUseCaseLabel(answers);
 
