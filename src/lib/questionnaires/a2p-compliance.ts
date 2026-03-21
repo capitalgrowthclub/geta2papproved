@@ -82,18 +82,14 @@ export function determineUseCase(answers: Record<string, string>): string {
   // cold outreach or promotional blasts. The use case is determined by actual behavior,
   // not industry alone. Only Marketing is blocked for restricted industries.
   if (isRestrictedIndustry(answers)) {
-    // Block pure Marketing for restricted industries
     if (firstMsg.startsWith("A promotional") || intent.startsWith("To promote")) {
-      // Restricted industries cannot do marketing — fall back to Mixed Use
-      // (they probably do conversational follow-up + transactional updates)
       return "Mixed Use — Both lead interaction and customer servicing";
     }
-    // Otherwise, let the normal classification logic run
   }
 
   // Explicit multiple stages or mix intent → Mixed Use
   if (
-    stage.startsWith("We message people at multiple stages") ||
+    stage.startsWith("It depends") ||
     intent.startsWith("A mix")
   ) {
     return "Mixed Use — Both lead interaction and customer servicing";
@@ -107,26 +103,41 @@ export function determineUseCase(answers: Record<string, string>): string {
     return "Marketing — Promotional and persuasion messaging";
   }
 
-  // Customer Care signals: existing customer + maintenance + customer-triggered
+  // Customer Care signals: existing customer + account update + maintenance
   if (
-    stage.startsWith("They are already a paying customer") &&
-    firstMsg.startsWith("A confirmation/update") &&
+    stage.startsWith("They already paid") &&
+    firstMsg.startsWith("An update about their existing") &&
     intent.startsWith("To maintain")
   ) {
     return "Customer Care — Post-relationship maintenance only";
   }
 
-  // Conversational signals: new lead + response to inquiry + back-and-forth
-  if (
-    stage.startsWith("They just submitted a form") &&
-    (firstMsg.startsWith("A response to their inquiry") || intent.startsWith("To have back-and-forth"))
-  ) {
+  // Confirmation of form/request/booking to a new lead = Conversational (not Customer Care)
+  // The contact just submitted something — they're a lead, not a customer yet
+  if (firstMsg.startsWith("A confirmation that we received")) {
+    if (stage.startsWith("They already paid")) {
+      // Existing customer booking confirmation = Customer Care
+      return "Customer Care — Post-relationship maintenance only";
+    }
+    // New lead got a form/booking confirmation — likely conversational or mixed
+    if (intent.startsWith("A mix") || stage.startsWith("It depends")) {
+      return "Mixed Use — Both lead interaction and customer servicing";
+    }
+    // Pure confirmation to leads (like appointment booking) = Conversational
+    return "Conversational Messaging — Pre-relationship back-and-forth";
+  }
+
+  // Asking a qualifying question = Conversational
+  if (firstMsg.startsWith("A question to learn more")) {
+    if (stage.startsWith("They already paid")) {
+      return "Mixed Use — Both lead interaction and customer servicing";
+    }
     return "Conversational Messaging — Pre-relationship back-and-forth";
   }
 
   // Automated follow-up to leads is conversational (not customer care)
   if (firstMsg.startsWith("An automated follow-up")) {
-    if (stage.startsWith("They are already a paying customer")) {
+    if (stage.startsWith("They already paid")) {
       return "Customer Care — Post-relationship maintenance only";
     }
     return "Conversational Messaging — Pre-relationship back-and-forth";
@@ -135,7 +146,7 @@ export function determineUseCase(answers: Record<string, string>): string {
   // System-initiated messages to existing customers → Customer Care
   if (
     initiation.startsWith("Our system") &&
-    stage.startsWith("They are already a paying customer")
+    stage.startsWith("They already paid")
   ) {
     return "Customer Care — Post-relationship maintenance only";
   }
@@ -291,28 +302,29 @@ export const a2pComplianceQuestions: QuestionSection[] = [
     questions: [
       {
         id: "first_message_purpose",
-        question: "What is the FIRST text message sent to a new contact after they opt in?",
+        question: "What does the FIRST text message to a new contact look like?",
         type: "select",
         options: [
-          "A response to their inquiry or form submission (e.g., 'Is this for purchase or refinance?')",
-          "A confirmation/update about their existing account or service (e.g., 'Your payment is due')",
-          "A promotional or re-engagement message (e.g., 'Check out our new offers')",
-          "An automated follow-up to a lead (e.g., 'Thanks for your interest, here's more info')",
+          "A confirmation that we received their form, request, or booking (e.g., 'We received your request' or 'Your appointment is confirmed for Thursday')",
+          "A question to learn more about what they need (e.g., 'Are you looking to purchase or refinance?' or 'What size event are you planning?')",
+          "An update about their existing account, order, or service (e.g., 'Your payment is due' or 'Your order has shipped')",
+          "A promotional or marketing message (e.g., 'Check out our new offers' or 'Limited time: 20% off')",
+          "An automated follow-up after they showed interest (e.g., 'Thanks for your interest, here's what we offer')",
         ],
-        helperText: "This is the single most important factor in A2P classification. Reviewers classify your entire campaign based on what your FIRST message looks like. A response to an inquiry = conversational. An account update = customer care. A promotion = marketing. An automated lead follow-up = conversational (not customer care).",
+        helperText: "Pick the one that best describes what your first text message actually says. Don't overthink it — just think about what the person receives right after they opt in.\n\n• If they booked an appointment and get a confirmation → pick the first option\n• If they submitted a form and you text them a question → pick the second option\n• If they're already a customer and get a payment reminder → pick the third option\n• If you send them a promotion → pick the fourth option\n• If they filled out a form and get an automated 'thanks for reaching out' → pick the fifth option",
         required: true,
       },
       {
         id: "contact_relationship_stage",
-        question: "When you first text someone, what is their relationship to your business?",
+        question: "When you send that first text, what has the person already done with your business?",
         type: "select",
         options: [
-          "They are already a paying customer or have an active account/contract/service",
-          "They just submitted a form, inquiry, or request — they are a new lead",
-          "They signed up for updates but have no active service or transaction",
-          "We message people at multiple stages — some are leads, some are customers",
+          "They already paid, signed up, or have an active account with us",
+          "They just filled out a form, submitted a request, or booked an appointment — but haven't paid or signed anything yet",
+          "They signed up for updates or a newsletter but haven't used our service",
+          "It depends — some are brand new leads, some are existing customers",
         ],
-        helperText: "CRITICAL: A form submission does NOT create a customer relationship. A lead is NOT a customer. Customer Care requires an active account, contract, or service BEFORE messaging begins. If your contacts only have 'interest', they are leads — not customers.",
+        helperText: "Think about it from the carrier's perspective:\n\n• Someone who PAID or has an ACTIVE ACCOUNT = customer\n• Someone who FILLED OUT A FORM or BOOKED online = lead (not a customer yet, even if they booked)\n• Someone who just signed up for updates = subscriber\n• If you text both new leads AND existing customers = select 'It depends'\n\nMost service businesses that get form submissions and also text existing clients should select 'It depends'.",
         required: true,
       },
       {
@@ -329,7 +341,7 @@ export const a2pComplianceQuestions: QuestionSection[] = [
       },
       {
         id: "message_intent",
-        question: "What is the primary PURPOSE of your text messages?",
+        question: "What is the main reason you text people?",
         type: "select",
         options: [
           "To maintain an existing service relationship (reminders, updates, status changes)",
@@ -337,7 +349,7 @@ export const a2pComplianceQuestions: QuestionSection[] = [
           "To promote, sell, or re-engage contacts",
           "A mix — we both service existing customers AND follow up with new leads",
         ],
-        helperText: "Be honest. If your messages do both (service existing customers AND follow up with new leads), select 'A mix'. Trying to force a single use case when your behavior is mixed is the #1 cause of rejection — the reviewer sees the inconsistency.",
+        helperText: "Examples:\n\n• A dentist sending appointment reminders to existing patients → 'To maintain'\n• A loan officer texting back people who submitted applications → 'To have back-and-forth conversations'\n• An e-commerce store sending sale alerts → 'To promote'\n• A home services company that follows up on quotes AND sends job updates → 'A mix'\n\nMost service businesses that get new inquiries AND have existing clients should select 'A mix'.",
         required: true,
       },
       {
