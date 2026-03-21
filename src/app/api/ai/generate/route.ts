@@ -904,28 +904,36 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
 
 - "sample_message_2": (min 20 chars, max 1024 chars) A second realistic sample message (different message type than sample 1). For restricted industries: MUST be another transactional message — no promotional content whatsoever. For unrestricted industries: can be a promotional/marketing message. Same format requirements as sample_message_1 — start with "[Business Name]:", include "Reply STOP to opt out." and "Msg & data rates may apply." MUST NOT contain any URLs or web links.
 
-- "opt_in_description": (min 40 chars, max 2048 chars) This field must walk the reviewer through the EXACT opt-in journey step by step so they can follow it on the website. Structure it in this order:
+- "opt_in_description": (min 40 chars, max 2048 chars) Keep this SIMPLE. Just describe how someone opts in. Do NOT add extra language about what the user "must" do, what the form "will not allow", or what is "required" — those phrases create compliance problems because they imply the checkbox is mandatory (which contradicts "consent is not a condition of purchase").
 
-  PART 1 — THE OPT-IN JOURNEY (step-by-step):
-  Start by describing HOW someone gets to the page where they enter their phone number. The reviewer will open the website and try to follow these steps. If the business uses a multi-step form, questionnaire, application, or checkout flow, describe each step:
-  "Contacts opt in at [URL]. The opt-in process works as follows: [step 1], [step 2], [step 3]... On the [final step / contact details page], the visitor enters their name, email, and phone number."
+  STRUCTURE — three simple parts:
 
-  EXAMPLE for a multi-step flow: "Contacts opt in at example.com/get-quote. Visitors click the 'Get a Free Quote' button on the homepage, which takes them to a 4-step questionnaire. They answer questions about their project type, budget, timeline, and location. On the final step, they enter their name, email address, and phone number. Below the phone number field, two separate unchecked SMS consent checkboxes are displayed."
+  1. HOW THEY OPT IN (2-4 sentences max):
+  Describe the path from the website to the consent checkbox. Keep it factual — just say what's on the page.
+  - Name the URL
+  - If multi-step form: briefly describe the steps ("Step 1: select loan type, Step 2: enter contact details")
+  - Where the checkbox appears ("Below the phone number field, an unchecked SMS consent checkbox is displayed")
 
-  EXAMPLE for a simple form: "Contacts opt in at example.com/contact. The contact page displays a form with fields for name, email, and phone number. Below the phone number field, two separate unchecked SMS consent checkboxes are displayed."
+  2. THE REQUIRED STATEMENTS (include these exactly):
+  - "The checkbox is never pre-checked, pre-selected, or activated by default."
+  - "Providing a phone number on the form alone does not constitute SMS consent. Consent requires the separate, affirmative act of checking the designated checkbox."
+  - "The SMS consent checkbox is separate from any other form agreement or terms acceptance checkbox."
+  - "The consent disclosure is displayed immediately adjacent to the unchecked checkbox."
+  - "Links to the Privacy Policy and Terms and Conditions are displayed on the form adjacent to the checkbox."
+  - "Consent is not a condition of purchase or service."
 
-  PART 2 — THE SEVEN REQUIRED STATEMENTS (include all of these after the journey):
-  1. "The checkbox is never pre-checked, pre-selected, or activated by default."
-  2. "Providing a phone number on the form alone does not constitute SMS consent. Consent requires the separate, affirmative act of checking the designated checkbox."
-  3. "The SMS consent checkbox is separate from any other form agreement or terms acceptance checkbox."
-  4. "The consent disclosure is displayed immediately adjacent to the unchecked checkbox."
-  5. "Links to the Privacy Policy and Terms and Conditions are displayed on the form adjacent to the checkbox."
-  6. "Consent is not a condition of purchase or service."
+  3. CONSENT TEXT (quote verbatim):
+  Quote the consent checkbox text.
 
-  PART 3 — VERBATIM CONSENT TEXT:
-  After all statements, quote the verbatim consent disclosure text from the consent checkboxes.
+  THINGS TO NEVER WRITE:
+  - "The visitor must manually check this checkbox" — implies it's required, contradicts consent-not-condition
+  - "The form will not allow submission without..." — same problem
+  - "Users are required to..." — same problem
+  - "Before submitting, the user must..." — same problem
+  - Any language that makes the checkbox sound mandatory or blocking
 
-  CRITICAL: The opt-in journey description is what makes or breaks MESSAGE_FLOW rejections. If the reviewer can't figure out how to get to the consent checkboxes on the website, they reject. Be specific about the URL, what buttons to click, and what steps the visitor completes before reaching the phone number field.
+  EXAMPLE OF GOOD (simple, factual):
+  "Contacts opt in at example.com/get-quote. The form has two steps: Step 1 asks about the project type and budget, Step 2 collects name, email, and phone number. Below the phone field, an unchecked SMS consent checkbox is displayed with the full consent disclosure. The checkbox is never pre-checked, pre-selected, or activated by default. Providing a phone number on the form alone does not constitute SMS consent. Consent requires the separate, affirmative act of checking the designated checkbox. The SMS consent checkbox is separate from any other form agreement. The consent disclosure is displayed immediately adjacent to the unchecked checkbox. Links to the Privacy Policy and Terms and Conditions are displayed on the form adjacent to the checkbox. Consent is not a condition of purchase or service. The consent checkbox reads: '[verbatim text]'"
 
 - "opt_in_message": (max 320 chars) The confirmation message sent after opt-in. Must include: business name at the start followed by colon, what they signed up for, message frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for help." DUAL-PROGRAM REQUIREMENT: For unrestricted businesses with BOTH marketing and transactional programs, the opt-in message MUST reference both program types — e.g., "You're now signed up for promotional and service texts from [Business Name]." Do NOT describe only one program when the business has two. For restricted (transactional-only) businesses, reference only service/transactional texts.
 
