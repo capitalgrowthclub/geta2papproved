@@ -9,6 +9,7 @@ export interface AnalysisIssue {
   category: string;
   title: string;
   description: string;
+  simple_description?: string;
   affected_documents: Array<"submission_language" | "privacy_policy" | "terms_conditions">;
   recommendation: string;
 }
@@ -21,6 +22,7 @@ export interface AnalysisCheck {
 export interface AnalysisResult {
   summary: string;
   overall_risk: "pass" | "needs_attention" | "at_risk";
+  compliance_score: number;
   issues: AnalysisIssue[];
   checks_passed: AnalysisCheck[];
 }
@@ -64,25 +66,45 @@ export default function ComplianceAnalysis({
     const order = { critical: 0, high: 1, medium: 2, low: 3 };
     return (order[a.severity] ?? 4) - (order[b.severity] ?? 4);
   });
+  const [expandedIssues, setExpandedIssues] = useState<Set<string>>(new Set());
+  const score = result.compliance_score ?? null;
+  const scoreColor = score !== null
+    ? score >= 90 ? "text-emerald-600" : score >= 70 ? "text-amber-600" : "text-red-600"
+    : "";
+  const scoreRingColor = score !== null
+    ? score >= 90 ? "border-emerald-400" : score >= 70 ? "border-amber-400" : "border-red-400"
+    : "border-slate-200";
 
   return (
     <div className="space-y-4">
-      {/* Risk badge + summary */}
-      <div className="flex items-start gap-3">
-        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${risk.bg} ${risk.text} flex-shrink-0`}>
-          {result.overall_risk === "pass" && (
-            <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-            </svg>
-          )}
-          {result.overall_risk === "at_risk" && (
-            <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
-            </svg>
-          )}
-          {risk.label}
-        </span>
-        <p className="text-sm text-slate-600">{result.summary}</p>
+      {/* Score + Risk badge + summary */}
+      <div className="flex items-center gap-4">
+        {score !== null && (
+          <div className={`flex-shrink-0 w-16 h-16 rounded-full border-4 ${scoreRingColor} flex items-center justify-center`}>
+            <span className={`text-xl font-bold ${scoreColor}`}>{score}</span>
+          </div>
+        )}
+        <div className="flex-1">
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${risk.bg} ${risk.text}`}>
+              {result.overall_risk === "pass" && (
+                <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                </svg>
+              )}
+              {result.overall_risk === "at_risk" && (
+                <svg className="w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+              )}
+              {risk.label}
+            </span>
+            {score !== null && (
+              <span className="text-xs text-slate-400">Score: {score}/100</span>
+            )}
+          </div>
+          <p className="text-sm text-slate-600">{result.summary}</p>
+        </div>
       </div>
 
       {/* Issues */}
@@ -94,6 +116,7 @@ export default function ComplianceAnalysis({
           <div className="space-y-2">
             {sortedIssues.map((issue) => {
               const style = SEVERITY_STYLES[issue.severity] || SEVERITY_STYLES.medium;
+              const isExpanded = expandedIssues.has(issue.id);
               return (
                 <div
                   key={issue.id}
@@ -110,7 +133,9 @@ export default function ComplianceAnalysis({
                           {issue.severity}
                         </span>
                       </div>
-                      <p className="text-xs text-slate-700 mt-1">{issue.description}</p>
+                      <p className="text-xs text-slate-700 mt-1">
+                        {issue.simple_description || issue.description}
+                      </p>
                       <div className="flex items-center gap-2 mt-2 flex-wrap">
                         {issue.affected_documents.map((doc) => (
                           <span
@@ -120,10 +145,31 @@ export default function ComplianceAnalysis({
                             {DOC_LABELS[doc] || doc}
                           </span>
                         ))}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const next = new Set(expandedIssues);
+                            if (isExpanded) next.delete(issue.id);
+                            else next.add(issue.id);
+                            setExpandedIssues(next);
+                          }}
+                          className="text-[10px] text-slate-500 hover:text-slate-700 underline cursor-pointer ml-auto"
+                        >
+                          {isExpanded ? "Hide details" : "Show details"}
+                        </button>
                       </div>
-                      <p className="text-xs text-slate-500 italic mt-1.5">
-                        Fix: {issue.recommendation}
-                      </p>
+                      {isExpanded && (
+                        <div className="mt-2 pt-2 border-t border-slate-200/50 space-y-1">
+                          {issue.simple_description && (
+                            <p className="text-xs text-slate-600">
+                              <span className="font-medium">Technical detail:</span> {issue.description}
+                            </p>
+                          )}
+                          <p className="text-xs text-slate-500 italic">
+                            How to fix: {issue.recommendation}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

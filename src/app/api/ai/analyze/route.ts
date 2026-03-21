@@ -228,17 +228,19 @@ OUTPUT FORMAT
 
 Output ONLY valid JSON with no markdown, no code fences, no extra text. Use this exact schema:
 {
-  "summary": "2-3 sentence overall assessment — state whether the documents tell a consistent story and are ready for submission, or identify the key problems",
+  "summary": "2-3 sentence overall assessment in PLAIN ENGLISH — write it like you're talking to a business owner, not a compliance expert. Say whether their documents are ready to submit or what the main problems are.",
   "overall_risk": "pass" or "needs_attention" or "at_risk",
+  "compliance_score": 0-100 integer. Scoring guide: Start at 100. Deduct points per issue: critical = -20 each, high = -10 each, medium = -5 each, low = -2 each. Minimum score is 0. A score of 90+ = ready to submit. 70-89 = needs some fixes. Below 70 = significant issues.
   "issues": [
     {
       "id": "issue_1",
       "severity": "critical" or "high" or "medium" or "low",
       "category": "category_name",
-      "title": "Short descriptive title",
-      "description": "Detailed description of what's wrong, quoting the specific text from the documents as evidence",
+      "title": "Short descriptive title (plain English, not jargon)",
+      "simple_description": "Explain the problem like you're talking to a business owner who doesn't know what A2P compliance is. 1-2 sentences max. Example: 'Your privacy policy says you send 4 messages per month, but your submission form says 8. These numbers need to match or your application will be rejected.' Do NOT use technical terms like 'consent disclosure blockquote', 'CTIA', 'SHAFT', 'transactional message test', etc.",
+      "description": "Technical detail with quoted evidence from the documents for the compliance team",
       "affected_documents": ["submission_language", "privacy_policy", "terms_conditions"],
-      "recommendation": "Exactly what should be changed — be specific enough that someone could make the fix"
+      "recommendation": "What specifically should be changed — plain English, actionable"
     }
   ],
   "checks_passed": [
