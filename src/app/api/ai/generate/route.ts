@@ -911,14 +911,22 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
   2. The steps the person goes through to get to the consent checkbox
   3. That's it.
 
-  WHAT TO NOT INCLUDE:
+  WHAT TO NOT INCLUDE — DO NOT ADD ANY OF THESE. IF YOU DO, THE OUTPUT IS WRONG:
   - No consent disclosure text
   - No "the checkbox is never pre-checked" statements
   - No "consent is not a condition of purchase" statements
   - No "providing a phone number alone does not constitute consent" statements
   - No verbatim checkbox text
-  - No "must", "required", "will not allow" language
   - No legal boilerplate of any kind
+  - ABSOLUTELY NO sentences about what the visitor "must" do, what is "required", or what the form "will not allow". Specifically:
+    * NEVER write "The visitor must manually check the checkbox" or any variation
+    * NEVER write "The visitor must check the checkbox before submitting"
+    * NEVER write "The form will not allow submission without"
+    * NEVER write "The form requires the checkbox to be checked"
+    * NEVER write "Users are required to check"
+    * NEVER write "Before submitting, the user must"
+    These phrases imply the checkbox is mandatory, which contradicts consent-not-condition-of-purchase rules and will get the campaign REJECTED.
+  - The LAST sentence should describe where the checkbox appears. Do NOT add any sentence after that. End the description once you've said where the checkbox is.
 
   If the person starts at one URL but the consent checkbox is on a different page (like /checkout or /step-3), list BOTH URLs — where they start and where the checkbox is.
 
