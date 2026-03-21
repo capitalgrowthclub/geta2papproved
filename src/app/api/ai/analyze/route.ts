@@ -46,6 +46,7 @@ SECTION A: SUBMISSION LANGUAGE FIELD-BY-FIELD REVIEW
    - Do both include "Reply STOP to opt out." (NEVER "unsubscribe" or "cancel")?
    - Do both include "Msg & data rates may apply."?
    - Do they contain ANY URLs, web links, or email addresses? (carriers flag external contact endpoints as redirection — especially in restricted industries. An email address like docs@example.com should be replaced with "send them to our team")
+   - If the questionnaire's sample_messages field contained an email address but the generated sample_message does NOT — that means the system correctly cleaned it. Do NOT flag this as high. At most flag as LOW/informational to confirm the cleaned version is what gets submitted.
    - THE FIRST MESSAGE TEST: Does sample_message_1 match what the first text to a new contact would actually look like?
      * Customer Care: should be an account/service update, NOT a response to an inquiry or a confirmation of a new request
      * Conversational: should be a confirmation of their request, a question, or a direct response to their inquiry. Most service businesses send a confirmation as the first message ("We received your request", "Your appointment is confirmed", "Thanks for your application"). This IS conversational — it's acknowledging the lead's action.
@@ -107,7 +108,11 @@ SECTION B: CROSS-DOCUMENT CONSISTENCY
     The legal business name must be identical across all three documents and match the questionnaire data. Check for: missing LLC/Inc, inconsistent abbreviation, DBA vs legal name confusion.
 
 12. JURISDICTION CONSISTENCY:
-    Governing law state, arbitration venue, and jurisdiction for non-arbitrable claims in the Terms must ALL reference the SAME state matching business_state from questionnaire answers. A split jurisdiction is a legal inconsistency that causes rejection.
+    Governing law state, arbitration venue, and jurisdiction for non-arbitrable claims must ALL reference the SAME state in BOTH the Privacy Policy AND Terms & Conditions, matching business_state from questionnaire answers.
+    IMPORTANT — INCORPORATION vs PHYSICAL ADDRESS: It is COMMON and LEGAL for a business to be incorporated in one state (e.g., Wyoming, Delaware) but physically operate in another (e.g., California). The Business State field = incorporation state. The Business Address may be in a different state. This is NOT an error. However:
+    - If the PP says "the business is based in [physical address state]" but the governing law is the incorporation state, that IS a consistency issue — the PP should say "incorporated in [state]" or "serves customers in [physical state]" not "based in [physical state]"
+    - CCPA sections should say "serves California residents" or "operates in California" — NOT "is based in California" if the business is incorporated elsewhere
+    - Governing law in BOTH documents must reference the SAME incorporation state
 
 13. CARRIER LIST:
     If carrier lists are mentioned, they must NOT include Sprint (absorbed into T-Mobile). Only: AT&T, Verizon, T-Mobile, Boost Mobile, MetroPCS, and U.S. Cellular.

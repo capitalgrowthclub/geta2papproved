@@ -100,7 +100,12 @@ CRITICAL REQUIREMENTS:
 19. SMS OPT-OUT RECORDS — PERMANENT RETENTION: In the data retention section, include this sentence as a standalone statement: "SMS opt-out records, including the date and time of each STOP request received and processed, are retained permanently to ensure that opted-out mobile numbers are never reactivated without a new affirmative opt-in consent."
 20. SMS OPT-IN CONSENT RETENTION — 5 YEARS: State explicitly in the data retention section that SMS opt-in consent records and all supporting documentation are retained for a minimum of five (5) years from the date consent was obtained. Use "five (5) years" — not four years, not "several years."
 21. SERVICE TEXTS LANGUAGE: In all consent-facing language — consent disclosure blockquotes, opt-in confirmation message descriptions, checkbox text quoted inside documents — use "service texts" instead of "transactional texts" when referring to non-promotional messages (reminders, confirmations, updates, notifications). "Transactional" is internal carrier/industry terminology; "service texts" is the plain-language equivalent that consumers recognize and that carriers expect to see in consumer-facing consent copy. This rule applies to any language that will appear directly on a form, inside a quoted consent block, or in a message body description shown to end users.
-22. JURISDICTION CONSISTENCY: When generating any document containing dispute resolution, arbitration, or governing law clauses, the governing law state, the arbitration venue, and the jurisdiction for non-arbitrable claims must ALL reference the same single state throughout the document. Use ONLY the business's state of incorporation/operation (from the Business State field). Never mix or split jurisdictions — do not set governing law in one state and arbitration venue in a different state. A jurisdiction mismatch is a legal inconsistency that creates liability exposure.
+22. JURISDICTION CONSISTENCY: The governing law state, arbitration venue, and jurisdiction for non-arbitrable claims must ALL reference the SAME state in BOTH the Privacy Policy AND Terms & Conditions. Use the Business State field from the questionnaire — this is where the business is legally registered/incorporated, which may differ from the physical address.
+   CRITICAL — INCORPORATION vs PHYSICAL ADDRESS: Many businesses are incorporated in one state (e.g., Wyoming, Delaware) but physically operate in another (e.g., California, Texas). This is normal and legal. When this happens:
+   - Governing law, arbitration, and jurisdiction = the INCORPORATION state (from Business State field) in BOTH PP and TC
+   - CCPA section: Do NOT say "the business is based in [physical state]" — instead say "Although [Business Name] is incorporated in [Business State], it operates in California and extends CCPA rights to California residents" or "serves customers in California and complies with CCPA"
+   - The Privacy Policy must NOT frame the physical address state as the legal domicile if it differs from the incorporation state
+   - A reviewer will see the Business State in the portal as the incorporation state — if the PP says "based in" a different state, that's a split jurisdiction flag
 23. OPT-OUT CONFIRMATION MESSAGE CONTENT: When describing the opt-out confirmation message users receive after replying STOP, include this exact sentence explicitly: "The opt-out confirmation message will identify [Business Name] by name and confirm that no further messages will be sent." This closes the loop between the Terms and what the user actually receives, which carriers verify during compliance review.
 24. START RE-ENROLLMENT KEYWORD — REQUIRED IN BOTH DOCUMENTS: Immediately after the opt-out description in BOTH the Privacy Policy opt-out section AND the Terms & Conditions SMS opt-out section, add a re-enrollment disclosure using the actual business data from the questionnaire. Use this exact format (substituting real values): "If you wish to re-enroll in our SMS messaging program after opting out, you may text START to [STOP/HELP Number from questionnaire] or re-submit your SMS consent through the opt-in checkbox on our website contact form at [Primary Website URL from questionnaire]." This disclosure is required by CTIA best practices. It must appear in both documents — once in the Privacy Policy opt-out section and once in the Terms & Conditions opt-out section.
 25. ADDRESS FORMATTING CONSISTENCY: When including a business address anywhere in a document, choose either "Suite" or "Ste" for the suite/unit designation and use that same format consistently throughout the entire document. Never write "Suite 200" in one place and "Ste 200" in another. Preferred format is the full word "Suite [number]" — not abbreviated.
@@ -905,7 +910,8 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
   1. What does this business do? (one sentence — name + industry + who they serve)
   2. What texts do they send? (name 2-4 specific message types — NOT "updates and notifications")
   3. How did recipients opt in? (one sentence — "Customers opt in via [mechanism] on [URL]")
-  4. For restricted industries only: what will NEVER be sent (one sentence naming the prohibition)
+  4. What will NOT be sent: For restricted industries with Conversational/Mixed Use, use this complete framing (not just "No promotional texts are sent"): "[Business Name] does not send unsolicited promotional or marketing SMS messages. SMS communications are limited to responses to user inquiries, conversational follow-up, and transactional messages related to [specific service area]. Messages are not sent to purchased lists or cold contacts."
+     For unrestricted industries, include a SHAFT statement: "Neither the promotional nor the service messaging program includes content related to sex, hate, alcohol, firearms, or tobacco/drugs."
 
   EXAMPLE OF GOOD (simple, clear, specific):
   "[Business Name] is a mortgage lending company serving homebuyers in Florida. After borrowers opt in via the contact form at example.com, we send application status updates, document request notifications, closing date reminders, and rate lock confirmations. All messages are triggered by activity on the borrower's active loan file. No promotional, marketing, or solicitation messages are sent."
@@ -954,10 +960,22 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
 
   Keep it short. A reviewer reading this should be able to open the website and follow these steps to find the consent checkbox.
 
-- "opt_in_message": (max 320 chars) The confirmation text message sent to the user after they opt in. This is a TEXT MESSAGE, not a legal document. Keep it natural.
-  Must include: business name at the start followed by colon, what they signed up for, message frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for help."
-  Do NOT include "Consent is not required for purchase" or "Consent is not required for service" — that language belongs on forms and in legal documents, NOT in a confirmation text message. A real text message would never say that.
-  DUAL-PROGRAM REQUIREMENT: For unrestricted businesses with BOTH marketing and transactional programs, the opt-in message MUST reference both program types — e.g., "You're now signed up for promotional and service texts from [Business Name]." For restricted businesses, reference only service/transactional texts.
+- "opt_in_message": (max 320 chars) The confirmation text message sent to the user after they opt in. This is a TEXT MESSAGE, not a legal document.
+  Must include ONLY these elements — nothing else:
+  1. Business name at the start followed by colon
+  2. What they signed up for
+  3. Message frequency
+  4. "Msg & data rates may apply."
+  5. "Reply STOP to opt out."
+  6. "Reply HELP for help."
+  THE MESSAGE ENDS AFTER "Reply HELP for help." — DO NOT ADD ANYTHING AFTER THAT.
+  BANNED from this field — DO NOT INCLUDE:
+  - "Consent is not required for purchase" — NO
+  - "Consent is not required for service" — NO
+  - "Consent is not a condition" — NO
+  - Any variation of "consent is not required" — NO
+  These are form/legal language, NOT text message language.
+  DUAL-PROGRAM REQUIREMENT: For unrestricted businesses with BOTH marketing and transactional programs, reference both program types. For restricted businesses, reference only service/transactional texts.
 
 - "marketing_consent_checkbox": Checkbox text for marketing SMS consent. Must include ALL of: consent to marketing texts from the business with parenthetical examples of message types, msg frequency (exact number from data), "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", "Consent is not required for purchase.", "SMS opt-in data is never shared with third parties."
 
