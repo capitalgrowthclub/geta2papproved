@@ -45,7 +45,7 @@ SECTION A: SUBMISSION LANGUAGE FIELD-BY-FIELD REVIEW
    - Do both sample messages start with "[Business Name]:" format?
    - Do both include "Reply STOP to opt out." (NEVER "unsubscribe" or "cancel")?
    - Do both include "Msg & data rates may apply."?
-   - Do they contain ANY URLs or web links? (instant rejection if yes)
+   - Do they contain ANY URLs, web links, or email addresses? (carriers flag external contact endpoints as redirection — especially in restricted industries. An email address like docs@example.com should be replaced with "send them to our team")
    - THE FIRST MESSAGE TEST: Does sample_message_1 match what the first text to a new contact would actually look like?
      * Customer Care: should be an account/service update, NOT a response to an inquiry or a confirmation of a new request
      * Conversational: should be a confirmation of their request, a question, or a direct response to their inquiry. Most service businesses send a confirmation as the first message ("We received your request", "Your appointment is confirmed", "Thanks for your application"). This IS conversational — it's acknowledging the lead's action.
@@ -75,6 +75,7 @@ SECTION A: SUBMISSION LANGUAGE FIELD-BY-FIELD REVIEW
    - Does it reference the correct program type(s)? Unrestricted with two programs: must mention BOTH promotional AND service. Restricted Customer Care: service only. Restricted Conversational/Mixed: "service and follow-up texts"
    - Does it include frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for help."?
    - Is it under 320 characters?
+   - Do NOT flag the absence of "Consent is not a condition of purchase" in the confirmation message — that language belongs on forms and in legal documents, NOT in a text message. A real confirmation text would never say that.
 
 5. CONSENT CHECKBOX TEXT:
    - Marketing checkbox (if applicable): includes message type examples, frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", "Consent is not required for purchase.", "SMS opt-in data is never shared with third parties."

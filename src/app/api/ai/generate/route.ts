@@ -114,7 +114,12 @@ CRITICAL REQUIREMENTS:
    - For CONVERSATIONAL or MIXED USE case — expanded test: Messages are allowed if the recipient INITIATED CONTACT (submitted a form, sent an inquiry, requested information) OR has an active account/file/service. Conversational follow-up on an inquiry IS allowed. What is NOT allowed: cold outreach to people who didn't reach out, promotional offers, rate quote blasts, or marketing campaigns.
 29. CONSENT NOT A CONDITION: Include this as an explicit standalone statement in the SMS section: "Consent to receive text messages is not required as a condition of purchasing any goods or services." This means the user can submit the form and use the service WITHOUT checking the SMS checkbox. NEVER write language implying the checkbox is required to submit the form (e.g., "must check before submitting", "form will not allow submission without", "required to consent"). The checkbox is optional — if they check it, they get texts; if they don't, they can still use the service.
 30. PROHIBITION SURVIVES RESTRUCTURING: The no-sharing prohibition for SMS opt-in data must explicitly survive any corporate merger, acquisition, or organizational restructuring. Include language such as: "This prohibition on sharing SMS opt-in data shall survive any corporate restructuring, merger, acquisition, or change in ownership."
-31. CROSS-DOCUMENT CONSENT TEXT — CHARACTER-FOR-CHARACTER MATCH: When consent checkbox texts are provided (from the A2P Submission Language), every document that quotes them MUST use the EXACT SAME wording, character for character. The Privacy Policy "Consent Disclosure" blockquote, the Terms & Conditions consent disclosure section, and the opt-in description field must all quote the identical text. Do NOT paraphrase, reorder words, add/remove commas, change capitalization, or substitute synonyms. If the checkbox says "service texts" do not write "service messages." If it says "promotional texts" do not write "marketing messages." Copy the text verbatim. A compliance reviewer will diff the consent language across all three documents — any discrepancy, no matter how small, is flagged as an inconsistency.
+31. CROSS-DOCUMENT VERBATIM MATCH: When text is provided from the A2P Submission Language (consent checkboxes, sample messages, opt-in message, form secondary text), every document that quotes or references them MUST use the EXACT SAME wording — character for character. This applies to:
+   - Consent checkbox text in blockquotes
+   - Sample messages quoted in the SMS section
+   - Opt-in confirmation message
+   - Form secondary text
+   Do NOT paraphrase, reorder words, add/remove punctuation, change capitalization, add exclamation marks, or rearrange sentence structure. If the submission language says "thanks for submitting your loan request — this is [Agent Name]" do NOT rewrite it as "this is [Agent Name] — thanks for submitting your loan request!" A compliance reviewer will diff these across all three documents — ANY difference causes rejection.
 32. VERBATIM SECTIONS — COPY, DO NOT REWRITE: When the prompt provides sections labeled "VERBATIM" or "COPY EXACTLY", you MUST reproduce them character-for-character in the appropriate location in the document. Do not rewrite, paraphrase, "improve", or edit them in any way. They have already been reviewed for compliance. Your only job is to place them correctly in the document structure. This includes consent blockquotes, opt-out confirmation text, START re-enrollment text, carrier lists, and any other text explicitly marked as verbatim. A compliance reviewer will programmatically diff these sections across documents — any difference causes rejection.
 
 FORMAT REQUIREMENTS:
@@ -517,6 +522,8 @@ interface ConsentCheckboxes {
   transactional?: string | null;
   optInMessage?: string | null;
   formSecondaryText?: string | null;
+  sampleMessage1?: string | null;
+  sampleMessage2?: string | null;
 }
 
 function buildConsentAnchorSection(checkboxes: ConsentCheckboxes | null, restricted: boolean): string {
@@ -561,6 +568,14 @@ ${checkboxes.formSecondaryText ? `
 VERBATIM — FORM SECONDARY TEXT (from Submission Language):
 "${checkboxes.formSecondaryText}"
 When referencing the form secondary text or sub-checkbox disclosure, use the EXACT text above.` : ""}
+${checkboxes.sampleMessage1 ? `
+VERBATIM — SAMPLE MESSAGE 1 (from Submission Language):
+"${checkboxes.sampleMessage1}"
+When quoting sample messages in this document, use this EXACT text. Do NOT reorder words, change punctuation, add exclamation marks, or rephrase. Copy character-for-character.` : ""}
+${checkboxes.sampleMessage2 ? `
+VERBATIM — SAMPLE MESSAGE 2 (from Submission Language):
+"${checkboxes.sampleMessage2}"
+Copy this EXACT text when quoting the second sample message.` : ""}
 `;
 }
 
@@ -870,7 +885,7 @@ CRITICAL KEYWORD RULES — READ FIRST:
 - The STOP keyword phrase is ALWAYS "Reply STOP to opt out." — NEVER "unsubscribe", NEVER "cancel", NEVER "stop receiving messages." The exact phrase "opt out" is mandatory everywhere it appears.
 - The HELP keyword phrase is ALWAYS "Reply HELP for info." or "Reply HELP for help."
 - The data rates phrase is ALWAYS "Msg & data rates may apply." — not "message and data rates", not "standard rates."
-- Do NOT include ANY URLs or web links in sample messages — not shortened URLs (bit.ly), not full URLs, not even the business's own website. Carriers flag URLs in sample messages as spam and will reject the campaign. HOWEVER, email addresses ARE allowed in sample messages — an email address (e.g., docs@example.com) is NOT a URL. If the business mentions an email address for document submission or support, include it in the sample message for specificity.
+- Do NOT include ANY URLs, web links, or email addresses in sample messages. Not shortened URLs (bit.ly), not full URLs, not even the business's own website or email. Carriers flag external contact endpoints in sample messages as spam/redirection. Instead of an email address like "docs@example.com", write "send them to our team" or "reply to this message for instructions." This applies to ALL industries, but especially restricted industries where reviewers scrutinize every element.
 
 CONSENT IS OPTIONAL — NEVER IMPLY IT'S REQUIRED TO SUBMIT THE FORM:
 SMS consent is optional. The user can submit the form and use the service WITHOUT checking the SMS checkbox. Checking it is their choice — if they check it, they consent to receive texts. If they don't, they can still submit and use the service.
@@ -902,7 +917,7 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
 
 - "sample_message_1": (min 20 chars, max 1024 chars) A realistic sample transactional/service message. MUST follow this exact format: "[Business Name]: [Specific transactional content related to recipient's existing account/file/transaction]. Reply STOP to opt out. Msg & data rates may apply." The message MUST start with the business name followed by a colon. Must include "Reply STOP to opt out." (not "unsubscribe"). Must include "Msg & data rates may apply." MUST NOT contain any URLs or web links — carriers flag URLs in sample messages as spam.
 
-- "sample_message_2": (min 20 chars, max 1024 chars) A second realistic sample message (different message type than sample 1). For restricted industries: MUST be another transactional message — no promotional content whatsoever. For unrestricted industries: can be a promotional/marketing message. Same format requirements as sample_message_1 — start with "[Business Name]:", include "Reply STOP to opt out." and "Msg & data rates may apply." MUST NOT contain any URLs or web links (email addresses ARE allowed — they are not URLs).
+- "sample_message_2": (min 20 chars, max 1024 chars) A second realistic sample message (different message type than sample 1). For restricted industries: MUST be another transactional message — no promotional content whatsoever. For unrestricted industries: can be a promotional/marketing message. Same format requirements as sample_message_1 — start with "[Business Name]:", include "Reply STOP to opt out." and "Msg & data rates may apply." MUST NOT contain any URLs, web links, or email addresses.
 
 - "opt_in_description": (min 40 chars, max 2048 chars) This field ONLY describes the process of how someone opts in. Nothing else. No consent language. No legal statements. No verbatim checkbox text. Just the journey.
 
@@ -920,10 +935,12 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
   - No verbatim checkbox text
   - No legal boilerplate of any kind
   - No language implying the checkbox is REQUIRED to submit the form:
-    * OKAY: "the visitor checks the SMS consent checkbox and submits" (describes the opt-in process)
-    * NEVER: "the visitor MUST check the checkbox before submitting" (implies it's mandatory to submit)
+    * OKAY: "checks the SMS consent checkbox and submits the form" (describes the process)
+    * NEVER: "manually check" — drop the word "manually", just say "checks"
+    * NEVER: "must check the checkbox before submitting" (implies mandatory)
     * NEVER: "the form will not allow submission without" (implies blocking)
     * NEVER: "the form requires the checkbox to be checked" (implies mandatory)
+    * NEVER: "before submitting the form" after mentioning the checkbox — just say "and submits the form"
 
   If the person starts at one URL but the consent checkbox is on a different page (like /checkout or /step-3), list BOTH URLs — where they start and where the checkbox is.
 
@@ -1120,6 +1137,8 @@ export async function POST(req: NextRequest) {
           transactional: parsed.transactional_consent_checkbox ?? null,
           optInMessage: parsed.opt_in_message ?? null,
           formSecondaryText: parsed.form_secondary_text ?? null,
+          sampleMessage1: parsed.sample_message_1 ?? null,
+          sampleMessage2: parsed.sample_message_2 ?? null,
         };
       } catch {
         // Malformed JSON — proceed without consent anchoring
@@ -1164,8 +1183,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Append SEO attribution footer to Privacy Policy and Terms & Conditions
+    // Strip any existing footer first to prevent duplicates
     if (!isSubmissionLanguage) {
-      generatedContent = generatedContent.trimEnd() +
+      generatedContent = generatedContent
+        .replace(/<p[^>]*>.*?GetA2PApproved\.com.*?<\/p>/gi, "")
+        .trimEnd() +
         '\n\n<p style="margin-top: 2em; font-size: 0.85em; color: #6b7280; text-align: center;"><em>This document was generated by <a href="https://geta2papproved.com" target="_blank" rel="noopener noreferrer">GetA2PApproved.com</a></em></p>';
     }
 
