@@ -47,22 +47,25 @@ SECTION A: SUBMISSION LANGUAGE FIELD-BY-FIELD REVIEW
    - Do both include "Msg & data rates may apply."?
    - Do they contain ANY URLs or web links? (instant rejection if yes)
    - THE FIRST MESSAGE TEST: Does sample_message_1 match what the first text to a new contact would actually look like?
-     * Customer Care: should be an account/service update, NOT a response to an inquiry
-     * Conversational: should be a question or response to an inquiry, NOT an automated blast
-     * Mixed Use: one message should show conversational follow-up, the other transactional
+     * Customer Care: should be an account/service update, NOT a response to an inquiry or a confirmation of a new request
+     * Conversational: should be a confirmation of their request, a question, or a direct response to their inquiry. Most service businesses send a confirmation as the first message ("We received your request", "Your appointment is confirmed", "Thanks for your application"). This IS conversational — it's acknowledging the lead's action.
+     * Mixed Use: one message should show conversational follow-up or confirmation, the other should show a transactional update for existing customers
      * Marketing: can include promotional content
-   - Do the sample messages match the first_message_example from the questionnaire? If the business says their first message is "Are you looking to purchase or refinance?" but sample_message_1 is "Your payment is due" — that's a critical mismatch
+   - Do the sample messages match the first_message_example from the questionnaire? If the business says their first message is "Your appointment is confirmed for Thursday" but sample_message_1 is "Your payment is due" — that's a critical mismatch because confirmations go to leads, payment reminders go to customers
+   - Do the sample messages match the BUSINESS CATEGORY? A service business should have messages about appointments, quotes, consultations. An e-commerce business should have messages about orders, shipping, delivery. A SaaS business should have messages about accounts, trials, onboarding. If the messages are generic and don't reflect the business type, flag it.
    - For restricted industries: do samples contain ANY promotional language (offers, rates, "get approved today", urgency language)? Even subtle phrases like "we have great options" are promotional
    - Are the messages realistic and specific to THIS business? Generic messages get flagged
 
 3. OPT-IN DESCRIPTION — STEP-BY-STEP JOURNEY:
    This is where MESSAGE_FLOW rejections happen. The reviewer will try to follow these steps on the website. Check:
    - Does the opt_in_description describe the EXACT path a visitor takes from landing on the website to entering their phone number?
-   - If the business uses a multi-step form/questionnaire/application, are ALL steps described? (e.g., "Step 1: click Get a Quote, Step 2: answer 4 questions, Step 3: enter contact details")
-   - Does it name a specific URL where the opt-in happens?
+   - Compare the opt_in_description against the questionnaire's "Opt-in Journey Steps" and "Opt-in Flow Type" — does the description match what the business said their flow looks like? If the business said "multi-step questionnaire" but the opt_in_description says "simple contact form", that's a mismatch.
+   - If the business uses a multi-step form/questionnaire/application/funnel, are ALL steps described? (e.g., "Step 1: click Get a Quote, Step 2: answer 4 questions, Step 3: enter contact details"). Most service businesses have a multi-step flow — the reviewer needs to be able to follow it.
+   - Does it name a specific URL where the opt-in happens? Compare against the Opt-in Page URL from the questionnaire.
    - Does it include ALL SEVEN required statements: (1) checkbox never pre-checked, (2) phone number alone ≠ consent, (3) SMS checkbox separate from other agreements, (4) consent disclosure adjacent to checkbox, (5) PP/TC links displayed adjacent, (6) consent not condition of purchase, (7) verbatim consent text quoted?
    - Is any of the seven statements missing or watered down?
    - Is the verbatim consent checkbox text actually quoted at the end?
+   - Does the Privacy Policy's opt-in description match the submission language's opt_in_description? They should describe the same journey.
 
 4. OPT-IN CONFIRMATION MESSAGE:
    - Does it start with "[Business Name]:"?
@@ -194,15 +197,25 @@ SECTION F: THE REVIEWER'S STORY COHERENCE TEST
     - Customer-triggered? System-triggered? Both?
     - Is this consistent across all documents?
 
-    QUESTION 4: "Does everything match?"
+    QUESTION 4: "Does the business type match the story?"
+    - Look at the Business Category (service, e-commerce, SaaS, real estate, etc.)
+    - Do the sample messages sound like messages THIS type of business would send?
+    - Does the use_case_description describe what this type of business actually does?
+    - A service business should talk about appointments, quotes, consultations, projects — not orders and shipping
+    - An e-commerce business should talk about orders, shipping, delivery — not appointments and consultations
+    - If the documents sound generic or describe a different type of business, flag it
+
+    QUESTION 5: "Does everything match?"
     Go through this checklist:
     □ The use_case_description → matches sample messages → matches PP messaging section → matches TC messaging section
-    □ The opt_in_description → matches how the PP describes opt-in → matches how the TC references consent
+    □ The opt_in_description journey → matches the questionnaire's opt-in flow type and journey steps → matches how the PP describes opt-in
     □ The consent checkbox text → matches PP blockquote → matches TC blockquote (character for character)
     □ The frequency numbers → same everywhere
     □ The STOP/HELP language → same everywhere
     □ The business name → same everywhere
     □ The restricted industry language → appropriate for the use case (not too restrictive, not too permissive)
+    □ The business category → documents sound like they were written for this type of business
+    □ The first message example from questionnaire → matches sample_message_1 in submission language
 
     If ANY of these tell a different story from the others, that is a critical consistency issue. Most rejections are NOT because the business is risky — they are because the story being told is inconsistent.
 
