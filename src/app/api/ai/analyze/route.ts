@@ -114,11 +114,21 @@ SECTION B: CROSS-DOCUMENT CONSISTENCY
 14. ADDRESS FORMATTING:
     Suite/Ste format must be consistent throughout all documents. Not "Suite 200" in one place and "Ste 200" in another.
 
+15. MANDATORY CHECKBOX LANGUAGE — GLOBAL CHECK:
+    Search ALL documents (submission language, privacy policy, terms) for language that implies the SMS consent checkbox is REQUIRED to submit the form. The checkbox is optional — consent is not a condition of purchase. Flag ANY of these patterns as critical issues:
+    - "must check the checkbox" / "must manually check"
+    - "required to check" / "required to consent"
+    - "the form will not allow submission without"
+    - "cannot submit without checking"
+    - "mandatory" (in context of the checkbox)
+    - "needs to check before submitting"
+    These phrases contradict "consent is not a condition of purchase or service" and will be flagged by a strict reviewer as an inconsistency.
+
 ═══════════════════════════════════════════════
 SECTION C: PRIVACY POLICY DEEP REVIEW
 ═══════════════════════════════════════════════
 
-15. REQUIRED PRIVACY POLICY SECTIONS — verify EACH exists:
+16. REQUIRED PRIVACY POLICY SECTIONS — verify EACH exists:
     - "Explicit Prohibition on SMS Opt-In Data Sharing" as a NAMED subsection (h3 or equivalent)
     - "We do not purchase, rent, or acquire personal information from data brokers..." statement
     - Dual consent mechanism statement (phone number alone ≠ consent)
@@ -130,7 +140,7 @@ SECTION C: PRIVACY POLICY DEEP REVIEW
     - Opt-out confirmation identifying business by name
     - Prohibition survives corporate restructuring statement
 
-16. PRIVACY POLICY MESSAGING LANGUAGE vs USE CASE:
+17. PRIVACY POLICY MESSAGING LANGUAGE vs USE CASE:
     - Does the SMS section describe messaging that matches the use case?
     - For restricted Conversational/Mixed: does it use the softer framing ("does not send unsolicited promotional or marketing SMS messages") rather than the hard prohibition ("does not send promotional messages of any kind")?
     - For restricted Customer Care: does it have all four hard prohibition sentences?
@@ -140,7 +150,7 @@ SECTION C: PRIVACY POLICY DEEP REVIEW
 SECTION D: TERMS & CONDITIONS DEEP REVIEW
 ═══════════════════════════════════════════════
 
-17. REQUIRED TERMS SECTIONS — verify EACH exists:
+18. REQUIRED TERMS SECTIONS — verify EACH exists:
     - START re-enrollment disclosure in opt-out section
     - Opt-out confirmation identifying business by name
     - Consent not a condition of purchase statement
@@ -149,14 +159,14 @@ SECTION D: TERMS & CONDITIONS DEEP REVIEW
     - SMS-related liability exclusions
     - Consent mechanism — THREE paragraph structure (affirmative action, phone number ≠ consent, separate checkboxes)
 
-18. TERMS MESSAGING LANGUAGE vs USE CASE:
+19. TERMS MESSAGING LANGUAGE vs USE CASE:
     Same checks as #16 but for the Terms document. The messaging description in Terms must match PP exactly.
 
 ═══════════════════════════════════════════════
 SECTION E: RESTRICTED INDUSTRY COMPLIANCE
 ═══════════════════════════════════════════════
 
-19. RESTRICTED INDUSTRY CHECKS (only if industry is restricted):
+20. RESTRICTED INDUSTRY CHECKS (only if industry is restricted):
     The checks depend on the A2P Use Case Classification:
 
     CUSTOMER CARE use case:
@@ -181,7 +191,7 @@ SECTION E: RESTRICTED INDUSTRY COMPLIANCE
 SECTION F: THE REVIEWER'S STORY COHERENCE TEST
 ═══════════════════════════════════════════════
 
-20. STORY COHERENCE — THE FINAL AND MOST IMPORTANT CHECK:
+21. STORY COHERENCE — THE FINAL AND MOST IMPORTANT CHECK:
     Step back from the individual checks and ask the three questions a real reviewer asks:
 
     QUESTION 1: "Why does the FIRST message exist?"
@@ -279,7 +289,7 @@ function buildAnalysisPrompt(
 
   const useCase = getUseCaseLabel(answers);
 
-  return `Perform a full compliance review of these A2P 10DLC documents. Check ALL 20 categories in Sections A-F of your instructions.
+  return `Perform a full compliance review of these A2P 10DLC documents. Check ALL 21categories in Sections A-F of your instructions.
 
 ═══════════════════════════════════════════════
 QUESTIONNAIRE ANSWERS (source of truth)
@@ -340,7 +350,7 @@ ${tcTruncated}
 ═══════════════════════════════════════════════
 YOUR TASK
 ═══════════════════════════════════════════════
-Review ALL 20 check categories (Sections A through F). For Section F (Story Coherence), step back and ask the four reviewer questions. Find every possible rejection reason. Output the JSON analysis.`;
+Review ALL 21check categories (Sections A through F). For Section F (Story Coherence), step back and ask the four reviewer questions. Find every possible rejection reason. Output the JSON analysis.`;
 }
 
 export async function POST(req: NextRequest) {
