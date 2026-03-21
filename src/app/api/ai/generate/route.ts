@@ -110,7 +110,7 @@ CRITICAL REQUIREMENTS:
 28. RESTRICTED INDUSTRY MESSAGE TEST: For restricted-industry documents, apply this test to every described message type:
    - For CUSTOMER CARE use case — strict transactional test: Q1: Has the recipient already initiated the transaction? (YES) Q2: Does it persuade a new action? (NO) Q3: Would it make sense as a response? (YES). Only YES/NO/YES messages pass.
    - For CONVERSATIONAL or MIXED USE case — expanded test: Messages are allowed if the recipient INITIATED CONTACT (submitted a form, sent an inquiry, requested information) OR has an active account/file/service. Conversational follow-up on an inquiry IS allowed. What is NOT allowed: cold outreach to people who didn't reach out, promotional offers, rate quote blasts, or marketing campaigns.
-29. CONSENT NOT A CONDITION: Include this as an explicit standalone statement in the SMS section: "Consent to receive text messages is not required as a condition of purchasing any goods or services."
+29. CONSENT NOT A CONDITION: Include this as an explicit standalone statement in the SMS section: "Consent to receive text messages is not required as a condition of purchasing any goods or services." This means the user can submit the form and use the service WITHOUT checking the SMS checkbox. NEVER write language implying the checkbox is required to submit the form (e.g., "must check before submitting", "form will not allow submission without", "required to consent"). The checkbox is optional — if they check it, they get texts; if they don't, they can still use the service.
 30. PROHIBITION SURVIVES RESTRUCTURING: The no-sharing prohibition for SMS opt-in data must explicitly survive any corporate merger, acquisition, or organizational restructuring. Include language such as: "This prohibition on sharing SMS opt-in data shall survive any corporate restructuring, merger, acquisition, or change in ownership."
 31. CROSS-DOCUMENT CONSENT TEXT — CHARACTER-FOR-CHARACTER MATCH: When consent checkbox texts are provided (from the A2P Submission Language), every document that quotes them MUST use the EXACT SAME wording, character for character. The Privacy Policy "Consent Disclosure" blockquote, the Terms & Conditions consent disclosure section, and the opt-in description field must all quote the identical text. Do NOT paraphrase, reorder words, add/remove commas, change capitalization, or substitute synonyms. If the checkbox says "service texts" do not write "service messages." If it says "promotional texts" do not write "marketing messages." Copy the text verbatim. A compliance reviewer will diff the consent language across all three documents — any discrepancy, no matter how small, is flagged as an inconsistency.
 32. VERBATIM SECTIONS — COPY, DO NOT REWRITE: When the prompt provides sections labeled "VERBATIM" or "COPY EXACTLY", you MUST reproduce them character-for-character in the appropriate location in the document. Do not rewrite, paraphrase, "improve", or edit them in any way. They have already been reviewed for compliance. Your only job is to place them correctly in the document structure. This includes consent blockquotes, opt-out confirmation text, START re-enrollment text, carrier lists, and any other text explicitly marked as verbatim. A compliance reviewer will programmatically diff these sections across documents — any difference causes rejection.
@@ -884,6 +884,18 @@ CRITICAL KEYWORD RULES — READ FIRST:
 - The data rates phrase is ALWAYS "Msg & data rates may apply." — not "message and data rates", not "standard rates."
 - Do NOT include ANY URLs or links in sample messages — not shortened URLs (bit.ly), not full URLs, not even the business's own website. Carriers flag URLs in sample messages as spam and will reject the campaign. Sample messages must contain only plain text content with no web addresses whatsoever.
 
+CONSENT IS OPTIONAL — NEVER IMPLY IT'S REQUIRED TO SUBMIT THE FORM:
+SMS consent is optional. The user can submit the form and use the service WITHOUT checking the SMS checkbox. Checking it is their choice — if they check it, they consent to receive texts. If they don't, they can still submit and use the service.
+NEVER use language that implies checking the SMS box is required to submit the form or use the service:
+- NEVER: "the visitor must check the checkbox before submitting"
+- NEVER: "the form will not allow submission without checking"
+- NEVER: "required to check the checkbox"
+- NEVER: "cannot submit without consenting"
+- NEVER: "mandatory"
+OKAY to say: "An unchecked SMS consent checkbox is displayed" (factual — describes what's on the page)
+OKAY to say: "By checking the checkbox, the user consents to receive texts" (describes what happens IF they check it)
+The distinction: describe what the checkbox does, not that the user is forced to check it.
+
 You MUST output ONLY valid JSON with no markdown, no code fences, no extra text. The JSON must have these exact keys:
 
 - "use_case_description": (min 40 chars, max 4096 chars) KEEP THIS SIMPLE AND DIRECT. Write it like you're explaining the business to someone in 30 seconds. Do NOT write an essay. Do NOT use legal jargon. Do NOT pad with filler words. A good use_case_description is 3-5 short sentences that answer:
@@ -918,14 +930,12 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
   - No "providing a phone number alone does not constitute consent" statements
   - No verbatim checkbox text
   - No legal boilerplate of any kind
-  - ABSOLUTELY NO sentences about what the visitor "must" do, what is "required", or what the form "will not allow". Specifically:
-    * NEVER write "The visitor must manually check the checkbox" or any variation
-    * NEVER write "The visitor must check the checkbox before submitting"
-    * NEVER write "The form will not allow submission without"
-    * NEVER write "The form requires the checkbox to be checked"
-    * NEVER write "Users are required to check"
-    * NEVER write "Before submitting, the user must"
-    These phrases imply the checkbox is mandatory, which contradicts consent-not-condition-of-purchase rules and will get the campaign REJECTED.
+  - No language implying the checkbox is required to submit the form:
+    * NEVER: "The visitor must manually check the checkbox"
+    * NEVER: "The visitor must check the checkbox before submitting"
+    * NEVER: "The form will not allow submission without"
+    * NEVER: "The form requires the checkbox to be checked"
+    The checkbox is optional — the user can submit without checking it.
   - The LAST sentence should describe where the checkbox appears. Do NOT add any sentence after that. End the description once you've said where the checkbox is.
 
   If the person starts at one URL but the consent checkbox is on a different page (like /checkout or /step-3), list BOTH URLs — where they start and where the checkbox is.
