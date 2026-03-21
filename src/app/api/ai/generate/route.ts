@@ -704,6 +704,7 @@ BUSINESS IDENTITY:
 - Legal Business Name: ${answers.legal_business_name || "N/A"}
 - DBA Names: ${answers.has_dba === "Yes" ? answers.dba_names || "N/A" : "None"}
 - Business Description: ${answers.business_description || "N/A"}
+- Business Category: ${answers.business_category || "N/A"}
 - Industry Classification: ${answers.industry_type || "N/A"}
 - Business Address: ${answers.business_address || "N/A"}
 - Business Phone: ${answers.business_phone || "N/A"}
@@ -791,6 +792,7 @@ BUSINESS IDENTITY:
 - Legal Business Name: ${answers.legal_business_name || "N/A"}
 - DBA Names: ${answers.has_dba === "Yes" ? answers.dba_names || "N/A" : "None"}
 - Business Description: ${answers.business_description || "N/A"}
+- Business Category: ${answers.business_category || "N/A"}
 - Industry Classification: ${answers.industry_type || "N/A"}
 - Business Address: ${answers.business_address || "N/A"}
 - Business Phone: ${answers.business_phone || "N/A"}
@@ -969,6 +971,7 @@ BUSINESS IDENTITY:
 - Legal Business Name: ${answers.legal_business_name || "N/A"}
 - DBA Names: ${answers.has_dba === "Yes" ? answers.dba_names || "N/A" : "None"}
 - Business Description: ${answers.business_description || "N/A"}
+- Business Category: ${answers.business_category || "N/A"}
 - Industry Classification: ${answers.industry_type || "N/A"}
 - Website: ${answers.primary_website || "N/A"}
 - Business Phone: ${answers.business_phone || "N/A"}

@@ -230,6 +230,7 @@ function QuestionRenderer({
             "Business Type": answers.has_dba === "Yes" ? `${answers.legal_business_name} (DBA: ${answers.dba_names})` : answers.legal_business_name || "",
             "Website": answers.primary_website || "",
             "Business Address": answers.business_address || "",
+            "Business Category": answers.business_category || "",
             "Industry": answers.industry_type || "",
             "First Message Purpose": answers.first_message_purpose || "",
             "Contact Relationship Stage": answers.contact_relationship_stage || "",

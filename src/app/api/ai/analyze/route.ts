@@ -271,6 +271,7 @@ QUESTIONNAIRE ANSWERS (source of truth)
 - Business Description: ${answers.business_description || "N/A"}
 - Business State: ${answers.business_state || "N/A"}
 - Business Address: ${answers.business_address || "N/A"}
+- Business Category: ${answers.business_category || "N/A"}
 - Industry Type: ${answers.industry_type || "N/A"}
 - Restricted Industry: ${restricted ? "YES" : "NO"}
 - A2P Use Case Classification: ${useCase}
