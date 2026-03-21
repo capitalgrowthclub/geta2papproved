@@ -920,8 +920,9 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
 
   WHAT TO INCLUDE:
   1. The URL where the process starts (and if different, the URL where the consent checkbox actually appears)
-  2. The steps the person goes through to get to the consent checkbox
-  3. That's it.
+  2. The steps the person goes through
+  3. That they check the SMS consent checkbox to opt in — this IS the opt-in action, it's part of the process
+  4. That's it.
 
   WHAT TO NOT INCLUDE — DO NOT ADD ANY OF THESE. IF YOU DO, THE OUTPUT IS WRONG:
   - No consent disclosure text
@@ -930,23 +931,21 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
   - No "providing a phone number alone does not constitute consent" statements
   - No verbatim checkbox text
   - No legal boilerplate of any kind
-  - No language implying the checkbox is required to submit the form:
-    * NEVER: "The visitor must manually check the checkbox"
-    * NEVER: "The visitor must check the checkbox before submitting"
-    * NEVER: "The form will not allow submission without"
-    * NEVER: "The form requires the checkbox to be checked"
-    The checkbox is optional — the user can submit without checking it.
-  - The LAST sentence should describe where the checkbox appears. Do NOT add any sentence after that. End the description once you've said where the checkbox is.
+  - No language implying the checkbox is REQUIRED to submit the form:
+    * OKAY: "the visitor checks the SMS consent checkbox and submits" (describes the opt-in process)
+    * NEVER: "the visitor MUST check the checkbox before submitting" (implies it's mandatory to submit)
+    * NEVER: "the form will not allow submission without" (implies blocking)
+    * NEVER: "the form requires the checkbox to be checked" (implies mandatory)
 
   If the person starts at one URL but the consent checkbox is on a different page (like /checkout or /step-3), list BOTH URLs — where they start and where the checkbox is.
 
   If it's a simple one-page form, just say where they go and what's on the page.
 
-  EXAMPLE for multi-step: "Contacts opt in at example.com/get-quote. On step 1, the visitor selects their project type and budget. On step 2, they enter their name, email, and phone number. An unchecked SMS consent checkbox is displayed below the phone number field on step 2."
+  EXAMPLE for multi-step: "Contacts opt in at example.com/get-quote. On step 1, the visitor selects their project type and budget. On step 2, they enter their name, email, and phone number, check the SMS consent checkbox, and submit the form."
 
-  EXAMPLE for simple form: "Contacts opt in at example.com/contact. The page has a form with fields for name, email, and phone number. An unchecked SMS consent checkbox is displayed below the phone number field."
+  EXAMPLE for simple form: "Contacts opt in at example.com/contact. The visitor enters their name, email, and phone number, checks the SMS consent checkbox, and submits the form."
 
-  EXAMPLE with different URLs: "The process starts at example.com/apply. The visitor completes a 3-step application (loan type, property details, financial info). On the final step at example.com/apply/contact-info, they enter their phone number. An unchecked SMS consent checkbox is displayed below the phone number field."
+  EXAMPLE with different URLs: "The process starts at example.com/apply. The visitor completes a 3-step application (loan type, property details, financial info). On the final step at example.com/apply/contact-info, they enter their phone number, check the SMS consent checkbox, and submit the form."
 
   Keep it short. A reviewer reading this should be able to open the website and follow these steps to find the consent checkbox.
 
