@@ -112,33 +112,23 @@ export function determineUseCase(answers: Record<string, string>): string {
     return "Customer Care — Post-relationship maintenance only";
   }
 
-  // Confirmation of form/request/booking to a new lead = Conversational (not Customer Care)
-  // The contact just submitted something — they're a lead, not a customer yet
-  if (firstMsg.startsWith("A confirmation that we received")) {
+  // Confirmation/acknowledgment (most common first message for service businesses)
+  // This is Conversational when sent to leads, Customer Care when sent to existing customers
+  if (firstMsg.startsWith("A confirmation or acknowledgment")) {
     if (stage.startsWith("They already paid")) {
-      // Existing customer booking confirmation = Customer Care
       return "Customer Care — Post-relationship maintenance only";
     }
-    // New lead got a form/booking confirmation — likely conversational or mixed
     if (intent.startsWith("A mix") || stage.startsWith("It depends")) {
       return "Mixed Use — Both lead interaction and customer servicing";
     }
-    // Pure confirmation to leads (like appointment booking) = Conversational
+    // Confirmation to a new lead (appointment, form, quote) = Conversational
     return "Conversational Messaging — Pre-relationship back-and-forth";
   }
 
-  // Asking a qualifying question = Conversational
-  if (firstMsg.startsWith("A question to learn more")) {
+  // Question or follow-up to their request = Conversational
+  if (firstMsg.startsWith("A question or follow-up")) {
     if (stage.startsWith("They already paid")) {
       return "Mixed Use — Both lead interaction and customer servicing";
-    }
-    return "Conversational Messaging — Pre-relationship back-and-forth";
-  }
-
-  // Automated follow-up to leads is conversational (not customer care)
-  if (firstMsg.startsWith("An automated follow-up")) {
-    if (stage.startsWith("They already paid")) {
-      return "Customer Care — Post-relationship maintenance only";
     }
     return "Conversational Messaging — Pre-relationship back-and-forth";
   }
@@ -305,13 +295,12 @@ export const a2pComplianceQuestions: QuestionSection[] = [
         question: "What does the FIRST text message to a new contact look like?",
         type: "select",
         options: [
-          "A confirmation that we received their form, request, or booking (e.g., 'We received your request' or 'Your appointment is confirmed for Thursday')",
-          "A question to learn more about what they need (e.g., 'Are you looking to purchase or refinance?' or 'What size event are you planning?')",
-          "An update about their existing account, order, or service (e.g., 'Your payment is due' or 'Your order has shipped')",
-          "A promotional or marketing message (e.g., 'Check out our new offers' or 'Limited time: 20% off')",
-          "An automated follow-up after they showed interest (e.g., 'Thanks for your interest, here's what we offer')",
+          "A confirmation or acknowledgment (e.g., 'Your appointment is confirmed', 'We received your application', 'Thanks for requesting a quote — we'll be in touch')",
+          "A question or follow-up to their request (e.g., 'Are you looking to purchase or refinance?', 'What's your timeline for the project?')",
+          "An update about their existing account or service (e.g., 'Your payment is due', 'Your order has shipped')",
+          "A promotional or marketing message (e.g., 'Check out our new offers', '20% off this week')",
         ],
-        helperText: "Pick the one that best describes what your first text message actually says. Don't overthink it — just think about what the person receives right after they opt in.\n\n• If they booked an appointment and get a confirmation → pick the first option\n• If they submitted a form and you text them a question → pick the second option\n• If they're already a customer and get a payment reminder → pick the third option\n• If you send them a promotion → pick the fourth option\n• If they filled out a form and get an automated 'thanks for reaching out' → pick the fifth option",
+        helperText: "Most service businesses send a confirmation or acknowledgment as the first text — something like 'We got your request' or 'Your appointment is confirmed.' That's the most common answer.\n\n• Booked an appointment → confirmation\n• Submitted a form/application/quote request → confirmation\n• Filled out a lead magnet or funnel → confirmation\n• You text them back asking questions → question or follow-up\n• They're already a paying customer getting reminders → account update\n• You're sending them a deal or offer → promotional",
         required: true,
       },
       {
@@ -320,11 +309,11 @@ export const a2pComplianceQuestions: QuestionSection[] = [
         type: "select",
         options: [
           "They already paid, signed up, or have an active account with us",
-          "They just filled out a form, submitted a request, or booked an appointment — but haven't paid or signed anything yet",
+          "They took an action but haven't paid yet — filled out a form, booked an appointment, requested a quote, submitted an application, opted into a funnel, etc.",
           "They signed up for updates or a newsletter but haven't used our service",
           "It depends — some are brand new leads, some are existing customers",
         ],
-        helperText: "Think about it from the carrier's perspective:\n\n• Someone who PAID or has an ACTIVE ACCOUNT = customer\n• Someone who FILLED OUT A FORM or BOOKED online = lead (not a customer yet, even if they booked)\n• Someone who just signed up for updates = subscriber\n• If you text both new leads AND existing customers = select 'It depends'\n\nMost service businesses that get form submissions and also text existing clients should select 'It depends'.",
+        helperText: "Most businesses using this tool are texting people who just took some kind of action — booked, applied, requested a quote, opted into a lead magnet, etc. That person is a LEAD, not a customer (even if they booked an appointment).\n\n• Filled out a form → lead\n• Booked an appointment → lead (they haven't paid yet)\n• Requested a quote → lead\n• Opted into a funnel or lead magnet → lead\n• Submitted a loan application → lead\n• Already paid or has an active account → customer\n• You text both types → 'It depends'",
         required: true,
       },
       {
