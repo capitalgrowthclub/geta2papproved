@@ -131,6 +131,7 @@ SECTION C: PRIVACY POLICY DEEP REVIEW
 
 16. REQUIRED PRIVACY POLICY SECTIONS — verify EACH exists:
     - "Explicit Prohibition on SMS Opt-In Data Sharing" as a NAMED subsection (h3 or equivalent)
+    - The exact sentence "No mobile information will be shared with third parties or affiliates for marketing or promotional purposes." — this specific phrase is required by carrier compliance policies (Twilio/TCR). Flag as HIGH if missing.
     - "We do not purchase, rent, or acquire personal information from data brokers..." statement
     - Dual consent mechanism statement (phone number alone ≠ consent)
     - Staff training clause with anonymized data language
