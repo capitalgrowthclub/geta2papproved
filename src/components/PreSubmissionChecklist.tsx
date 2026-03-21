@@ -118,6 +118,7 @@ export interface WebsiteVerificationResult {
   hasPrivacyLink: boolean;
   hasTermsLink: boolean;
   hasConsentText: boolean;
+  isMultiStep?: boolean;
   rawText: string;
   issues: string[];
 }
@@ -159,16 +160,18 @@ export default function PreSubmissionChecklist({
   }, [hasAllDocs, analysisRisk, analysisScore]);
 
   // Auto-check website items from verification result
+  // For multi-step forms, only auto-check what we can actually verify (accessibility)
   useEffect(() => {
     if (!verificationResult) return;
     const autoChecks = new Set(checked);
     if (verificationResult.accessible) autoChecks.add("website_live");
-    if (verificationResult.hasCheckbox) autoChecks.add("checkboxes_visible");
-    if (verificationResult.hasPrivacyLink) autoChecks.add("pp_tc_links_visible");
-    if (verificationResult.hasTermsLink && autoChecks.has("pp_tc_links_visible")) {
-      // Both links needed
-    } else if (!verificationResult.hasTermsLink) {
-      autoChecks.delete("pp_tc_links_visible");
+
+    // Only auto-check consent items if we could actually see them (not multi-step)
+    if (!verificationResult.isMultiStep) {
+      if (verificationResult.hasCheckbox) autoChecks.add("checkboxes_visible");
+      if (verificationResult.hasPrivacyLink && verificationResult.hasTermsLink) {
+        autoChecks.add("pp_tc_links_visible");
+      }
     }
     setChecked(autoChecks);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -280,11 +283,18 @@ export default function PreSubmissionChecklist({
                     No issues found on your opt-in page.
                   </p>
                 ) : (
-                  verificationResult.issues.map((issue, i) => (
-                    <p key={i} className="text-xs text-amber-700">
-                      ⚠ {issue}
-                    </p>
-                  ))
+                  <>
+                    {verificationResult.isMultiStep && (
+                      <p className="text-xs text-slate-600 font-medium">
+                        Multi-step form detected — we verified the page loads but can&apos;t check later steps automatically. Please verify the website items below manually.
+                      </p>
+                    )}
+                    {verificationResult.issues.map((issue, i) => (
+                      <p key={i} className={`text-xs ${verificationResult.isMultiStep ? "text-slate-500" : "text-amber-700"}`}>
+                        {verificationResult.isMultiStep ? "ℹ" : "⚠"} {issue}
+                      </p>
+                    ))}
+                  </>
                 )}
               </div>
             )}

@@ -122,11 +122,23 @@ export async function POST(req: NextRequest) {
       issues.push("Consent text found but no 'Msg & data rates may apply' language detected. This should be included in the consent disclosure.");
     }
 
-    // Check if page is a SPA that might not render server-side
+    // Detect multi-step forms and SPAs
     const isSPA = htmlLower.includes("__next") || htmlLower.includes("react-root") ||
       htmlLower.includes("id=\"app\"") || htmlLower.includes("id=\"root\"");
-    if (isSPA && !hasPhoneField && !hasCheckbox) {
-      issues.push("This page appears to use JavaScript rendering (SPA). The form may not be visible in the initial HTML. If you know the form is there, you can manually verify the checklist items above.");
+    const isMultiStep = /step\s*[12345]/i.test(html) || /multi.?step/i.test(html) ||
+      /wizard/i.test(html) || /progress.?bar/i.test(html) ||
+      /data-step/i.test(html) || /funnel/i.test(htmlLower) ||
+      htmlLower.includes("gohighlevel") || htmlLower.includes("leadconnector") ||
+      htmlLower.includes("clickfunnels") || htmlLower.includes("typeform");
+
+    // If it's a multi-step form or SPA where we can't see the consent step,
+    // soften the warnings — the consent elements are likely on a later step
+    const cantSeeConsentStep = (isSPA || isMultiStep) && !hasPhoneField && !hasCheckbox;
+
+    if (cantSeeConsentStep) {
+      // Clear all the false-negative warnings
+      issues.length = 0;
+      issues.push("This appears to be a multi-step form or JavaScript-rendered page. We can only check the first step — the consent checkboxes are likely on a later step. Please manually verify the website checklist items below.");
     }
 
     return NextResponse.json({
@@ -138,6 +150,7 @@ export async function POST(req: NextRequest) {
         hasPrivacyLink,
         hasTermsLink,
         hasConsentText,
+        isMultiStep: isMultiStep || isSPA,
         rawText: "",
         issues,
       },
