@@ -150,13 +150,13 @@ export function determineUseCase(answers: Record<string, string>): string {
 // the "mixed" part is conversational follow-up + transactional, not promotional
 export function useCaseIncludesMarketing(answers: Record<string, string>): boolean {
   if (isRestrictedIndustry(answers)) return false;
-  const useCase = answers.recommended_use_case || determineUseCase(answers);
+  const useCase = determineUseCase(answers);
   return useCase.startsWith("Marketing") || useCase.startsWith("Mixed Use");
 }
 
 // Get a short use case label for prompts
 export function getUseCaseLabel(answers: Record<string, string>): string {
-  const useCase = answers.recommended_use_case || determineUseCase(answers);
+  const useCase = determineUseCase(answers);
   if (useCase.startsWith("Customer Care")) return "Customer Care";
   if (useCase.startsWith("Conversational")) return "Conversational Messaging";
   if (useCase.startsWith("Marketing")) return "Marketing";
@@ -380,21 +380,6 @@ export const a2pComplianceQuestions: QuestionSection[] = [
         type: "textarea",
         placeholder: "e.g., 'Hi [Name], thanks for reaching out about your home purchase. Are you looking to buy or refinance?' or 'Your appointment is confirmed for Thursday at 2pm.'",
         helperText: "Write this EXACTLY as you would send it. This is the single message the reviewer will judge your entire campaign by. If it asks a question → conversational. If it confirms/updates → customer care. If it promotes → marketing.",
-        required: true,
-        aiSuggest: true,
-      },
-      {
-        id: "recommended_use_case",
-        question: "Recommended A2P Use Case",
-        type: "select",
-        options: [
-          "Customer Care — Post-relationship maintenance only",
-          "Conversational Messaging — Pre-relationship back-and-forth",
-          "Marketing — Promotional and persuasion messaging",
-          "Mixed Use — Both lead interaction and customer servicing",
-        ],
-        helperText: "Based on your answers above, this is the use case that matches your actual messaging behavior. This determines how your Privacy Policy, Terms & Conditions, and A2P Submission Language are written. Selecting the wrong use case is the top reason for campaign rejection.\n\n• Customer Care: You ONLY message existing customers with active accounts/contracts. No lead follow-up.\n• Conversational: You respond to people who contacted you. Back-and-forth interaction with leads.\n• Marketing: You send promotional content to drive action.\n• Mixed Use: You do BOTH — interact with leads AND service existing customers. This is the most common for real businesses.",
-        recommendationText: "Use the 'Write with AI' button to get a recommendation based on your answers. Most businesses that both follow up with leads AND service customers should select 'Mixed Use'.",
         required: true,
         aiSuggest: true,
       },

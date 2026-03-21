@@ -11,7 +11,7 @@ import SubmissionLanguageViewer from "@/components/SubmissionLanguageViewer";
 import ComplianceAnalysis from "@/components/ComplianceAnalysis";
 import type { AnalysisResult } from "@/components/ComplianceAnalysis";
 import type { Project, QuestionnaireResponse, GeneratedDocument, ClientIntakeLink } from "@/lib/supabase";
-import { isProhibitedIndustry, isRestrictedIndustry, getSelectedProhibited, getSelectedRestricted } from "@/lib/questionnaires/a2p-compliance";
+import { isProhibitedIndustry, isRestrictedIndustry, getSelectedProhibited, getSelectedRestricted, getUseCaseLabel } from "@/lib/questionnaires/a2p-compliance";
 
 type DocumentType = "privacy_policy" | "terms_conditions" | "submission_language";
 
@@ -330,6 +330,7 @@ export default function ProjectDetailPage() {
   const industryIsRestricted = isRestrictedIndustry(answers);
   const prohibitedList = getSelectedProhibited(answers);
   const restrictedList = getSelectedRestricted(answers);
+  const useCaseLabel = isQuestionnaireComplete ? getUseCaseLabel(answers) : null;
 
   const canAnalyze = !!(submissionDoc && privacyDoc && termsDoc)
     && !stalePrivacy && !staleTerms
@@ -1053,6 +1054,19 @@ export default function ProjectDetailPage() {
 
       {activeTab === "submission" && (
         <div>
+          {useCaseLabel && (
+            <div className="mb-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-slate-600">Recommended A2P Use Case:</span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+                  {useCaseLabel}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1.5">
+                This is determined by your questionnaire answers. Select this use case when submitting your A2P 10DLC campaign registration. All generated documents are tailored to this classification.
+              </p>
+            </div>
+          )}
           {submissionDoc ? (
             <SubmissionLanguageViewer
               content={submissionDoc.content}

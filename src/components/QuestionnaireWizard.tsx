@@ -49,7 +49,7 @@ export default function QuestionnaireWizard({
     }
     return result;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sections, mode, answers.recommended_use_case, answers.first_message_purpose, answers.contact_relationship_stage, answers.message_intent, answers.industry_type]);
+  }, [sections, mode, answers.first_message_purpose, answers.contact_relationship_stage, answers.message_intent, answers.industry_type]);
 
   // Auto-skip to first unanswered question
   const firstUnanswered = useMemo(() => {
@@ -238,7 +238,6 @@ function QuestionRenderer({
             "Message Intent": answers.message_intent || "",
             "Active Service Before Messaging": answers.has_active_service_before_messaging || "",
             "First Message Example": answers.first_message_example || "",
-            "Recommended Use Case": answers.recommended_use_case || "",
             "Business Description": answers.business_description || "",
           },
         }),
