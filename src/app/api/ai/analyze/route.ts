@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase";
-import { isRestrictedIndustry } from "@/lib/questionnaires/a2p-compliance";
+import { isRestrictedIndustry, getUseCaseLabel } from "@/lib/questionnaires/a2p-compliance";
 
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 function getAnthropic() {
   return new Anthropic({
@@ -25,71 +25,194 @@ function stripHtmlToText(html: string): string {
     .trim();
 }
 
-const ANALYSIS_SYSTEM_PROMPT = `You are an expert A2P 10DLC compliance auditor. You have been given three documents generated for a single business's A2P 10DLC registration: the Submission Language (JSON fields for the registration form), the Privacy Policy (HTML converted to text), and the Terms & Conditions (HTML converted to text). You also have the business's questionnaire answers as the source of truth.
+const ANALYSIS_SYSTEM_PROMPT = `You are the strictest A2P 10DLC compliance reviewer. You have been given three documents for a single business's A2P 10DLC campaign registration: the Submission Language (JSON fields for the registration portal), the Privacy Policy, and the Terms & Conditions. You also have the business's questionnaire answers as the source of truth.
 
-Your job is to perform a rigorous cross-document compliance review, as if you are the strictest carrier reviewer examining these documents before approving or rejecting an A2P 10DLC campaign registration.
+Your job is to find EVERY reason a carrier reviewer could reject this registration. Think like the most demanding reviewer who reads hundreds of these daily. You must check ALL of the categories below AND perform a final "story coherence" review.
 
-CHECK EVERY ONE OF THESE CATEGORIES:
+═══════════════════════════════════════════════
+SECTION A: SUBMISSION LANGUAGE FIELD-BY-FIELD REVIEW
+═══════════════════════════════════════════════
 
-1. CONSENT TEXT CONSISTENCY: Compare the consent checkbox texts from the Submission Language (marketing_consent_checkbox and transactional_consent_checkbox) against the "Consent Disclosure" blockquotes in both the Privacy Policy and Terms & Conditions. They must match CHARACTER FOR CHARACTER. Flag any word substitution, reordering, punctuation change, or synonym swap (e.g., "service texts" vs "service messages", "promotional texts" vs "marketing messages"). This is the most common cause of rejection.
+1. USE CASE DESCRIPTION QUALITY:
+   - Is it simple and direct? (3-5 sentences, not a legal essay) If it reads like a lawyer wrote it or is padded with jargon, flag it — reviewers scrutinize verbose descriptions
+   - Does it clearly state: what the business does, what texts they send (specific types), how recipients opted in, and what is NOT sent?
+   - Does the use case description match the declared A2P Use Case Classification? (Customer Care / Conversational / Mixed Use / Marketing)
+   - For restricted industries with Conversational or Mixed Use case: does it honestly describe BOTH inquiry follow-up AND transactional messaging? Does it say "does not send unsolicited promotional or marketing SMS" (correct) vs "does not send promotional messages of any kind" (incorrect if business follows up on inquiries)?
+   - For restricted industries with Customer Care case: does it describe ONLY post-relationship servicing? No mention of lead follow-up?
 
-2. FREQUENCY CONSISTENCY: The message frequency stated in the Submission Language use_case_description, opt_in_message, consent checkboxes, Privacy Policy, and Terms & Conditions must all match the questionnaire answers for marketing_frequency and transactional_frequency. Flag any mismatch or "varies" substitution.
+2. SAMPLE MESSAGE REVIEW — THE MOST CRITICAL CHECK:
+   The reviewer judges the ENTIRE campaign based on sample messages. Check:
+   - Do both sample messages start with "[Business Name]:" format?
+   - Do both include "Reply STOP to opt out." (NEVER "unsubscribe" or "cancel")?
+   - Do both include "Msg & data rates may apply."?
+   - Do they contain ANY URLs or web links? (instant rejection if yes)
+   - THE FIRST MESSAGE TEST: Does sample_message_1 match what the first text to a new contact would actually look like?
+     * Customer Care: should be an account/service update, NOT a response to an inquiry
+     * Conversational: should be a question or response to an inquiry, NOT an automated blast
+     * Mixed Use: one message should show conversational follow-up, the other transactional
+     * Marketing: can include promotional content
+   - Do the sample messages match the first_message_example from the questionnaire? If the business says their first message is "Are you looking to purchase or refinance?" but sample_message_1 is "Your payment is due" — that's a critical mismatch
+   - For restricted industries: do samples contain ANY promotional language (offers, rates, "get approved today", urgency language)? Even subtle phrases like "we have great options" are promotional
+   - Are the messages realistic and specific to THIS business? Generic messages get flagged
 
-3. MANDATORY ELEMENTS IN CONSENT BLOCKS: Each consent disclosure quoted in the Privacy Policy and Terms must contain all six required elements: (a) message type + business name, (b) frequency, (c) "Msg & data rates may apply.", (d) "Reply STOP to opt out.", (e) "Reply HELP for info.", (f) "SMS opt-in data is never shared with third parties."
+3. OPT-IN DESCRIPTION — STEP-BY-STEP JOURNEY:
+   This is where MESSAGE_FLOW rejections happen. The reviewer will try to follow these steps on the website. Check:
+   - Does the opt_in_description describe the EXACT path a visitor takes from landing on the website to entering their phone number?
+   - If the business uses a multi-step form/questionnaire/application, are ALL steps described? (e.g., "Step 1: click Get a Quote, Step 2: answer 4 questions, Step 3: enter contact details")
+   - Does it name a specific URL where the opt-in happens?
+   - Does it include ALL SEVEN required statements: (1) checkbox never pre-checked, (2) phone number alone ≠ consent, (3) SMS checkbox separate from other agreements, (4) consent disclosure adjacent to checkbox, (5) PP/TC links displayed adjacent, (6) consent not condition of purchase, (7) verbatim consent text quoted?
+   - Is any of the seven statements missing or watered down?
+   - Is the verbatim consent checkbox text actually quoted at the end?
 
-4. OPT-OUT LANGUAGE: Every STOP reference across all documents must say "Reply STOP to opt out." — never "Reply STOP to unsubscribe", "Reply STOP to cancel", or other variants. Check every occurrence.
+4. OPT-IN CONFIRMATION MESSAGE:
+   - Does it start with "[Business Name]:"?
+   - Does it reference the correct program type(s)? Unrestricted with two programs: must mention BOTH promotional AND service. Restricted Customer Care: service only. Restricted Conversational/Mixed: "service and follow-up texts"
+   - Does it include frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for help."?
+   - Is it under 320 characters?
 
-5. CARRIER LIST: If carrier lists are mentioned in Privacy Policy or Terms, they must NOT include Sprint (absorbed into T-Mobile). Only: AT&T, Verizon, T-Mobile, Boost Mobile, MetroPCS, and U.S. Cellular.
+5. CONSENT CHECKBOX TEXT:
+   - Marketing checkbox (if applicable): includes message type examples, frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", "Consent is not required for purchase.", "SMS opt-in data is never shared with third parties."
+   - Transactional/service checkbox: uses "service texts" (NOT "transactional texts"), includes all required elements
+   - For restricted industries: marketing checkbox should be "Not applicable" with appropriate framing
 
-6. JURISDICTION CONSISTENCY: Governing law state, arbitration venue, and jurisdiction for non-arbitrable claims in the Terms must all reference the same single state matching the business_state from questionnaire answers.
+6. FORM SECONDARY TEXT:
+   - Uses "boxes above" (PLURAL) for two checkboxes, "box above" (SINGULAR) for one
+   - NEVER says "by providing your phone number and checking the box"
+   - Includes: express written consent, "checkbox never pre-checked", "Reply STOP to opt out.", "Reply HELP for help.", "Msg & data rates may apply.", "Consent is not a condition of purchase or service.", "No mobile information will be shared with third parties for marketing or promotional purposes."
 
-7. BUSINESS NAME CONSISTENCY: The legal business name must be used consistently across all three documents and match the questionnaire data. Check for inconsistent name usage.
+═══════════════════════════════════════════════
+SECTION B: CROSS-DOCUMENT CONSISTENCY
+═══════════════════════════════════════════════
 
-8. REQUIRED PRIVACY POLICY SECTIONS: Verify the Privacy Policy contains:
-   - "Explicit Prohibition on SMS Opt-In Data Sharing" as a named subsection
-   - "We do not purchase, rent, or acquire personal information from data brokers..." statement
-   - Dual consent mechanism statement (phone number alone ≠ consent)
-   - Staff training clause with anonymized data language
-   - SMS opt-out permanent retention statement
-   - SMS opt-in 5-year retention statement
-   - "Consent is not required as a condition of purchasing" statement
-   - START re-enrollment disclosure in opt-out section
-   - Opt-out confirmation identifying business by name
-   - Prohibition survives restructuring statement
+7. CONSENT TEXT — CHARACTER-FOR-CHARACTER MATCH:
+   Compare the consent checkbox texts from the Submission Language against the "Consent Disclosure" blockquotes in BOTH the Privacy Policy and Terms & Conditions. They must match CHARACTER FOR CHARACTER. Flag ANY: word substitution ("service texts" vs "service messages"), reordering, punctuation change, capitalization difference, or synonym swap. This is the #1 cause of rejection.
 
-9. REQUIRED TERMS & CONDITIONS SECTIONS: Verify the Terms contain:
-   - START re-enrollment disclosure in opt-out section
-   - Opt-out confirmation identifying business by name
-   - Consent not a condition of purchase statement
-   - SMS data sharing prohibition survives corporate restructuring
-   - Force majeure covering SMS delivery
+8. FREQUENCY CONSISTENCY:
+   The message frequency stated in: Submission Language use_case_description, opt_in_message, consent checkboxes, Privacy Policy, and Terms & Conditions must ALL match the questionnaire answers for marketing_frequency and transactional_frequency. Flag any mismatch or "varies" substitution.
 
-10. RESTRICTED INDUSTRY COMPLIANCE (if industry_type indicates a restricted industry): Verify that:
-    - All four prohibition sentences appear in both PP and TC
-    - No promotional or marketing language exists anywhere
-    - Sample messages pass the transactional message test (recipient initiated, not persuasive, makes sense as response)
-    - Marketing consent checkbox is set to "Not applicable"
+9. MANDATORY ELEMENTS IN CONSENT BLOCKS:
+   Each consent disclosure quoted in the Privacy Policy and Terms must contain ALL SIX required elements: (a) message type + business name, (b) exact frequency, (c) "Msg & data rates may apply.", (d) "Reply STOP to opt out.", (e) "Reply HELP for info.", (f) "SMS opt-in data is never shared with third parties." Missing any one = rejection.
 
-11. SAMPLE MESSAGE FORMAT: Sample messages in the Submission Language must:
-    - Start with "[Business Name]:" format
-    - Include "Reply STOP to opt out." (not "unsubscribe")
-    - Include "Msg & data rates may apply."
-    - Contain NO URLs or web links of any kind
+10. OPT-OUT LANGUAGE:
+    Every STOP reference across ALL documents must say "Reply STOP to opt out." — NEVER "Reply STOP to unsubscribe", "Reply STOP to cancel", or other variants. Check every single occurrence.
 
-12. OPT-IN CONFIRMATION MESSAGE: For unrestricted businesses with both marketing AND transactional programs, the opt_in_message must reference BOTH program types. For restricted businesses, it should reference only service/transactional texts.
+11. BUSINESS NAME CONSISTENCY:
+    The legal business name must be identical across all three documents and match the questionnaire data. Check for: missing LLC/Inc, inconsistent abbreviation, DBA vs legal name confusion.
 
-13. FORM SECONDARY TEXT: The form_secondary_text field must use:
-    - "By checking the boxes above" (PLURAL) for unrestricted businesses with two consent checkboxes
-    - "By checking the box above" (SINGULAR) for restricted businesses with one checkbox
-    Must NOT say "by providing your phone number and checking the box."
+12. JURISDICTION CONSISTENCY:
+    Governing law state, arbitration venue, and jurisdiction for non-arbitrable claims in the Terms must ALL reference the SAME state matching business_state from questionnaire answers. A split jurisdiction is a legal inconsistency that causes rejection.
 
-14. ADDRESS FORMATTING: Suite/Ste format must be consistent throughout all documents (not "Suite 200" in one place and "Ste 200" in another).
+13. CARRIER LIST:
+    If carrier lists are mentioned, they must NOT include Sprint (absorbed into T-Mobile). Only: AT&T, Verizon, T-Mobile, Boost Mobile, MetroPCS, and U.S. Cellular.
 
-15. HTML ENCODING: In the original HTML documents, "&" should be encoded as "&amp;" — but since you're reviewing text-converted versions, check that "Msg & data rates may apply" appears consistently (not "Msg and data rates" or other variations).
+14. ADDRESS FORMATTING:
+    Suite/Ste format must be consistent throughout all documents. Not "Suite 200" in one place and "Ste 200" in another.
+
+═══════════════════════════════════════════════
+SECTION C: PRIVACY POLICY DEEP REVIEW
+═══════════════════════════════════════════════
+
+15. REQUIRED PRIVACY POLICY SECTIONS — verify EACH exists:
+    - "Explicit Prohibition on SMS Opt-In Data Sharing" as a NAMED subsection (h3 or equivalent)
+    - "We do not purchase, rent, or acquire personal information from data brokers..." statement
+    - Dual consent mechanism statement (phone number alone ≠ consent)
+    - Staff training clause with anonymized data language
+    - SMS opt-out permanent retention statement
+    - SMS opt-in 5-year retention statement (must say "five (5) years")
+    - "Consent is not required as a condition of purchasing" statement
+    - START re-enrollment disclosure with actual phone number and URL
+    - Opt-out confirmation identifying business by name
+    - Prohibition survives corporate restructuring statement
+
+16. PRIVACY POLICY MESSAGING LANGUAGE vs USE CASE:
+    - Does the SMS section describe messaging that matches the use case?
+    - For restricted Conversational/Mixed: does it use the softer framing ("does not send unsolicited promotional or marketing SMS messages") rather than the hard prohibition ("does not send promotional messages of any kind")?
+    - For restricted Customer Care: does it have all four hard prohibition sentences?
+    - Does the PP describe the opt-in mechanism accurately (matching the journey from the submission language)?
+
+═══════════════════════════════════════════════
+SECTION D: TERMS & CONDITIONS DEEP REVIEW
+═══════════════════════════════════════════════
+
+17. REQUIRED TERMS SECTIONS — verify EACH exists:
+    - START re-enrollment disclosure in opt-out section
+    - Opt-out confirmation identifying business by name
+    - Consent not a condition of purchase statement
+    - SMS data sharing prohibition survives corporate restructuring
+    - Force majeure covering SMS delivery
+    - SMS-related liability exclusions
+    - Consent mechanism — THREE paragraph structure (affirmative action, phone number ≠ consent, separate checkboxes)
+
+18. TERMS MESSAGING LANGUAGE vs USE CASE:
+    Same checks as #16 but for the Terms document. The messaging description in Terms must match PP exactly.
+
+═══════════════════════════════════════════════
+SECTION E: RESTRICTED INDUSTRY COMPLIANCE
+═══════════════════════════════════════════════
+
+19. RESTRICTED INDUSTRY CHECKS (only if industry is restricted):
+    The checks depend on the A2P Use Case Classification:
+
+    CUSTOMER CARE use case:
+    - All four hard prohibition sentences present in both PP and TC
+    - NO promotional or marketing language anywhere
+    - Sample messages pass strict transactional test: (1) recipient initiated the transaction? YES, (2) persuades new action? NO, (3) makes sense as response? YES
+    - Marketing consent checkbox set to "Not applicable"
+
+    CONVERSATIONAL or MIXED USE case:
+    - Documents use softer framing: "does not send unsolicited promotional or marketing SMS messages" — NOT the four hard prohibition sentences
+    - CRITICAL: If documents contain "does not send promotional, advertising, or marketing SMS messages of any kind" BUT the use case is Conversational or Mixed Use, that is a CRITICAL inconsistency — the reviewer will see the business follows up on inquiries (conversational behavior) which contradicts "of any kind"
+    - Conversational follow-up on user-initiated inquiries IS allowed and should be described honestly
+    - Cold outreach, promotional blasts, rate quotes, "get approved today" messages are still prohibited
+    - Sample messages can include inquiry follow-up AS LONG AS the contact initiated first
+
+    ALL restricted industries:
+    - No cold outreach language, no purchased lists, no unsolicited marketing
+    - Messages must identify business by name, include STOP/HELP language
+    - SMS opt-in consent cannot be shared with third parties
+
+═══════════════════════════════════════════════
+SECTION F: THE REVIEWER'S STORY COHERENCE TEST
+═══════════════════════════════════════════════
+
+20. STORY COHERENCE — THE FINAL AND MOST IMPORTANT CHECK:
+    Step back from the individual checks and ask the three questions a real reviewer asks:
+
+    QUESTION 1: "Why does the FIRST message exist?"
+    - Look at sample_message_1. Is it: a response to an inquiry? An account update? A promotion?
+    - Does the answer match the declared use case?
+    - Does the Privacy Policy and Terms describe messaging behavior consistent with this answer?
+    - Does the use_case_description tell the same story?
+
+    QUESTION 2: "What stage is the user in when they get the first message?"
+    - Look at the contact_relationship_stage from the questionnaire
+    - Stranger → Marketing. Lead → Conversational. Customer → Customer Care. Multiple → Mixed Use.
+    - Do ALL documents agree on what stage the recipient is in?
+    - Does the PP describe the relationship stage the same way as the submission language?
+
+    QUESTION 3: "Who caused the message to happen?"
+    - Customer-triggered? System-triggered? Both?
+    - Is this consistent across all documents?
+
+    QUESTION 4: "Does everything match?"
+    Go through this checklist:
+    □ The use_case_description → matches sample messages → matches PP messaging section → matches TC messaging section
+    □ The opt_in_description → matches how the PP describes opt-in → matches how the TC references consent
+    □ The consent checkbox text → matches PP blockquote → matches TC blockquote (character for character)
+    □ The frequency numbers → same everywhere
+    □ The STOP/HELP language → same everywhere
+    □ The business name → same everywhere
+    □ The restricted industry language → appropriate for the use case (not too restrictive, not too permissive)
+
+    If ANY of these tell a different story from the others, that is a critical consistency issue. Most rejections are NOT because the business is risky — they are because the story being told is inconsistent.
+
+═══════════════════════════════════════════════
+OUTPUT FORMAT
+═══════════════════════════════════════════════
 
 Output ONLY valid JSON with no markdown, no code fences, no extra text. Use this exact schema:
 {
-  "summary": "1-2 sentence overall assessment of the documents",
+  "summary": "2-3 sentence overall assessment — state whether the documents tell a consistent story and are ready for submission, or identify the key problems",
   "overall_risk": "pass" or "needs_attention" or "at_risk",
   "issues": [
     {
@@ -97,9 +220,9 @@ Output ONLY valid JSON with no markdown, no code fences, no extra text. Use this
       "severity": "critical" or "high" or "medium" or "low",
       "category": "category_name",
       "title": "Short descriptive title",
-      "description": "Detailed description of what's wrong, quoting the specific text if relevant",
+      "description": "Detailed description of what's wrong, quoting the specific text from the documents as evidence",
       "affected_documents": ["submission_language", "privacy_policy", "terms_conditions"],
-      "recommendation": "What specifically should be changed to fix this"
+      "recommendation": "Exactly what should be changed — be specific enough that someone could make the fix"
     }
   ],
   "checks_passed": [
@@ -111,17 +234,17 @@ Output ONLY valid JSON with no markdown, no code fences, no extra text. Use this
 }
 
 Severity guide:
-- critical: Will cause carrier rejection (consent text mismatch, missing mandatory elements, wrong STOP language, URLs in samples)
-- high: Likely causes rejection or manual review flag (frequency mismatch, jurisdiction split, Sprint in carrier list, opt-in message missing program type)
-- medium: May cause reviewer concern (minor inconsistencies, formatting issues, missing non-critical sections)
-- low: Best practice improvement (wording improvements, clarity enhancements)
+- critical: Will cause carrier rejection. The reviewer WILL reject this. Examples: consent text mismatch across documents, missing mandatory elements, wrong STOP language, URLs in samples, use case classification contradicts actual messaging behavior, restricted industry using wrong prohibition language for use case, opt-in description missing the journey steps
+- high: Likely causes rejection or manual review flag. Examples: frequency mismatch, jurisdiction split, Sprint in carrier list, opt-in message missing program type, use_case_description is too verbose/legal-sounding, sample messages don't match the first message example
+- medium: May cause reviewer concern. Examples: minor formatting inconsistencies, slightly different wording that doesn't change meaning, missing non-critical sections
+- low: Best practice improvement. Examples: wording could be clearer, additional detail would help
 
 Overall risk guide:
-- "pass": No critical or high issues. Documents are ready for submission.
-- "needs_attention": Has medium issues or 1 high issue that should be addressed but may not cause rejection.
-- "at_risk": Has any critical issues, or 2+ high issues. Likely to be rejected without fixes.
+- "pass": No critical or high issues. The story is consistent across all documents. Ready for submission.
+- "needs_attention": Has medium issues or 1 high issue. Should be reviewed but may pass.
+- "at_risk": Has any critical issues, or 2+ high issues. Will likely be rejected without fixes.
 
-Be thorough but precise. Do NOT invent issues that don't exist. If a check passes, include it in checks_passed. Only report real, specific problems with quoted evidence.`;
+Be thorough and ruthless — find every possible rejection reason. But do NOT invent issues that don't exist. Quote specific text as evidence for every issue. If a check passes, include it in checks_passed with what you verified.`;
 
 function buildAnalysisPrompt(
   submissionContent: string,
@@ -136,31 +259,69 @@ function buildAnalysisPrompt(
   const ppTruncated = ppText.length > 60000 ? ppText.substring(0, 60000) + "... [truncated]" : ppText;
   const tcTruncated = tcText.length > 60000 ? tcText.substring(0, 60000) + "... [truncated]" : tcText;
 
-  return `Analyze these three A2P 10DLC documents for cross-document compliance:
+  const useCase = getUseCaseLabel(answers);
 
-QUESTIONNAIRE ANSWERS (source of truth for business details):
+  return `Perform a full compliance review of these A2P 10DLC documents. Check ALL 20 categories in Sections A-F of your instructions.
+
+═══════════════════════════════════════════════
+QUESTIONNAIRE ANSWERS (source of truth)
+═══════════════════════════════════════════════
 - Legal Business Name: ${answers.legal_business_name || "N/A"}
 - DBA Names: ${answers.has_dba === "Yes" ? answers.dba_names || "N/A" : "None"}
+- Business Description: ${answers.business_description || "N/A"}
 - Business State: ${answers.business_state || "N/A"}
+- Business Address: ${answers.business_address || "N/A"}
 - Industry Type: ${answers.industry_type || "N/A"}
-- Restricted Industry: ${restricted ? "YES — transactional messages only" : "NO — unrestricted (marketing + transactional)"}
+- Restricted Industry: ${restricted ? "YES" : "NO"}
+- A2P Use Case Classification: ${useCase}
+
+MESSAGING BEHAVIOR:
+- First Message Purpose: ${answers.first_message_purpose || "N/A"}
+- Contact Relationship Stage: ${answers.contact_relationship_stage || "N/A"}
+- Message Initiation: ${answers.message_initiation || "N/A"}
+- Message Intent: ${answers.message_intent || "N/A"}
+- Active Service Before Messaging: ${answers.has_active_service_before_messaging || "N/A"}
+- First Message Example: ${answers.first_message_example || "N/A"}
+- Sample Messages Provided: ${answers.sample_messages || "N/A"}
+
+CAMPAIGN DETAILS:
 - Marketing Frequency: ${restricted ? "N/A (restricted)" : (answers.marketing_frequency || "N/A")}
 - Transactional Frequency: ${answers.transactional_frequency || "N/A"}
-- STOP/HELP Number: ${answers.stop_help_number || "N/A"}
-- Primary Website: ${answers.primary_website || "N/A"}
-- Support Email: ${answers.support_email || "N/A"}
-- Business Address: ${answers.business_address || "N/A"}
+- Marketing Use Case: ${answers.marketing_use_case || "N/A"}
+- Transactional Use Case: ${answers.transactional_use_case || "N/A"}
+- Transactional Message Types: ${answers.transactional_message_types || "N/A"}
 
-=== SUBMISSION LANGUAGE (JSON) ===
+OPT-IN FLOW:
+- Opt-in Locations: ${answers.optin_locations || "N/A"}
+- Opt-in Flow Type: ${answers.optin_flow_type || "N/A"}
+- Opt-in Journey Steps: ${answers.optin_journey_steps || "N/A"}
+- Opt-in Page URL: ${answers.optin_page_url || "N/A"}
+- Phone Field Required: ${answers.phone_field_required || "N/A"}
+
+SUPPORT:
+- STOP/HELP Number: ${answers.stop_help_number || "N/A"}
+- Support Email: ${answers.support_email || "N/A"}
+- Primary Website: ${answers.primary_website || "N/A"}
+
+═══════════════════════════════════════════════
+SUBMISSION LANGUAGE (JSON — every field matters)
+═══════════════════════════════════════════════
 ${submissionContent}
 
-=== PRIVACY POLICY (text content) ===
+═══════════════════════════════════════════════
+PRIVACY POLICY (full text)
+═══════════════════════════════════════════════
 ${ppTruncated}
 
-=== TERMS & CONDITIONS (text content) ===
+═══════════════════════════════════════════════
+TERMS & CONDITIONS (full text)
+═══════════════════════════════════════════════
 ${tcTruncated}
 
-Perform the full compliance review across all 15 check categories and output the JSON analysis.`;
+═══════════════════════════════════════════════
+YOUR TASK
+═══════════════════════════════════════════════
+Review ALL 20 check categories (Sections A through F). For Section F (Story Coherence), step back and ask the four reviewer questions. Find every possible rejection reason. Output the JSON analysis.`;
 }
 
 export async function POST(req: NextRequest) {
@@ -234,7 +395,7 @@ export async function POST(req: NextRequest) {
 
     const stream = getAnthropic().messages.stream({
       model: "claude-sonnet-4-6",
-      max_tokens: 8000,
+      max_tokens: 16000,
       system: ANALYSIS_SYSTEM_PROMPT,
       messages: [{ role: "user", content: prompt }],
     });

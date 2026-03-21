@@ -71,6 +71,97 @@ export function getSelectedRestricted(answers: Record<string, string>): string[]
   return selected.filter((s) => RESTRICTED_INDUSTRIES.includes(s));
 }
 
+// Determine the recommended A2P use case based on messaging behavior answers
+export function determineUseCase(answers: Record<string, string>): string {
+  const firstMsg = answers.first_message_purpose || "";
+  const stage = answers.contact_relationship_stage || "";
+  const intent = answers.message_intent || "";
+  const initiation = answers.message_initiation || "";
+
+  // Restricted industries CAN be Conversational or Mixed Use — they just can't do
+  // cold outreach or promotional blasts. The use case is determined by actual behavior,
+  // not industry alone. Only Marketing is blocked for restricted industries.
+  if (isRestrictedIndustry(answers)) {
+    // Block pure Marketing for restricted industries
+    if (firstMsg.startsWith("A promotional") || intent.startsWith("To promote")) {
+      // Restricted industries cannot do marketing — fall back to Mixed Use
+      // (they probably do conversational follow-up + transactional updates)
+      return "Mixed Use — Both lead interaction and customer servicing";
+    }
+    // Otherwise, let the normal classification logic run
+  }
+
+  // Explicit multiple stages or mix intent → Mixed Use
+  if (
+    stage.startsWith("We message people at multiple stages") ||
+    intent.startsWith("A mix")
+  ) {
+    return "Mixed Use — Both lead interaction and customer servicing";
+  }
+
+  // Marketing signals
+  if (
+    firstMsg.startsWith("A promotional") ||
+    intent.startsWith("To promote")
+  ) {
+    return "Marketing — Promotional and persuasion messaging";
+  }
+
+  // Customer Care signals: existing customer + maintenance + customer-triggered
+  if (
+    stage.startsWith("They are already a paying customer") &&
+    firstMsg.startsWith("A confirmation/update") &&
+    intent.startsWith("To maintain")
+  ) {
+    return "Customer Care — Post-relationship maintenance only";
+  }
+
+  // Conversational signals: new lead + response to inquiry + back-and-forth
+  if (
+    stage.startsWith("They just submitted a form") &&
+    (firstMsg.startsWith("A response to their inquiry") || intent.startsWith("To have back-and-forth"))
+  ) {
+    return "Conversational Messaging — Pre-relationship back-and-forth";
+  }
+
+  // Automated follow-up to leads is conversational (not customer care)
+  if (firstMsg.startsWith("An automated follow-up")) {
+    if (stage.startsWith("They are already a paying customer")) {
+      return "Customer Care — Post-relationship maintenance only";
+    }
+    return "Conversational Messaging — Pre-relationship back-and-forth";
+  }
+
+  // System-initiated messages to existing customers → Customer Care
+  if (
+    initiation.startsWith("Our system") &&
+    stage.startsWith("They are already a paying customer")
+  ) {
+    return "Customer Care — Post-relationship maintenance only";
+  }
+
+  // Default: Mixed Use (safest for businesses that span stages)
+  return "Mixed Use — Both lead interaction and customer servicing";
+}
+
+// Check if the use case includes marketing messaging
+// Restricted industries NEVER show marketing questions — even in Mixed Use,
+// the "mixed" part is conversational follow-up + transactional, not promotional
+export function useCaseIncludesMarketing(answers: Record<string, string>): boolean {
+  if (isRestrictedIndustry(answers)) return false;
+  const useCase = answers.recommended_use_case || determineUseCase(answers);
+  return useCase.startsWith("Marketing") || useCase.startsWith("Mixed Use");
+}
+
+// Get a short use case label for prompts
+export function getUseCaseLabel(answers: Record<string, string>): string {
+  const useCase = answers.recommended_use_case || determineUseCase(answers);
+  if (useCase.startsWith("Customer Care")) return "Customer Care";
+  if (useCase.startsWith("Conversational")) return "Conversational Messaging";
+  if (useCase.startsWith("Marketing")) return "Marketing";
+  return "Mixed Use";
+}
+
 export const a2pComplianceQuestions: QuestionSection[] = [
   // ─── SECTION 1: BUSINESS IDENTITY (Client-Facing) ───
   {
@@ -192,7 +283,106 @@ export const a2pComplianceQuestions: QuestionSection[] = [
     ],
   },
 
-  // ─── SECTION 2: SMS CAMPAIGN USE CASES ───
+  // ─── SECTION 2: MESSAGING BEHAVIOR (Internal — determines A2P use case) ───
+  {
+    id: "messaging_behavior",
+    title: "Messaging Behavior",
+    description: "These questions determine which A2P 10DLC use case your business should register under. Selecting the wrong use case is the #1 reason campaigns get rejected. Answer based on what you ACTUALLY do — not what you aspire to.",
+    questions: [
+      {
+        id: "first_message_purpose",
+        question: "What is the FIRST text message sent to a new contact after they opt in?",
+        type: "select",
+        options: [
+          "A response to their inquiry or form submission (e.g., 'Is this for purchase or refinance?')",
+          "A confirmation/update about their existing account or service (e.g., 'Your payment is due')",
+          "A promotional or re-engagement message (e.g., 'Check out our new offers')",
+          "An automated follow-up to a lead (e.g., 'Thanks for your interest, here's more info')",
+        ],
+        helperText: "This is the single most important factor in A2P classification. Reviewers classify your entire campaign based on what your FIRST message looks like. A response to an inquiry = conversational. An account update = customer care. A promotion = marketing. An automated lead follow-up = conversational (not customer care).",
+        required: true,
+      },
+      {
+        id: "contact_relationship_stage",
+        question: "When you first text someone, what is their relationship to your business?",
+        type: "select",
+        options: [
+          "They are already a paying customer or have an active account/contract/service",
+          "They just submitted a form, inquiry, or request — they are a new lead",
+          "They signed up for updates but have no active service or transaction",
+          "We message people at multiple stages — some are leads, some are customers",
+        ],
+        helperText: "CRITICAL: A form submission does NOT create a customer relationship. A lead is NOT a customer. Customer Care requires an active account, contract, or service BEFORE messaging begins. If your contacts only have 'interest', they are leads — not customers.",
+        required: true,
+      },
+      {
+        id: "message_initiation",
+        question: "Who causes the message to be sent?",
+        type: "select",
+        options: [
+          "The customer — messages are triggered by their actions (form submit, purchase, appointment)",
+          "Our system — messages are sent on a schedule or triggered by our internal processes",
+          "Both — some messages respond to customer actions, others are sent proactively",
+        ],
+        helperText: "If your system sends messages without the customer taking a specific action, that changes the classification. Customer-triggered = more likely customer care or conversational. System-triggered = more likely marketing or mixed use.",
+        required: true,
+      },
+      {
+        id: "message_intent",
+        question: "What is the primary PURPOSE of your text messages?",
+        type: "select",
+        options: [
+          "To maintain an existing service relationship (reminders, updates, status changes)",
+          "To have back-and-forth conversations with people who contacted us",
+          "To promote, sell, or re-engage contacts",
+          "A mix — we both service existing customers AND follow up with new leads",
+        ],
+        helperText: "Be honest. If your messages do both (service existing customers AND follow up with new leads), select 'A mix'. Trying to force a single use case when your behavior is mixed is the #1 cause of rejection — the reviewer sees the inconsistency.",
+        required: true,
+      },
+      {
+        id: "has_active_service_before_messaging",
+        question: "Before you send the first text, does the recipient have any of the following?",
+        type: "multi-select",
+        options: [
+          "An active account or login",
+          "A signed contract or agreement",
+          "An active subscription or service plan",
+          "A completed purchase or transaction",
+          "An open application, case, or file being processed",
+          "None of the above — they just submitted a form or expressed interest",
+        ],
+        helperText: "Customer Care requires a DEFINED service state before messaging begins. If recipients only have 'interest' or 'a form submission', they are leads — and your use case is Conversational or Mixed, not Customer Care.",
+        required: true,
+      },
+      {
+        id: "first_message_example",
+        question: "Write an example of the very first text message a new contact would receive from you",
+        type: "textarea",
+        placeholder: "e.g., 'Hi [Name], thanks for reaching out about your home purchase. Are you looking to buy or refinance?' or 'Your appointment is confirmed for Thursday at 2pm.'",
+        helperText: "Write this EXACTLY as you would send it. This is the single message the reviewer will judge your entire campaign by. If it asks a question → conversational. If it confirms/updates → customer care. If it promotes → marketing.",
+        required: true,
+        aiSuggest: true,
+      },
+      {
+        id: "recommended_use_case",
+        question: "Recommended A2P Use Case",
+        type: "select",
+        options: [
+          "Customer Care — Post-relationship maintenance only",
+          "Conversational Messaging — Pre-relationship back-and-forth",
+          "Marketing — Promotional and persuasion messaging",
+          "Mixed Use — Both lead interaction and customer servicing",
+        ],
+        helperText: "Based on your answers above, this is the use case that matches your actual messaging behavior. This determines how your Privacy Policy, Terms & Conditions, and A2P Submission Language are written. Selecting the wrong use case is the top reason for campaign rejection.\n\n• Customer Care: You ONLY message existing customers with active accounts/contracts. No lead follow-up.\n• Conversational: You respond to people who contacted you. Back-and-forth interaction with leads.\n• Marketing: You send promotional content to drive action.\n• Mixed Use: You do BOTH — interact with leads AND service existing customers. This is the most common for real businesses.",
+        recommendationText: "Use the 'Write with AI' button to get a recommendation based on your answers. Most businesses that both follow up with leads AND service customers should select 'Mixed Use'.",
+        required: true,
+        aiSuggest: true,
+      },
+    ],
+  },
+
+  // ─── SECTION 3: SMS CAMPAIGN USE CASES ───
   {
     id: "sms_campaigns",
     title: "SMS Campaign Use Cases",
@@ -286,6 +476,15 @@ export const a2pComplianceQuestions: QuestionSection[] = [
         recommendationText: "We recommend 'As needed based on account activity' — this is the safest choice for transactional messages since they're triggered by customer actions and hard to predict exactly.",
         required: true,
       },
+      {
+        id: "sample_messages",
+        question: "Write 2-3 example text messages you actually send (or plan to send)",
+        type: "textarea",
+        placeholder: "Example 1: Hi [Name], thanks for reaching out about your home purchase. Are you looking to buy or refinance?\n\nExample 2: Your application has been received. We'll follow up within 24 hours with next steps.\n\nExample 3: Reminder: Your appointment with [Business] is tomorrow at 2pm. Reply YES to confirm.",
+        helperText: "These should reflect REAL messages you send. If your samples don't match your use case, the reviewer WILL reject you. For Mixed Use, include both a lead follow-up message AND a customer service message. For Customer Care, only include messages to existing customers.",
+        required: true,
+        aiSuggest: true,
+      },
     ],
   },
 
@@ -343,6 +542,41 @@ export const a2pComplianceQuestions: QuestionSection[] = [
         helperText: "WHY THIS MATTERS: Every form that collects a phone number must have clickable links to your Privacy Policy and Terms & Conditions. Carriers check for this. We'll generate both documents for you.",
         recommendationText: "Best practice: Place policy links directly next to or below the consent checkboxes — not just in the footer. Carriers are more likely to approve when links are clearly visible near the opt-in area.",
         required: true,
+      },
+      {
+        id: "optin_flow_type",
+        question: "How does someone get to the page where they enter their phone number and consent to texts?",
+        type: "select",
+        options: [
+          "They land directly on a simple contact form (name, phone, email)",
+          "They fill out a multi-step questionnaire or application, then reach the contact details step",
+          "They go through a checkout or booking process, then enter their phone at checkout",
+          "They click a 'Text Us' or 'Chat' button and are prompted for their phone number",
+          "They text a keyword to a number (text-to-join)",
+          "They sign up for an account and enter their phone during registration",
+        ],
+        helperText: "CRITICAL: A2P reviewers will try to follow this exact path on your website. If they can't find where the phone number is collected and where the consent checkboxes are, they will reject you. If your flow involves multiple steps (like answering questions first), you MUST describe each step so the reviewer can follow along.",
+        required: true,
+        clientFacing: true,
+      },
+      {
+        id: "optin_journey_steps",
+        question: "Describe the exact steps someone takes from landing on your website to entering their phone number",
+        type: "textarea",
+        placeholder: "Example: 1. Visitor lands on our homepage at example.com\n2. They click 'Get a Free Quote' button\n3. They answer 4 questions about their project (type, budget, timeline, location)\n4. On the final step, they enter their name, email, and phone number\n5. Below the phone field, there are two unchecked consent checkboxes for SMS\n6. They submit the form",
+        helperText: "WALK THE REVIEWER THROUGH IT STEP BY STEP. The reviewer will open your website and try to follow these exact steps. If they get lost or can't find the consent checkboxes, you get rejected. Be specific about: which page they start on, what buttons they click, what steps they complete before reaching the phone field, and where the consent checkboxes appear.",
+        required: true,
+        clientFacing: true,
+        aiSuggest: true,
+      },
+      {
+        id: "optin_page_url",
+        question: "What is the direct URL of the page where the phone number field and consent checkboxes appear?",
+        type: "text",
+        placeholder: "e.g., https://www.yourbusiness.com/contact or https://www.yourbusiness.com/get-quote/step-3",
+        helperText: "If the consent checkboxes appear on a specific step of a multi-step form, provide the URL that gets the reviewer as close as possible to that step. If it's a single-page form, just provide that page URL.",
+        required: true,
+        clientFacing: true,
       },
     ],
   },

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import type { Question, QuestionSection } from "@/lib/questionnaires/a2p-compliance";
-import { isRestrictedIndustry } from "@/lib/questionnaires/a2p-compliance";
+import { isRestrictedIndustry, useCaseIncludesMarketing } from "@/lib/questionnaires/a2p-compliance";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Textarea from "@/components/ui/Textarea";
@@ -30,11 +30,16 @@ export default function QuestionnaireWizard({
   const [answers, setAnswers] = useState<Record<string, string>>(initialAnswers);
   const [saving, setSaving] = useState(false);
 
+  const MARKETING_QUESTION_IDS_SET = new Set(["marketing_use_case", "marketing_message_types", "marketing_frequency"]);
+
   const flatQuestions = useMemo<FlatQuestion[]>(() => {
+    const showMarketing = useCaseIncludesMarketing(answers);
     const result: FlatQuestion[] = [];
     for (const section of sections) {
       for (const q of section.questions) {
         if (mode === "client" && !q.clientFacing) continue;
+        // Skip marketing questions if use case doesn't include marketing
+        if (MARKETING_QUESTION_IDS_SET.has(q.id) && !showMarketing) continue;
         result.push({
           ...q,
           sectionTitle: section.title,
@@ -43,7 +48,8 @@ export default function QuestionnaireWizard({
       }
     }
     return result;
-  }, [sections, mode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sections, mode, answers.recommended_use_case, answers.first_message_purpose, answers.contact_relationship_stage, answers.message_intent, answers.industry_type]);
 
   // Auto-skip to first unanswered question
   const firstUnanswered = useMemo(() => {
@@ -56,9 +62,11 @@ export default function QuestionnaireWizard({
   const [currentIndex, setCurrentIndex] = useState(firstUnanswered);
 
   const totalQuestions = flatQuestions.length;
-  const currentQuestion = flatQuestions[currentIndex];
-  const isFirst = currentIndex === 0;
-  const isLast = currentIndex === totalQuestions - 1;
+  // Clamp index if questions were removed (e.g., marketing questions hidden)
+  const safeIndex = Math.min(currentIndex, totalQuestions - 1);
+  const currentQuestion = flatQuestions[safeIndex];
+  const isFirst = safeIndex === 0;
+  const isLast = safeIndex === totalQuestions - 1;
 
   function updateAnswer(questionId: string, value: string) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -216,11 +224,21 @@ function QuestionRenderer({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           question: question.question,
+          questionId: question.id,
           businessContext: {
             "Business Name": answers.legal_business_name || "",
             "Business Type": answers.has_dba === "Yes" ? `${answers.legal_business_name} (DBA: ${answers.dba_names})` : answers.legal_business_name || "",
             "Website": answers.primary_website || "",
             "Business Address": answers.business_address || "",
+            "Industry": answers.industry_type || "",
+            "First Message Purpose": answers.first_message_purpose || "",
+            "Contact Relationship Stage": answers.contact_relationship_stage || "",
+            "Message Initiation": answers.message_initiation || "",
+            "Message Intent": answers.message_intent || "",
+            "Active Service Before Messaging": answers.has_active_service_before_messaging || "",
+            "First Message Example": answers.first_message_example || "",
+            "Recommended Use Case": answers.recommended_use_case || "",
+            "Business Description": answers.business_description || "",
           },
         }),
       });

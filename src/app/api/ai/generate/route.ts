@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase";
-import { isProhibitedIndustry, isRestrictedIndustry, getSelectedRestricted } from "@/lib/questionnaires/a2p-compliance";
+import { isProhibitedIndustry, isRestrictedIndustry, getSelectedRestricted, getUseCaseLabel, determineUseCase } from "@/lib/questionnaires/a2p-compliance";
 
 export const maxDuration = 800; // ~13 minutes
 
@@ -103,12 +103,13 @@ CRITICAL REQUIREMENTS:
 24. START RE-ENROLLMENT KEYWORD — REQUIRED IN BOTH DOCUMENTS: Immediately after the opt-out description in BOTH the Privacy Policy opt-out section AND the Terms & Conditions SMS opt-out section, add a re-enrollment disclosure using the actual business data from the questionnaire. Use this exact format (substituting real values): "If you wish to re-enroll in our SMS messaging program after opting out, you may text START to [STOP/HELP Number from questionnaire] or re-submit your SMS consent through the opt-in checkbox on our website contact form at [Primary Website URL from questionnaire]." This disclosure is required by CTIA best practices. It must appear in both documents — once in the Privacy Policy opt-out section and once in the Terms & Conditions opt-out section.
 25. ADDRESS FORMATTING CONSISTENCY: When including a business address anywhere in a document, choose either "Suite" or "Ste" for the suite/unit designation and use that same format consistently throughout the entire document. Never write "Suite 200" in one place and "Ste 200" in another. Preferred format is the full word "Suite [number]" — not abbreviated.
 26. STOP KEYWORD — EXACT PHRASING: The opt-out phrase is ALWAYS "Reply STOP to opt out." — NEVER "Reply STOP to unsubscribe", NEVER "Reply STOP to cancel", NEVER "Reply STOP to stop receiving messages." The word "opt out" is mandatory everywhere it appears in any document. "Unsubscribe" will cause a carrier rejection. This applies to: consent disclosures, opt-out sections, sample messages, and all SMS-related language.
-27. FOUR PROHIBITION SENTENCES FOR RESTRICTED INDUSTRIES: When generating for a Category B restricted-industry client, FOUR prohibition sentences are mandatory (not three). Each must appear as a standalone sentence with the full legal business name as the grammatical subject. The fourth sentence is: "[Business Name] does not send batch, broadcast, or mass SMS messages of any kind." All four must appear in BOTH the Privacy Policy and Terms & Conditions.
-28. TRANSACTIONAL MESSAGE TEST: For every message type described in a Category B (restricted industry) document, apply this three-question test:
-   Q1: Has the recipient already initiated the transaction or action that this message responds to? (Must be YES)
-   Q2: Does this message contain any information designed to persuade the recipient to take a new action they have not already begun? (Must be NO)
-   Q3: If the recipient had never heard of this company, would this message make sense as a response to something they did? (Must be YES)
-   If a message fails any question, it is promotional and must NOT be included. Only messages passing YES, NO, YES are permitted for restricted industries.
+27. RESTRICTED INDUSTRY MESSAGING LANGUAGE: For restricted-industry clients, the language used depends on the USE CASE CLASSIFICATION provided in the prompt:
+   - CUSTOMER CARE use case: Use the FOUR hard prohibition sentences (each as a standalone sentence with full business name): "[Business Name] does not send promotional, advertising, or marketing SMS messages of any kind." / "[Business Name] does not engage in SMS-based solicitation of prospective clients or customers." / "[Business Name] does not use text messaging to present offers, rate quotes, discounts, or product comparisons." / "[Business Name] does not send batch, broadcast, or mass SMS messages of any kind."
+   - CONVERSATIONAL or MIXED USE case: Do NOT use the four hard prohibition sentences — they deny behavior the reviewer can see is happening (inquiry follow-up). Instead use this accurate framing: "[Business Name] does not send unsolicited promotional or marketing SMS messages. SMS communications are limited to responses to user inquiries, conversational follow-up, and transactional messages related to [specific service area]. Messages are not sent to purchased lists or cold contacts and do not include promotional or unsolicited marketing content."
+   The industry restriction section in the prompt will specify which approach to use. Follow it exactly.
+28. RESTRICTED INDUSTRY MESSAGE TEST: For restricted-industry documents, apply this test to every described message type:
+   - For CUSTOMER CARE use case — strict transactional test: Q1: Has the recipient already initiated the transaction? (YES) Q2: Does it persuade a new action? (NO) Q3: Would it make sense as a response? (YES). Only YES/NO/YES messages pass.
+   - For CONVERSATIONAL or MIXED USE case — expanded test: Messages are allowed if the recipient INITIATED CONTACT (submitted a form, sent an inquiry, requested information) OR has an active account/file/service. Conversational follow-up on an inquiry IS allowed. What is NOT allowed: cold outreach to people who didn't reach out, promotional offers, rate quote blasts, or marketing campaigns.
 29. CONSENT NOT A CONDITION: Include this as an explicit standalone statement in the SMS section: "Consent to receive text messages is not required as a condition of purchasing any goods or services."
 30. PROHIBITION SURVIVES RESTRUCTURING: The no-sharing prohibition for SMS opt-in data must explicitly survive any corporate merger, acquisition, or organizational restructuring. Include language such as: "This prohibition on sharing SMS opt-in data shall survive any corporate restructuring, merger, acquisition, or change in ownership."
 31. CROSS-DOCUMENT CONSENT TEXT — CHARACTER-FOR-CHARACTER MATCH: When consent checkbox texts are provided (from the A2P Submission Language), every document that quotes them MUST use the EXACT SAME wording, character for character. The Privacy Policy "Consent Disclosure" blockquote, the Terms & Conditions consent disclosure section, and the opt-in description field must all quote the identical text. Do NOT paraphrase, reorder words, add/remove commas, change capitalization, or substitute synonyms. If the checkbox says "service texts" do not write "service messages." If it says "promotional texts" do not write "marketing messages." Copy the text verbatim. A compliance reviewer will diff the consent language across all three documents — any discrepancy, no matter how small, is flagged as an inconsistency.
@@ -314,6 +315,8 @@ function buildIndustryRestrictionSection(answers: Record<string, string>): strin
   if (!isRestrictedIndustry(answers)) return "";
   const restricted = getSelectedRestricted(answers);
   const legalName = answers.legal_business_name || "This business";
+  const useCase = getUseCaseLabel(answers);
+  const isCustomerCareOnly = useCase === "Customer Care";
 
   const perIndustryRules = restricted.map((industry) => {
     const rules = INDUSTRY_RULES[industry];
@@ -323,35 +326,151 @@ ${industry.toUpperCase()}:
   Regulatory note: ${rules.regulatoryNote}
   PROHIBITED messages (never include, never reference):
     ${rules.prohibited.map((p) => `• ${p}`).join("\n    ")}
-  ALLOWED messages (transactional only, triggered by user action or account event):
+  ALLOWED messages (${isCustomerCareOnly ? "transactional only, triggered by user action or account event" : "transactional + conversational follow-up on user-initiated inquiries"}):
     ${rules.allowed.map((a) => `• ${a}`).join("\n    ")}`;
   }).join("\n");
 
-  return `
+  // Customer Care only: use the hard 4 prohibition sentences (purely servicing existing customers)
+  if (isCustomerCareOnly) {
+    return `
 INDUSTRY RESTRICTION — CRITICAL — READ BEFORE GENERATING:
-This business operates in a regulated industry that is PERMITTED to register for A2P 10DLC but is RESTRICTED TO TRANSACTIONAL MESSAGES ONLY: ${restricted.join(", ")}.
+This business operates in a regulated industry: ${restricted.join(", ")}.
+Use case is CUSTOMER CARE — this business ONLY messages existing customers with active accounts/files/services.
 
 FOUR MANDATORY DECLARATIVE PROHIBITION SENTENCES — INCLUDE VERBATIM IN THE SMS SECTION:
-These four sentences must appear as standalone statements in the SMS/Text Messaging policy section of every generated document. Use the exact legal business name as the subject. Do NOT bury them in a list — each must be its own sentence in a paragraph:
+These four sentences must appear as standalone statements in the SMS/Text Messaging policy section of every generated document:
   "${legalName} does not send promotional, advertising, or marketing SMS messages of any kind."
   "${legalName} does not engage in SMS-based solicitation of prospective clients or customers."
   "${legalName} does not use text messaging to present offers, rate quotes, discounts, or product comparisons."
   "${legalName} does not send batch, broadcast, or mass SMS messages of any kind."
 
-UNIVERSAL RULES FOR ALL RESTRICTED INDUSTRIES:
-1. This business does NOT send promotional, marketing, or solicitation SMS messages. Remove ALL promotional SMS language from the document.
-2. The SMS program is limited EXCLUSIVELY to transactional messages triggered by specific user actions or account events. Broadcast or scheduled marketing messages are not sent.
-3. Every generated document must state affirmatively and explicitly that this business does not use SMS for promotional or marketing purposes.
-4. The marketing_use_case and marketing_message_types fields below should be treated as N/A and ignored — the business cannot send promotional SMS regardless of what was entered there.
-5. Every message identifies the business by name, includes STOP opt-out language, and includes "Msg &amp; data rates may apply."
-6. SMS opt-in consent cannot be shared with or transferred to any third party under any circumstance.
-7. Any message with a promotional call to action, a discount, a rate quote, or language designed to persuade rather than inform is prohibited.
-8. Any message sent to a cold contact who did not affirmatively opt in is prohibited.
-9. TRANSACTIONAL MESSAGE PHRASING — CRITICAL FOR FINANCIAL SERVICES AND HEALTHCARE: When listing allowable transactional message types in any document, phrase them to make explicitly clear the message CONFIRMS OR RESPONDS TO an action the recipient already initiated — not that the business is presenting new information to them. Example: instead of "rate lock confirmations," write "rate lock status notifications confirming actions taken on the client's active file at the client's direction." Instead of "appointment reminders," write "appointment reminders for appointments the patient scheduled." This distinction is critical — a strict reviewer will flag any language that could be read as the business initiating contact with financial or health information, even in a transactional context.
+UNIVERSAL RULES:
+1. The SMS program is limited EXCLUSIVELY to transactional messages triggered by specific user actions or account events.
+2. The marketing_use_case and marketing_message_types fields below should be treated as N/A.
+3. Every message identifies the business by name, includes STOP opt-out language, and includes "Msg &amp; data rates may apply."
+4. SMS opt-in consent cannot be shared with or transferred to any third party.
+5. Any message with a promotional call to action, discount, rate quote, or language designed to persuade rather than inform is prohibited.
+6. Any message sent to a cold contact who did not affirmatively opt in is prohibited.
 
 SPECIFIC RULES BY INDUSTRY:${perIndustryRules}
 
-Write the SMS/messaging sections of all documents to strictly reflect these restrictions. Use firm, affirmative policy statements — not caveats or suggestions.
+Write the SMS/messaging sections of all documents to strictly reflect these restrictions.
+`;
+  }
+
+  // Conversational or Mixed Use: use softer, accurate language that allows inquiry follow-up
+  return `
+INDUSTRY RESTRICTION — REGULATED INDUSTRY WITH CONVERSATIONAL/MIXED MESSAGING:
+This business operates in a regulated industry: ${restricted.join(", ")}.
+Use case is ${useCase} — this business responds to inbound inquiries AND/OR services existing clients. It does NOT send cold outreach, promotional blasts, or unsolicited marketing.
+
+MESSAGING LANGUAGE — USE THIS POSITIONING (not the hard prohibition sentences):
+Instead of "does not send promotional, advertising, or marketing SMS messages of any kind", use this accurate framing:
+  "${legalName} does not send unsolicited promotional or marketing SMS messages. SMS communications are limited to responses to user inquiries, conversational follow-up, and transactional messages related to ${restricted.map(i => {
+    if (i.includes("Mortgage") || i.includes("Banking")) return "loan applications and active files";
+    if (i.includes("Insurance")) return "policy inquiries and active policies";
+    if (i.includes("Healthcare")) return "patient inquiries and appointments";
+    if (i.includes("Investment")) return "client inquiries and active accounts";
+    if (i.includes("Law")) return "case inquiries and active matters";
+    return "active client files and inquiries";
+  }).join(", ")}."
+
+WHY THIS MATTERS: The old "does not send promotional messages of ANY kind" language gets rejected when the reviewer sees that the business clearly follows up on form submissions — that's conversational messaging, and denying it creates a mismatch. The new language is honest: no cold outreach, no promos, but YES to responding to inquiries.
+
+WHAT IS ALLOWED:
+✓ Responding to inquiries submitted through the website
+✓ Asking qualification questions after someone submits a form
+✓ Following up on submitted applications/requests
+✓ Sending application/case/file status updates
+✓ Document and appointment reminders for active clients
+✓ Direct responses to client-initiated questions
+
+WHAT IS STILL PROHIBITED:
+✗ Cold outreach to purchased lists or contacts who didn't inquire
+✗ Promotional rate quotes, offers, or "get approved today" messages
+✗ Unsolicited marketing blasts or re-engagement campaigns
+✗ Broadcast messages to general lists
+✗ Any message designed to persuade someone who didn't already reach out
+
+RULES:
+1. The marketing_use_case and marketing_message_types fields should be treated as N/A — no promotional SMS.
+2. Every message identifies the business by name, includes STOP opt-out language, and includes "Msg &amp; data rates may apply."
+3. SMS opt-in consent cannot be shared with or transferred to any third party.
+4. Messages are ONLY sent to people who submitted an inquiry or have an active file/account.
+5. Sample messages must reflect REAL behavior: inquiry follow-up + transactional updates. NOT promotional.
+
+SPECIFIC RULES BY INDUSTRY:${perIndustryRules}
+
+Write the SMS/messaging sections to honestly reflect this business's messaging: inbound inquiry follow-up + transactional servicing. Do NOT deny that the business responds to leads — that's exactly what it does, and the reviewer knows it.
+`;
+}
+
+function buildUseCaseSection(answers: Record<string, string>): string {
+  const useCase = getUseCaseLabel(answers);
+  const firstMsgExample = answers.first_message_example || "";
+  const sampleMessages = answers.sample_messages || "";
+
+  let rules = "";
+
+  if (useCase === "Customer Care") {
+    rules = `USE CASE RULES — CUSTOMER CARE (POST-RELATIONSHIP ONLY):
+- This business ONLY messages people who are ALREADY customers with an active account, contract, or service.
+- ALL messaging language must describe a post-relationship maintenance program — updates, reminders, confirmations, status changes.
+- NEVER use language that implies lead follow-up, outreach, or initial contact: no "following up", "reaching out", "connecting with", "thanks for your interest".
+- Sample messages must ONLY be responses to existing service states (active account, open file, scheduled appointment, completed transaction).
+- Consent language should reference "service notifications", "account updates", and "appointment reminders" — NOT "responses to inquiries" or "follow-up communications".
+- The use_case_description must establish that recipients are EXISTING customers with DEFINED service states (account, contract, subscription, active file) BEFORE messaging begins.
+- A form submission or inquiry does NOT constitute a customer relationship. Do not describe the program as if it starts at the lead stage.
+- If the first message is a response to a form submission, that is NOT Customer Care — it is Conversational. Customer Care messages respond to SERVICE events, not INTEREST events.`;
+  } else if (useCase === "Conversational Messaging") {
+    rules = `USE CASE RULES — CONVERSATIONAL MESSAGING (PRE-RELATIONSHIP INTERACTION):
+- This business messages people who have INITIATED contact (form submission, inquiry, request) but do NOT yet have an active customer relationship.
+- Messaging is interactive and two-way — the business asks questions, gathers information, qualifies, and guides.
+- Sample messages must be questions or direct responses to inquiries — NOT broadcast updates or automated blasts.
+- Tone must be conversational and personal, not automated or templated.
+- The use_case_description must establish: (1) user initiated contact first, (2) messaging is interactive back-and-forth, (3) no formal customer relationship yet, (4) purpose is to understand, qualify, and guide.
+- Consent language should reference "responses to your inquiry", "follow-up communications", and "information you requested".
+- Do NOT describe the program as "customer care" or "account notifications" — the recipients are leads, not customers.
+- Messages that feel like automation blasts (generic, pushy, no personalization) will be rejected even with valid opt-in.
+- Language must NOT cross into persuasion. "We have great options for you" is marketing, not conversational. Stick to information exchange.`;
+  } else if (useCase === "Marketing") {
+    rules = `USE CASE RULES — MARKETING (PROMOTIONAL MESSAGING):
+- This business sends promotional, persuasion, or re-engagement messages to drive behavior.
+- Full marketing consent flow required — dual checkbox (marketing + transactional/service).
+- Sample messages can include offers, promotions, calls to action, new product announcements, and re-engagement.
+- The use_case_description must be transparent about promotional intent — do not disguise marketing as "updates" or "notifications".
+- Strongest SHAFT compliance language needed (no content related to sex, hate, alcohol, firearms, tobacco/drugs).
+- Consent language must explicitly reference "promotional text messages", "special offers", and "marketing communications".
+- Include specific frequency caps and honor them strictly — marketing campaigns get extra scrutiny on frequency claims.`;
+  } else {
+    // Mixed Use
+    rules = `USE CASE RULES — MIXED USE (BOTH LEAD INTERACTION AND CUSTOMER SERVICING):
+- This business BOTH interacts with new leads (pre-relationship) AND services existing customers (post-relationship).
+- This is the most common use case for real businesses — do NOT try to force it into a single category.
+- Documents must describe BOTH programs clearly:
+  (1) Pre-sale: responding to inquiries, qualifying leads, answering questions
+  (2) Post-sale: appointment reminders, status updates, payment notifications, account alerts
+- Sample messages MUST include examples from BOTH sides — one conversational/lead message AND one transactional/service message. If samples only show one side, the reviewer will flag a mismatch.
+- The use_case_description must explicitly describe both programs and the transition between them.
+- Consent checkboxes need to cover both program types (marketing/promotional + service/transactional).
+- Privacy Policy and Terms must address both relationship stages — lead interaction AND customer servicing.
+- Do NOT deny that lead follow-up happens. If the business follows up with leads AND services customers, the documents must reflect both. Denying reality (e.g., "we do not send outreach messages") when the system clearly does follow up will cause rejection due to inconsistency.
+- Legal docs that say "we only send transactional messages" when the business also follows up with leads = instant rejection.`;
+  }
+
+  return `
+A2P USE CASE CLASSIFICATION: ${useCase}
+${firstMsgExample ? `FIRST MESSAGE EXAMPLE (provided by the business): "${firstMsgExample}"` : ""}
+${sampleMessages ? `SAMPLE MESSAGES (provided by the business):\n${sampleMessages}` : ""}
+
+${rules}
+
+CRITICAL — USE CASE CONSISTENCY:
+Every element of every document must tell the same story. The reviewer's decision tree:
+1. Why does the first message exist? (to respond? to update? to sell?)
+2. What stage is the user in? (stranger? lead? customer?)
+3. Who caused the message to happen? (the user? the business? the system?)
+If the answer to these questions doesn't match the use case classification above, the campaign WILL be rejected.
 `;
 }
 
@@ -407,7 +526,9 @@ No A2P Submission Language has been generated yet for this project. Write repres
   }
 
   const marketingLine = restricted
-    ? "Marketing consent checkbox: Not applicable — restricted industry, transactional messages only."
+    ? (checkboxes.marketing
+      ? `Marketing consent checkbox: "${checkboxes.marketing}"`
+      : "Marketing consent checkbox: Not applicable — restricted industry, no promotional messaging.")
     : checkboxes.marketing
     ? `Marketing consent checkbox: "${checkboxes.marketing}"`
     : "";
@@ -634,7 +755,7 @@ ${existingPolicyContent}
 
 Update the above policy to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
-${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}${analysisHistory}
+${buildUseCaseSection(answers)}${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}${analysisHistory}
 Generate the COMPLETE privacy policy in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
 
 CRITICAL A2P requirements to include:
@@ -710,7 +831,7 @@ ${existingTermsContent}
 
 Update the above terms to include all A2P requirements listed below. Keep existing sections that are still relevant.
 ` : ""}
-${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}${buildPrivacyPolicyReferenceSection(privacyPolicyContent)}${analysisHistory}
+${buildUseCaseSection(answers)}${buildIndustryRestrictionSection(answers)}${buildConsentAnchorSection(consentCheckboxes, restricted)}${buildPrivacyPolicyReferenceSection(privacyPolicyContent)}${analysisHistory}
 Generate the COMPLETE terms & conditions in HTML format. Write EVERY section fully — no placeholders, no shortcuts, no "[insert here]" markers. This must be ready to copy-paste onto a website immediately.
 
 CRITICAL A2P requirements to include:
@@ -763,26 +884,46 @@ CRITICAL KEYWORD RULES — READ FIRST:
 
 You MUST output ONLY valid JSON with no markdown, no code fences, no extra text. The JSON must have these exact keys:
 
-- "use_case_description": (min 40 chars, max 4096 chars) Must explicitly answer ALL FIVE of these questions — a reviewer will check for each one:
-  1. Who is this business and what industry are they in? Name the business, identify the industry. For restricted industries, name the specific governing federal statutes.
-  2. Who receives these messages and how did they opt in? Describe the recipient population specifically (not just "our customers"). Describe what action they took and what consent mechanism was used.
-  3. What specific messages will be sent? Name each message type specifically. "Updates and notifications" alone is NOT sufficient.
-  4. What triggers each message? Transactional programs must state that messages are event-triggered and name the specific events.
-  5. What will never be sent? For restricted industries, explicitly state what is prohibited. For unrestricted dual-program businesses (marketing + transactional), include a statement that prohibited content categories (SHAFT: sex, hate, alcohol, firearms, tobacco/drugs) are never included in messages across BOTH programs — e.g., "Neither the promotional nor the service messaging program includes content related to [prohibited categories]." This demonstrates regulatory awareness to the reviewer.
+- "use_case_description": (min 40 chars, max 4096 chars) KEEP THIS SIMPLE AND DIRECT. Write it like you're explaining the business to someone in 30 seconds. Do NOT write an essay. Do NOT use legal jargon. Do NOT pad with filler words. A good use_case_description is 3-5 short sentences that answer:
+  1. What does this business do? (one sentence — name + industry + who they serve)
+  2. What texts do they send? (name 2-4 specific message types — NOT "updates and notifications")
+  3. How did recipients opt in? (one sentence — "Customers opt in via [mechanism] on [URL]")
+  4. For restricted industries only: what will NEVER be sent (one sentence naming the prohibition)
+
+  EXAMPLE OF GOOD (simple, clear, specific):
+  "[Business Name] is a mortgage lending company serving homebuyers in Florida. After borrowers opt in via the contact form at example.com, we send application status updates, document request notifications, closing date reminders, and rate lock confirmations. All messages are triggered by activity on the borrower's active loan file. No promotional, marketing, or solicitation messages are sent."
+
+  EXAMPLE OF BAD (too long, too wordy, legal-sounding):
+  "[Business Name], a duly licensed mortgage lending institution operating under the regulatory purview of RESPA, TILA, and Regulation Z, utilizes SMS messaging exclusively for the purpose of facilitating transactional communications with borrowers who have affirmatively opted in..."
+
+  The reviewer reads hundreds of these. Simple and specific wins. Verbose and legal-sounding gets scrutinized.
 
 - "sample_message_1": (min 20 chars, max 1024 chars) A realistic sample transactional/service message. MUST follow this exact format: "[Business Name]: [Specific transactional content related to recipient's existing account/file/transaction]. Reply STOP to opt out. Msg & data rates may apply." The message MUST start with the business name followed by a colon. Must include "Reply STOP to opt out." (not "unsubscribe"). Must include "Msg & data rates may apply." MUST NOT contain any URLs or web links — carriers flag URLs in sample messages as spam.
 
 - "sample_message_2": (min 20 chars, max 1024 chars) A second realistic sample message (different message type than sample 1). For restricted industries: MUST be another transactional message — no promotional content whatsoever. For unrestricted industries: can be a promotional/marketing message. Same format requirements as sample_message_1 — start with "[Business Name]:", include "Reply STOP to opt out." and "Msg & data rates may apply." MUST NOT contain any URLs or web links.
 
-- "opt_in_description": (min 40 chars, max 2048 chars) Must include ALL SEVEN of these required statements — missing any one causes a MESSAGE_FLOW rejection:
-  1. Where contacts opt in (specific URL and mechanism).
-  2. "The checkbox is never pre-checked, pre-selected, or activated by default." — use the negative form explicitly.
-  3. "Providing a phone number on the form alone does not constitute SMS consent. Consent requires the separate, affirmative act of checking the designated checkbox." — both sentences required.
-  4. "The SMS consent checkbox is separate from any other form agreement or terms acceptance checkbox."
-  5. "The consent disclosure is displayed immediately adjacent to the unchecked checkbox."
-  6. "Links to the Privacy Policy and Terms and Conditions are displayed on the form adjacent to the checkbox."
-  7. "Consent is not a condition of purchase or service."
-  After all seven statements, quote the verbatim consent disclosure text from the consent checkboxes.
+- "opt_in_description": (min 40 chars, max 2048 chars) This field must walk the reviewer through the EXACT opt-in journey step by step so they can follow it on the website. Structure it in this order:
+
+  PART 1 — THE OPT-IN JOURNEY (step-by-step):
+  Start by describing HOW someone gets to the page where they enter their phone number. The reviewer will open the website and try to follow these steps. If the business uses a multi-step form, questionnaire, application, or checkout flow, describe each step:
+  "Contacts opt in at [URL]. The opt-in process works as follows: [step 1], [step 2], [step 3]... On the [final step / contact details page], the visitor enters their name, email, and phone number."
+
+  EXAMPLE for a multi-step flow: "Contacts opt in at example.com/get-quote. Visitors click the 'Get a Free Quote' button on the homepage, which takes them to a 4-step questionnaire. They answer questions about their project type, budget, timeline, and location. On the final step, they enter their name, email address, and phone number. Below the phone number field, two separate unchecked SMS consent checkboxes are displayed."
+
+  EXAMPLE for a simple form: "Contacts opt in at example.com/contact. The contact page displays a form with fields for name, email, and phone number. Below the phone number field, two separate unchecked SMS consent checkboxes are displayed."
+
+  PART 2 — THE SEVEN REQUIRED STATEMENTS (include all of these after the journey):
+  1. "The checkbox is never pre-checked, pre-selected, or activated by default."
+  2. "Providing a phone number on the form alone does not constitute SMS consent. Consent requires the separate, affirmative act of checking the designated checkbox."
+  3. "The SMS consent checkbox is separate from any other form agreement or terms acceptance checkbox."
+  4. "The consent disclosure is displayed immediately adjacent to the unchecked checkbox."
+  5. "Links to the Privacy Policy and Terms and Conditions are displayed on the form adjacent to the checkbox."
+  6. "Consent is not a condition of purchase or service."
+
+  PART 3 — VERBATIM CONSENT TEXT:
+  After all statements, quote the verbatim consent disclosure text from the consent checkboxes.
+
+  CRITICAL: The opt-in journey description is what makes or breaks MESSAGE_FLOW rejections. If the reviewer can't figure out how to get to the consent checkboxes on the website, they reject. Be specific about the URL, what buttons to click, and what steps the visitor completes before reaching the phone number field.
 
 - "opt_in_message": (max 320 chars) The confirmation message sent after opt-in. Must include: business name at the start followed by colon, what they signed up for, message frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for help." DUAL-PROGRAM REQUIREMENT: For unrestricted businesses with BOTH marketing and transactional programs, the opt-in message MUST reference both program types — e.g., "You're now signed up for promotional and service texts from [Business Name]." Do NOT describe only one program when the business has two. For restricted (transactional-only) businesses, reference only service/transactional texts.
 
@@ -801,6 +942,19 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
   8. "No mobile information will be shared with third parties for marketing or promotional purposes."
 
 FREQUENCY CONSISTENCY: The message frequency stated in ALL fields must match the exact frequency values from the business data provided. Use the exact number — do not substitute "varies" when a specific frequency is given.
+
+USE CASE CLASSIFICATION — CRITICAL:
+The business data will include an "A2P USE CASE CLASSIFICATION" field. This determines how you write EVERY field:
+
+- CUSTOMER CARE: The use_case_description must describe a post-relationship maintenance program. Sample messages must ONLY be updates/reminders for existing customers with active accounts/services. NEVER include language about lead follow-up, outreach, or initial contact. The reviewer must believe these messages exist because a service is already underway.
+
+- CONVERSATIONAL MESSAGING: The use_case_description must describe interactive, two-way communication with people who initiated contact. Sample messages must be questions or direct responses to inquiries — conversational tone, not automated. The reviewer must believe this is a back-and-forth interaction, not a broadcast.
+
+- MARKETING: The use_case_description must be transparent about promotional intent. Sample messages can include offers, promotions, calls to action. Full SHAFT compliance needed.
+
+- MIXED USE: The use_case_description must EXPLICITLY describe BOTH programs — pre-sale interaction (lead follow-up, qualifying) AND post-sale servicing (reminders, updates). sample_message_1 should show one side, sample_message_2 should show the other. The reviewer must believe this business genuinely does both. Documents that deny reality (claiming "only transactional" when the business clearly does lead follow-up) get rejected for inconsistency.
+
+THE FIRST MESSAGE TEST: Whatever the use case, the sample_message_1 should reflect what the FIRST message to a new contact looks like. This is what the reviewer judges the entire campaign by.
 
 IMPORTANT: Keep ALL fields concise and practical. Consent checkbox texts must be short — they need to fit next to a checkbox on a form. But the opt_in_description and use_case_description should be thorough since reviewers read them word by word.
 
@@ -831,18 +985,39 @@ SMS CAMPAIGN USE CASES:
 OPT-IN DETAILS:
 - Opt-in Locations: ${answers.optin_locations || "N/A"}
 - Phone Field Required: ${answers.phone_field_required || "N/A"}
+- Opt-in Flow Type: ${answers.optin_flow_type || "N/A"}
+- Opt-in Journey Steps (CRITICAL — use this to describe the opt-in process step by step): ${answers.optin_journey_steps || "N/A"}
+- Opt-in Page URL (direct URL where phone field and consent checkboxes appear): ${answers.optin_page_url || answers.primary_website || "N/A"}
 - Support Email: ${answers.support_email || "N/A"}
 - STOP/HELP Number: ${answers.stop_help_number || "N/A"}
 ${buildWebsiteSection(answers, websiteContent)}
-${buildIndustryRestrictionSection(answers)}
-Generate the JSON with all 8 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.${restricted ? `
+${buildUseCaseSection(answers)}${buildIndustryRestrictionSection(answers)}
+Generate the JSON with all 8 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.${restricted ? (() => {
+    const uc = getUseCaseLabel(answers);
+    const isCustomerCareOnly = uc === "Customer Care";
+    if (isCustomerCareOnly) {
+      return `
 
-CRITICAL — RESTRICTED INDUSTRY (${restrictedIndustries.join(", ")}):
-- Both sample messages MUST be transactional only — no promotional content, no offers, no solicitations. Apply the transactional message test: Q1 (recipient initiated?) = YES, Q2 (persuades new action?) = NO, Q3 (makes sense as response?) = YES. Any message failing this test must not be included.
-- The use_case_description MUST describe a transactional-only program, name the governing regulations (${restrictedIndustries.map(i => INDUSTRY_RULES[i]?.regulatoryNote || "industry regulations").join("; ")}), and explicitly state what types of messages are NEVER sent.
+CRITICAL — RESTRICTED INDUSTRY, CUSTOMER CARE ONLY (${restrictedIndustries.join(", ")}):
+- Both sample messages MUST be transactional only — updates/reminders for existing customers with active accounts/files. No inquiry follow-up, no lead response.
+- The use_case_description MUST describe a transactional-only program and explicitly state what types of messages are NEVER sent.
 - The opt_in_message and transactional_consent_checkbox must reflect transactional-only consent.
 - For marketing_consent_checkbox, set it to this exact text: "Not applicable — This business operates in a regulated industry that restricts SMS messaging to transactional use only. Promotional or marketing text messages are not permitted for this business type per CTIA and carrier guidelines. A marketing consent checkbox should not be included on opt-in forms for this business."
-- The form_secondary_text must state that no promotional messages are sent and reference the transactional-only restriction.` : ""}
+- The form_secondary_text must use "By checking the box above" (SINGULAR) and state that no promotional messages are sent.`;
+    }
+    // Conversational or Mixed Use restricted industry
+    return `
+
+CRITICAL — RESTRICTED INDUSTRY, ${uc.toUpperCase()} (${restrictedIndustries.join(", ")}):
+- This business responds to inbound inquiries AND/OR services existing clients. It does NOT send cold outreach or promotional blasts.
+- sample_message_1 should be a CONVERSATIONAL follow-up to an inquiry (e.g., "Thanks for your inquiry — are you looking to purchase or refinance?"). This is the first message the reviewer will judge.
+- sample_message_2 should be a TRANSACTIONAL update for an active file/account (e.g., "Your application is in review. We may need additional documents to continue processing.").
+- The use_case_description must honestly describe BOTH conversational follow-up and transactional messaging. Do NOT claim "transactional only" if the business follows up on inquiries — that mismatch causes rejection.
+- Use this positioning: "Messages are limited to responses to user inquiries, conversational follow-up, and transactional updates. No unsolicited promotional or marketing messages are sent. Messages are not sent to purchased lists or cold contacts."
+- For marketing_consent_checkbox, set it to this exact text: "Not applicable — This business operates in a regulated industry. SMS communications are limited to responses to user inquiries, conversational follow-up, and transactional updates. Promotional or marketing text messages are not sent. A marketing consent checkbox should not be included on opt-in forms for this business."
+- The opt_in_message and transactional_consent_checkbox should reference "service and follow-up texts" rather than just "service texts" — because this business also does conversational follow-up.
+- The form_secondary_text must use "By checking the box above" (SINGULAR) and state that messages are limited to inquiry follow-up and transactional updates.`;
+  })() : ""}
 
 REMINDER: Every "Reply STOP" phrase must end with "to opt out" — NEVER "to unsubscribe" or "to cancel." This is checked by reviewers character by character.${analysisHistory}`;
 }
