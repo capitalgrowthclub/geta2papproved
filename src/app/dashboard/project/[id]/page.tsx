@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Card from "@/components/ui/Card";
@@ -25,6 +25,7 @@ export default function ProjectDetailPage() {
   const [deleting, setDeleting] = useState(false);
   const [response, setResponse] = useState<QuestionnaireResponse | null>(null);
   const [documents, setDocuments] = useState<GeneratedDocument[]>([]);
+  const autoGenTriggered = useRef(false);
   const [clientLinks, setClientLinks] = useState<ClientIntakeLink[]>([]);
   const [activeTab, setActiveTab] = useState<"overview" | "privacy" | "terms" | "submission">("overview");
   const [loading, setLoading] = useState(true);
@@ -53,6 +54,11 @@ export default function ProjectDetailPage() {
   // Website verification state
   const [verifyingWebsite, setVerifyingWebsite] = useState(false);
   const [verificationResult, setVerificationResult] = useState<WebsiteVerificationResult | null>(null);
+
+  // Generate all state
+  const isGeneratingAny = generatingSubmission || generatingPrivacy || generatingTerms;
+  const [generatingAll, setGeneratingAll] = useState(false);
+  const [genAllProgress, setGenAllProgress] = useState("");
 
   // Disclaimer acknowledgment
   const [disclaimerAcknowledged, setDisclaimerAcknowledged] = useState(false);
@@ -133,6 +139,67 @@ export default function ProjectDetailPage() {
     }
     fetchData();
   }, [id]);
+
+  // Auto-generate all docs when questionnaire is complete, disclaimer acknowledged, and no docs exist
+  useEffect(() => {
+    if (
+      loading ||
+      autoGenTriggered.current ||
+      !response?.completed ||
+      !disclaimerAcknowledged ||
+      documents.length > 0 ||
+      isGeneratingAny ||
+      generatingAll ||
+      isProhibitedIndustry((response?.questions_answers as Record<string, string>) || {})
+    ) return;
+
+    autoGenTriggered.current = true;
+
+    // Small delay to let UI render before starting generation
+    const timer = setTimeout(() => {
+      // Trigger generate all
+      setGeneratingAll(true);
+      const answers = (response.questions_answers as Record<string, string>) || {};
+      const ORDER: DocumentType[] = ["submission_language", "privacy_policy", "terms_conditions"];
+      const LABELS: Record<DocumentType, string> = {
+        submission_language: "Submission Language",
+        privacy_policy: "Privacy Policy",
+        terms_conditions: "Terms & Conditions",
+      };
+
+      (async () => {
+        for (let i = 0; i < ORDER.length; i++) {
+          setGenAllProgress(`Generating ${LABELS[ORDER[i]]}... (${i + 1}/3)`);
+          // Inline generation to avoid dependency on handleGenerateCore
+          const type = ORDER[i];
+          if (type === "privacy_policy") { setGeneratingPrivacy(true); setErrorPrivacy(""); }
+          if (type === "terms_conditions") { setGeneratingTerms(true); setErrorTerms(""); }
+          if (type === "submission_language") { setGeneratingSubmission(true); setErrorSubmission(""); }
+          try {
+            const res = await fetch("/api/ai/generate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ project_id: id, type, answers }),
+            });
+            if (res.ok) {
+              const data = await res.json();
+              setDocuments((prev) => [data.document, ...prev.filter((d) => d.type !== data.document.type)]);
+            }
+          } catch { /* silent */ }
+          finally {
+            if (type === "privacy_policy") setGeneratingPrivacy(false);
+            if (type === "terms_conditions") setGeneratingTerms(false);
+            if (type === "submission_language") setGeneratingSubmission(false);
+          }
+        }
+        setGeneratingAll(false);
+        setGenAllProgress("");
+      })();
+    }, 500);
+
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, response?.completed, disclaimerAcknowledged, documents.length]);
 
   async function handleAcknowledgeDisclaimer() {
     setAcknowledgingDisclaimer(true);
@@ -268,6 +335,32 @@ export default function ProjectDetailPage() {
     } finally {
       setAnalyzing(false);
     }
+  }
+
+  async function handleGenerateAll() {
+    if (!response || !disclaimerAcknowledged) {
+      if (!disclaimerAcknowledged) {
+        setPendingGenerateType("submission_language");
+        setShowDisclaimerModal(true);
+      }
+      return;
+    }
+
+    setGeneratingAll(true);
+    const ORDER: DocumentType[] = ["submission_language", "privacy_policy", "terms_conditions"];
+    const LABELS: Record<DocumentType, string> = {
+      submission_language: "Submission Language",
+      privacy_policy: "Privacy Policy",
+      terms_conditions: "Terms & Conditions",
+    };
+
+    for (let i = 0; i < ORDER.length; i++) {
+      setGenAllProgress(`Generating ${LABELS[ORDER[i]]}... (${i + 1}/3)`);
+      await handleGenerateCore(ORDER[i]);
+    }
+
+    setGeneratingAll(false);
+    setGenAllProgress("");
   }
 
   async function handleFixForMe() {
@@ -824,6 +917,33 @@ export default function ProjectDetailPage() {
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* Generate All / Regenerate All */}
+          {isQuestionnaireComplete && !industryIsProhibited && disclaimerAcknowledged && (
+            <div className="flex items-center gap-3">
+              {generatingAll ? (
+                <div className="flex items-center gap-2 p-3 bg-teal-50 border border-teal-200 rounded-lg w-full">
+                  <svg className="animate-spin w-4 h-4 text-teal-600" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  <span className="text-sm font-medium text-teal-700">{genAllProgress || "Generating documents..."}</span>
+                </div>
+              ) : (
+                <Button
+                  onClick={handleGenerateAll}
+                  disabled={isGeneratingAny}
+                  variant={documents.length > 0 ? "outline" : "primary"}
+                  size="sm"
+                >
+                  <svg className="w-4 h-4 mr-1.5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182" />
+                  </svg>
+                  {documents.length > 0 ? "Regenerate All Documents" : "Generate All Documents"}
+                </Button>
+              )}
             </div>
           )}
 
