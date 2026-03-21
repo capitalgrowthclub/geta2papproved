@@ -16,8 +16,8 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   // Website verification
   {
     id: "website_live",
-    label: "My opt-in page is live and loads without errors",
-    description: "The reviewer will visit this URL. If it's broken, behind a login, or shows an error — instant rejection.",
+    label: "My opt-in page is publicly accessible — no login, password, or account required",
+    description: "The reviewer will open this URL in a browser. If it requires a login, password, account, or any authentication to access — they can't verify it and will reject. The form must be visible to anyone with the link.",
     category: "website",
   },
   {
@@ -79,6 +79,12 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
     id: "use_case_selected",
     label: "I will select the recommended use case in the registration portal",
     description: "When filling out the A2P registration, select the exact use case shown on your submission language tab.",
+    category: "platform",
+  },
+  {
+    id: "content_declarations_checked",
+    label: "I will select the correct content declaration checkboxes during registration",
+    description: "The registration portal asks if your messages contain embedded links, phone numbers, direct lending content, or age-gated content. Check the boxes as shown in your submission language section.",
     category: "platform",
   },
   // Document verification

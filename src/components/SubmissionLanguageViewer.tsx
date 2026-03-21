@@ -4,6 +4,14 @@ import { useState } from "react";
 import Card from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 
+interface ContentDeclarations {
+  embedded_links?: boolean;
+  embedded_phone?: boolean;
+  direct_lending?: boolean;
+  age_gated?: boolean;
+  [key: string]: boolean | string | undefined;
+}
+
 interface SubmissionFields {
   use_case_description: string;
   sample_message_1: string;
@@ -13,6 +21,8 @@ interface SubmissionFields {
   marketing_consent_checkbox?: string;
   transactional_consent_checkbox?: string;
   form_secondary_text?: string;
+  content_declarations?: ContentDeclarations;
+  opt_in_keywords?: string;
 }
 
 interface SubmissionLanguageViewerProps {
@@ -388,6 +398,64 @@ export default function SubmissionLanguageViewer({
                       value={f.form_secondary_text}
                       editing={editing}
                       onChange={(v) => updateField("form_secondary_text", v)}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Content Declarations */}
+              {f.content_declarations && (
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">6</span>
+                    Content Declaration Checkboxes
+                  </h3>
+                  <p className="text-xs text-slate-500 mb-3 ml-8">
+                    During campaign registration, you&apos;ll be asked whether your messages contain these content types. Select the checkboxes as shown below.
+                  </p>
+                  <div className="ml-8 space-y-2">
+                    {Object.entries(f.content_declarations).map(([key, value]) => {
+                      if (typeof value === "string") return null;
+                      const labels: Record<string, string> = {
+                        embedded_links: "Embedded Links",
+                        embedded_phone: "Embedded Phone Numbers",
+                        direct_lending: "Direct Lending or Loan Content",
+                        age_gated: "Age-Gated Content",
+                      };
+                      return (
+                        <div key={key} className="flex items-center gap-3 p-2 rounded-lg bg-white border border-slate-200">
+                          <span className={`w-5 h-5 rounded flex items-center justify-center text-xs font-bold ${value ? "bg-teal-100 text-teal-700" : "bg-slate-100 text-slate-400"}`}>
+                            {value ? "✓" : "✗"}
+                          </span>
+                          <div>
+                            <span className="text-sm font-medium text-slate-700">{labels[key] || key}</span>
+                            <span className={`ml-2 text-xs font-semibold ${value ? "text-teal-600" : "text-slate-400"}`}>
+                              {value ? "YES — check this" : "NO — leave unchecked"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Opt-in Keywords */}
+              {f.opt_in_keywords && f.opt_in_keywords !== "N/A — this business uses web-based opt-in only." && (
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center text-xs font-bold">7</span>
+                    Opt-In Keywords
+                  </h3>
+                  <p className="text-xs text-slate-500 mb-3 ml-8">
+                    If your registration portal asks for opt-in keywords, enter these.
+                  </p>
+                  <div className="ml-8">
+                    <CopyField
+                      label="Opt-In Keyword"
+                      value={f.opt_in_keywords}
+                      editing={editing}
+                      onChange={(v) => updateField("opt_in_keywords", v)}
                     />
                   </div>
                 </div>

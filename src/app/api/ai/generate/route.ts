@@ -973,6 +973,17 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
   7. "Consent is not a condition of purchase or service."
   8. "No mobile information will be shared with third parties for marketing or promotional purposes."
 
+- "content_declarations": A JSON object telling the user what content declaration checkboxes to select during campaign registration. The registration portal asks whether messages will contain certain content types. Based on the business's answers and generated sample messages, output:
+  {
+    "embedded_links": true or false (true ONLY if sample messages contain URLs — since we ban URLs in samples, this should almost always be false),
+    "embedded_phone": true or false (true if sample messages contain phone numbers),
+    "direct_lending": true or false (true if the business is in mortgage lending, banking, insurance, investment, or any financial lending industry),
+    "age_gated": true or false (true only if the business deals in age-restricted products/services like alcohol, tobacco, or gambling — which would be prohibited anyway)
+  }
+  Include a brief note for each explaining WHY it should be checked or unchecked.
+
+- "opt_in_keywords": If the business indicated "Text-to-join (keyword opt-in)" as an opt-in location, generate a recommended keyword (e.g., "JOIN", "START", or a business-specific keyword). If text-to-join is not used, set this to "N/A — this business uses web-based opt-in only."
+
 FREQUENCY CONSISTENCY: The message frequency stated in ALL fields must match the exact frequency values from the business data provided. Use the exact number — do not substitute "varies" when a specific frequency is given.
 
 USE CASE CLASSIFICATION — CRITICAL:
