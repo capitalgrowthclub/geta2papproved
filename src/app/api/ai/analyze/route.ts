@@ -56,21 +56,19 @@ SECTION A: SUBMISSION LANGUAGE FIELD-BY-FIELD REVIEW
    - For restricted industries: do samples contain ANY promotional language (offers, rates, "get approved today", urgency language)? Even subtle phrases like "we have great options" are promotional
    - Are the messages realistic and specific to THIS business? Generic messages get flagged
 
-3. OPT-IN DESCRIPTION — SIMPLICITY AND ACCURACY:
-   This is where MESSAGE_FLOW rejections happen. Check:
-   - Is the opt_in_description simple and factual? It should describe how someone opts in — NOT impose requirements. Flag if it's overly long or reads like a legal document.
-   - CRITICAL — FLAG THESE PHRASES AS PROBLEMS (they imply the checkbox is mandatory, which contradicts "consent is not a condition of purchase"):
-     * "The visitor must manually check this checkbox" → should just say the checkbox exists, not that they "must" check it
-     * "The form will not allow submission without..." → implies blocking, contradicts consent-not-condition
-     * "Users are required to check..." → same issue
-     * "Before submitting, the user must..." → same issue
-     * Any language that makes the checkbox sound mandatory or form-blocking
-   - Does it describe the path from the website to the consent checkbox? (URL, steps if multi-step form, where checkbox appears)
-   - Compare against the questionnaire's "Opt-in Journey Steps" and "Opt-in Flow Type" — does the description match?
-   - Does it name a specific URL? Compare against the Opt-in Page URL from the questionnaire.
-   - Does it include ALL SIX required statements: (1) checkbox never pre-checked, (2) phone number alone ≠ consent, (3) SMS checkbox separate from other agreements, (4) consent disclosure adjacent to checkbox, (5) PP/TC links displayed adjacent, (6) consent not condition of purchase?
-   - Is the verbatim consent checkbox text quoted?
-   - Is it concise? A good opt_in_description is one paragraph for the journey + the six required statements + the quoted consent text. Not an essay.
+3. OPT-IN DESCRIPTION — PROCESS ONLY:
+   The opt_in_description should ONLY describe the process of how someone opts in. Nothing else. Check:
+   - Does it describe the URL where the process starts?
+   - If the consent checkbox is on a different page than where the process starts (e.g., starts at /apply, checkbox at /apply/contact-info), are both URLs listed?
+   - Does it describe the steps the person goes through to reach the consent checkbox?
+   - Is it short and factual? A good opt_in_description is 2-4 sentences. Flag if it's excessively long.
+   - Compare against the questionnaire's "Opt-in Journey Steps" and "Opt-in Flow Type" — does the description match what the business said?
+   - FLAG AS PROBLEMS — the opt_in_description should NOT contain any of these:
+     * Consent disclosure text or verbatim checkbox language (belongs in other fields, not here)
+     * Legal statements like "checkbox is never pre-checked", "consent is not a condition of purchase", "phone number alone does not constitute consent" (these do NOT belong in the opt-in description)
+     * "Must", "required", "will not allow" language
+     * Verbatim consent checkbox text quotes
+     If any of these appear in the opt_in_description, flag it — the field is only for describing the opt-in process/journey.
 
 4. OPT-IN CONFIRMATION MESSAGE:
    - Does it start with "[Business Name]:"?
