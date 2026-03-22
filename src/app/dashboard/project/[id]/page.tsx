@@ -11,7 +11,6 @@ import SubmissionLanguageViewer from "@/components/SubmissionLanguageViewer";
 import ComplianceAnalysis from "@/components/ComplianceAnalysis";
 import type { AnalysisResult } from "@/components/ComplianceAnalysis";
 import PreSubmissionChecklist from "@/components/PreSubmissionChecklist";
-import type { WebsiteVerificationResult } from "@/components/PreSubmissionChecklist";
 import type { Project, QuestionnaireResponse, GeneratedDocument, ClientIntakeLink } from "@/lib/supabase";
 import { isProhibitedIndustry, isRestrictedIndustry, getSelectedProhibited, getSelectedRestricted, getUseCaseLabel } from "@/lib/questionnaires/a2p-compliance";
 
@@ -52,8 +51,6 @@ export default function ProjectDetailPage() {
   const [fixProgress, setFixProgress] = useState("");
 
   // Website verification state
-  const [verifyingWebsite, setVerifyingWebsite] = useState(false);
-  const [verificationResult, setVerificationResult] = useState<WebsiteVerificationResult | null>(null);
 
   // Generate all state
   const isGeneratingAny = generatingSubmission || generatingPrivacy || generatingTerms;
@@ -291,26 +288,6 @@ export default function ProjectDetailPage() {
     }
   }
 
-  async function handleVerifyWebsite() {
-    const url = answers.optin_page_url || answers.primary_website?.split(/[\n,]/)[0]?.trim() || "";
-    if (!url) return;
-    setVerifyingWebsite(true);
-    try {
-      const res = await fetch("/api/verify-website", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setVerificationResult(data.result);
-      }
-    } catch {
-      // Silent failure
-    } finally {
-      setVerifyingWebsite(false);
-    }
-  }
 
   async function handleAnalyze() {
     setAnalyzing(true);
@@ -1222,11 +1199,7 @@ export default function ProjectDetailPage() {
                 hasAllDocs={!!(submissionDoc && privacyDoc && termsDoc)}
                 analysisScore={analysisResult?.compliance_score ?? null}
                 analysisRisk={analysisResult?.overall_risk ?? null}
-                optinPageUrl={answers.optin_page_url || answers.primary_website?.split(/[\n,]/)[0]?.trim() || ""}
                 useCaseLabel={useCaseLabel}
-                onVerifyWebsite={handleVerifyWebsite}
-                verifying={verifyingWebsite}
-                verificationResult={verificationResult}
               />
             </div>
           )}

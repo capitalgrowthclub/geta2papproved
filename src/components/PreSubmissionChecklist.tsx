@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 
 interface ChecklistItem {
@@ -17,37 +16,37 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   {
     id: "website_live",
     label: "My opt-in page is publicly accessible — no login, password, or account required",
-    description: "The reviewer will open this URL in a browser. If it requires a login, password, account, or any authentication to access — they can't verify it and will reject. The form must be visible to anyone with the link.",
+    description: "The reviewer will visit this URL. If it requires any authentication, they can't verify it and will reject.",
     category: "website",
   },
   {
     id: "checkboxes_visible",
     label: "SMS consent checkbox(es) are visible on my form",
-    description: "The reviewer needs to see unchecked SMS consent checkboxes on the page where phone numbers are collected.",
+    description: "Unchecked SMS consent checkboxes must be visible on the page where phone numbers are collected.",
     category: "website",
   },
   {
     id: "checkboxes_unchecked",
     label: "Consent checkboxes are NOT pre-checked by default",
-    description: "Pre-checked checkboxes = automatic rejection. They must start unchecked — the user checks them.",
+    description: "Pre-checked checkboxes = automatic rejection. They must start unchecked.",
     category: "website",
   },
   {
     id: "consent_text_matches",
     label: "The consent text next to my checkboxes matches my submission language exactly",
-    description: "The reviewer compares what's on your website to what you submitted. Any difference — even one word — gets flagged.",
+    description: "The reviewer compares your website to your submission. Any difference — even one word — gets flagged.",
     category: "website",
   },
   {
     id: "pp_tc_links_visible",
     label: "Privacy Policy and Terms & Conditions links are visible near the checkboxes",
-    description: "Clickable links to both documents must be displayed on the form, near the consent checkboxes.",
+    description: "Clickable links to both documents must be on the form, near the consent checkboxes.",
     category: "website",
   },
   {
     id: "pp_tc_published",
     label: "My Privacy Policy and Terms & Conditions are published on my website",
-    description: "The generated documents need to be live on your website at accessible URLs before you submit your application.",
+    description: "The generated documents need to be live at accessible URLs before you submit.",
     category: "website",
   },
   // Platform verification
@@ -66,13 +65,13 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   {
     id: "address_matches",
     label: "My business address on my platform matches my documents",
-    description: "Street address, suite number, city, state, zip — all must match exactly between your platform and documents.",
+    description: "Street address, suite number, city, state, zip — all must match exactly.",
     category: "platform",
   },
   {
     id: "phone_matches",
     label: "My STOP/HELP phone number is the number my platform actually sends from",
-    description: "The phone number in your documents must be the actual number registered on your SMS platform that sends texts.",
+    description: "The phone number in your documents must be the actual number registered on your SMS platform.",
     category: "platform",
   },
   {
@@ -84,7 +83,7 @@ const CHECKLIST_ITEMS: ChecklistItem[] = [
   {
     id: "content_declarations_checked",
     label: "I will select the correct content declaration checkboxes during registration",
-    description: "The registration portal asks if your messages contain embedded links, phone numbers, direct lending content, or age-gated content. Check the boxes as shown in your submission language section.",
+    description: "Check the content declaration boxes (embedded links, phone numbers, direct lending, age-gated) as shown in your submission language.",
     category: "platform",
   },
   // Document verification
@@ -109,24 +108,7 @@ interface PreSubmissionChecklistProps {
   hasAllDocs: boolean;
   analysisScore: number | null;
   analysisRisk: string | null;
-  optinPageUrl: string;
   useCaseLabel: string | null;
-  onVerifyWebsite: () => void;
-  verifying: boolean;
-  verificationResult: WebsiteVerificationResult | null;
-}
-
-export interface WebsiteVerificationResult {
-  url: string;
-  accessible: boolean;
-  hasPhoneField: boolean;
-  hasCheckbox: boolean;
-  hasPrivacyLink: boolean;
-  hasTermsLink: boolean;
-  hasConsentText: boolean;
-  isMultiStep?: boolean;
-  rawText: string;
-  issues: string[];
 }
 
 const CATEGORY_LABELS: Record<string, { title: string; icon: string }> = {
@@ -140,11 +122,7 @@ export default function PreSubmissionChecklist({
   hasAllDocs,
   analysisScore,
   analysisRisk,
-  optinPageUrl,
   useCaseLabel,
-  onVerifyWebsite,
-  verifying,
-  verificationResult,
 }: PreSubmissionChecklistProps) {
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState(true);
@@ -165,27 +143,9 @@ export default function PreSubmissionChecklist({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasAllDocs, analysisRisk, analysisScore]);
 
-  // Auto-check website items from verification result
-  // For multi-step forms, only auto-check what we can actually verify (accessibility)
-  useEffect(() => {
-    if (!verificationResult) return;
-    const autoChecks = new Set(checked);
-    if (verificationResult.accessible) autoChecks.add("website_live");
-
-    // Only auto-check consent items if we could actually see them (not multi-step)
-    if (!verificationResult.isMultiStep) {
-      if (verificationResult.hasCheckbox) autoChecks.add("checkboxes_visible");
-      if (verificationResult.hasPrivacyLink && verificationResult.hasTermsLink) {
-        autoChecks.add("pp_tc_links_visible");
-      }
-    }
-    setChecked(autoChecks);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [verificationResult]);
-
   function toggleItem(id: string) {
     const item = CHECKLIST_ITEMS.find((i) => i.id === id);
-    if (item?.autoVerifiable) return; // Don't allow manual toggle of auto items
+    if (item?.autoVerifiable) return;
     const next = new Set(checked);
     if (next.has(id)) next.delete(id);
     else next.add(id);
@@ -248,64 +208,6 @@ export default function PreSubmissionChecklist({
 
       {expanded && (
         <div className="border-t border-slate-100">
-          {/* Website verification button */}
-          <div className="px-4 py-3 bg-slate-50 border-b border-slate-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-slate-700">
-                  Auto-verify your opt-in page
-                </p>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  {optinPageUrl
-                    ? `We'll check ${optinPageUrl} for consent checkboxes and policy links`
-                    : "Add your opt-in page URL in the questionnaire first"}
-                </p>
-              </div>
-              {optinPageUrl && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={onVerifyWebsite}
-                  disabled={verifying}
-                >
-                  {verifying ? (
-                    <>
-                      <svg className="animate-spin w-3.5 h-3.5 mr-1" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Checking...
-                    </>
-                  ) : (
-                    "Verify Website"
-                  )}
-                </Button>
-              )}
-            </div>
-            {verificationResult && (
-              <div className="mt-2 space-y-1">
-                {verificationResult.issues.length === 0 ? (
-                  <p className="text-xs text-emerald-600 font-medium">
-                    No issues found on your opt-in page.
-                  </p>
-                ) : (
-                  <>
-                    {verificationResult.isMultiStep && (
-                      <p className="text-xs text-slate-600 font-medium">
-                        Multi-step form detected — we verified the page loads but can&apos;t check later steps automatically. Please verify the website items below manually.
-                      </p>
-                    )}
-                    {verificationResult.issues.map((issue, i) => (
-                      <p key={i} className={`text-xs ${verificationResult.isMultiStep ? "text-slate-500" : "text-amber-700"}`}>
-                        {verificationResult.isMultiStep ? "ℹ" : "⚠"} {issue}
-                      </p>
-                    ))}
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
           {/* Checklist by category */}
           {categories.map((cat) => {
             const items = CHECKLIST_ITEMS.filter((i) => i.category === cat);
