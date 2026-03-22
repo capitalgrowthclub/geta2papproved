@@ -286,7 +286,7 @@ Output ONLY valid JSON with no markdown, no code fences, no extra text. Use this
       "category": "category_name",
       "title": "Short descriptive title (plain English, not jargon)",
       "simple_description": "Explain the problem like you're talking to a business owner who doesn't know what A2P compliance is. 1-2 sentences max. Example: 'Your privacy policy says you send 4 messages per month, but your submission form says 8. These numbers need to match or your application will be rejected.' Do NOT use technical terms like 'consent disclosure blockquote', 'CTIA', 'SHAFT', 'transactional message test', etc.",
-      "description": "Technical detail with quoted evidence from the documents for the compliance team",
+      "description": "Technical detail with quoted evidence — keep to 3-5 sentences max. Do NOT write paragraphs. Quote the specific text that's wrong, state what it should be, done.",
       "affected_documents": ["submission_language", "privacy_policy", "terms_conditions"],
       "recommendation": "What specifically should be changed — plain English, actionable"
     }
@@ -294,9 +294,11 @@ Output ONLY valid JSON with no markdown, no code fences, no extra text. Use this
   "checks_passed": [
     {
       "title": "Check name",
-      "description": "Brief description of what was verified and found correct"
+      "description": "1 sentence — what was verified"
     }
   ]
+
+BE CONCISE. The entire JSON response should fit well within 16,000 tokens. Keep descriptions SHORT — 1-3 sentences for simple_description, 3-5 sentences for description. Do NOT write essays for each check. Quote the specific problem, state the fix, move on.
 }
 
 Severity guide:
@@ -480,7 +482,7 @@ export async function POST(req: NextRequest) {
     let message;
     const streamParams = {
       model: "claude-sonnet-4-6" as const,
-      max_tokens: 16000,
+      max_tokens: 32000,
       system: ANALYSIS_SYSTEM_PROMPT,
       messages: [{ role: "user" as const, content: prompt }],
     };
