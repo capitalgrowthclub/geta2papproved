@@ -92,18 +92,6 @@ function CopyField({ label, value, charLimit, editing, onChange }: { label: stri
   );
 }
 
-const COMPLIANCE_CHECKLIST = [
-  "My business website is live, publicly accessible, and error-free.",
-  "My website clearly displays my business name and contact details (address, email, phone).",
-  "Any DBA or alternate business names used are clearly disclosed on the site (if applicable).",
-  "I have provided my business website URL and the opt-in form URL.",
-  "My opt-in method is clearly shown (e.g., website form, QR code, paper form).",
-  "My opt-in flow includes all required disclosures (message purpose, frequency, STOP/HELP, consent language).",
-  "My Privacy Policy is published and accessible from the opt-in flow.",
-  "My Terms of Service are published and accessible from the website.",
-  "My website does not reference purchased, rented, or affiliate lead lists.",
-];
-
 function isRestrictedNotice(value: string | undefined | null): boolean {
   if (!value) return false;
   return value.startsWith("Not applicable") || value.startsWith("N/A");
@@ -465,24 +453,6 @@ export default function SubmissionLanguageViewer({
         })()}
       </Card>
 
-      {/* Compliance Checklist */}
-      <Card className="p-6 border-blue-200 bg-blue-50/50">
-        <h3 className="font-semibold text-slate-900 mb-1">Business Website Compliance Checklist</h3>
-        <p className="text-sm text-slate-500 mb-4">
-          Ensure your opt-in form and website meets the following carrier and platform guidelines before submitting your A2P registration.
-        </p>
-        <div className="space-y-3">
-          {COMPLIANCE_CHECKLIST.map((item, i) => (
-            <label key={i} className="flex items-start gap-3 cursor-pointer group">
-              <input
-                type="checkbox"
-                className="mt-0.5 w-4 h-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
-              />
-              <span className="text-sm text-slate-700 group-hover:text-slate-900">{item}</span>
-            </label>
-          ))}
-        </div>
-      </Card>
     </div>
   );
 }
