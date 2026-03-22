@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase";
 import { isRestrictedIndustry, getUseCaseLabel } from "@/lib/questionnaires/a2p-compliance";
+import { buildBehaviorModel } from "@/lib/behavior-model";
 
 export const maxDuration = 300;
 
@@ -25,9 +26,11 @@ function stripHtmlToText(html: string): string {
     .trim();
 }
 
-const ANALYSIS_SYSTEM_PROMPT = `You are the strictest A2P 10DLC compliance reviewer. You have been given three documents for a single business's A2P 10DLC campaign registration: the Submission Language (JSON fields for the registration portal), the Privacy Policy, and the Terms & Conditions. You also have the business's questionnaire answers as the source of truth.
+const ANALYSIS_SYSTEM_PROMPT = `You are an ADVERSARIAL A2P 10DLC rejection simulator. Your job is to TRY TO REJECT this registration package. Assume it fails unless every artifact matches the real messaging flow. You have the Submission Language, Privacy Policy, Terms & Conditions, and the business's questionnaire answers including their Behavior Model.
 
-Your job is to find EVERY reason a carrier reviewer could reject this registration. Think like the most demanding reviewer who reads hundreds of these daily. You must check ALL of the categories below AND perform a final "story coherence" review.
+Your mindset: "I am a carrier reviewer who rejects 60% of submissions. I am looking for ANY reason to reject. I will find it."
+
+You must check ALL categories below. For each check, your default assumption is FAIL — only mark it as passed if you have specific evidence it passes.
 
 ═══════════════════════════════════════════════
 SECTION A: SUBMISSION LANGUAGE FIELD-BY-FIELD REVIEW
@@ -195,10 +198,38 @@ SECTION E: RESTRICTED INDUSTRY COMPLIANCE
     - SMS opt-in consent cannot be shared with third parties
 
 ═══════════════════════════════════════════════
-SECTION F: THE REVIEWER'S STORY COHERENCE TEST
+SECTION F: HARD GATE VALIDATORS (CRITICAL BLOCKERS — not score deductions)
 ═══════════════════════════════════════════════
 
-21. STORY COHERENCE — THE FINAL AND MOST IMPORTANT CHECK:
+These are pass/fail gates. If ANY fails, the package should NOT be submitted.
+
+22. CHECKBOX AUTHORIZES FIRST MESSAGE:
+    Look at sample_message_1 (the first message). Look at the transactional_consent_checkbox text. Does the checkbox clearly authorize the type of message in sample_message_1?
+    - If sample_message_1 is conversational (asks a question, follows up on an inquiry, acknowledges a form submission) but the checkbox only says "service texts" about "account updates" or "active files" — the checkbox does NOT authorize the first message. CRITICAL FAILURE.
+    - The checkbox must include language covering what the first message actually does. For inquiry follow-up: "responses to your inquiry" or "follow-up communications". For confirmations: "confirmation of your request."
+    - If the recipient_stage is "lead" or "mixed", the checkbox MUST cover conversational messaging, not just transactional servicing.
+
+23. OPT-IN FLOW INCLUDES REQUIRED LINKS:
+    The opt_in_description must reference the opt-in website URL. Check that it includes a URL where the opt-in happens. Also verify the Privacy Policy and Terms & Conditions links are mentioned (either as URLs or as "Privacy Policy and Terms are linked on the form").
+
+24. PRIVACY VENDOR CONFLICT:
+    If the Privacy Policy discloses service providers (GoHighLevel, Twilio, Stripe, etc.) AND also uses absolute non-sharing language ("never shared with third parties" without "for marketing or promotional purposes" qualifier, OR "under any circumstances", OR "for any purpose whatsoever"), that is a CRITICAL contradiction. Service providers ARE third parties. The only safe pattern is: "No mobile information will be shared with third parties or affiliates for marketing or promotional purposes."
+
+25. MESSAGE COVERAGE:
+    Every message type in the business's actual program must appear in the use_case_description AND in the consent checkbox. Check:
+    - If the business does inquiry follow-up: use_case_description and checkbox must mention inquiry/follow-up
+    - If the business sends transactional updates: use_case_description and checkbox must mention updates/reminders
+    - If the business sends promotional messages: use_case_description and checkbox must mention promotional/marketing
+    - Missing coverage = the generated documents don't describe the real program = rejection
+
+26. DIRECT LENDING DECLARATION:
+    If the business is in mortgage lending, banking, insurance, investment, or any financial lending industry, the content_declarations field must have direct_lending set to true. If it's false or missing for a lending business, flag as HIGH.
+
+═══════════════════════════════════════════════
+SECTION G: THE REVIEWER'S STORY COHERENCE TEST
+═══════════════════════════════════════════════
+
+27. STORY COHERENCE — THE FINAL AND MOST IMPORTANT CHECK:
     Step back from the individual checks and ask the three questions a real reviewer asks:
 
     QUESTION 1: "Why does the FIRST message exist?"
@@ -295,8 +326,9 @@ function buildAnalysisPrompt(
   const tcTruncated = tcText.length > 20000 ? tcText.substring(0, 20000) + "... [truncated]" : tcText;
 
   const useCase = getUseCaseLabel(answers);
+  const behavior = buildBehaviorModel(answers);
 
-  return `Perform a full compliance review of these A2P 10DLC documents. Check ALL 21categories in Sections A-F of your instructions.
+  return `TRY TO REJECT this A2P 10DLC registration package. Check ALL 27 categories in Sections A-G. Assume it fails unless you find specific evidence for each check passing.
 
 ═══════════════════════════════════════════════
 QUESTIONNAIRE ANSWERS (source of truth)
@@ -310,6 +342,21 @@ QUESTIONNAIRE ANSWERS (source of truth)
 - Industry Type: ${answers.industry_type || "N/A"}
 - Restricted Industry: ${restricted ? "YES" : "NO"}
 - A2P Use Case Classification: ${useCase}
+
+BEHAVIOR MODEL (the real messaging program — documents must match this):
+- First Message Type: ${behavior.firstMessage.type}
+- First Message Trigger: ${behavior.firstMessage.trigger}
+- First Message Example: ${behavior.firstMessage.example || "N/A"}
+- Recipient Stage: ${behavior.recipientStage}
+- Has Conversational: ${behavior.hasConversational}
+- Has Transactional: ${behavior.hasTransactional}
+- Has Promotional: ${behavior.hasPromotional}
+- Consent Must Authorize: ${behavior.consentScope.mustAuthorize.join(", ") || "service texts"}
+- Service Providers Disclosed: ${behavior.serviceProviders.join(", ") || "None"}
+- Has Vendors: ${behavior.hasVendors}
+- Direct Lending: ${behavior.hasDirectLending}
+- PP URL: ${behavior.optIn.privacyPolicyUrl || "N/A"}
+- TC URL: ${behavior.optIn.termsUrl || "N/A"}
 
 MESSAGING BEHAVIOR:
 - First Message Purpose: ${answers.first_message_purpose || "N/A"}
@@ -357,7 +404,7 @@ ${tcTruncated}
 ═══════════════════════════════════════════════
 YOUR TASK
 ═══════════════════════════════════════════════
-Review ALL 21check categories (Sections A through F). For Section F (Story Coherence), step back and ask the four reviewer questions. Find every possible rejection reason. Output the JSON analysis.`;
+Review ALL 27check categories (Sections A through F). For Section F (Story Coherence), step back and ask the four reviewer questions. Find every possible rejection reason. Output the JSON analysis.`;
 }
 
 export async function POST(req: NextRequest) {

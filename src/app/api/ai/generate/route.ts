@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createServiceClient } from "@/lib/supabase";
 import { isProhibitedIndustry, isRestrictedIndustry, getSelectedRestricted, getUseCaseLabel, determineUseCase } from "@/lib/questionnaires/a2p-compliance";
+import { buildBehaviorModel, validateCheckboxAuthorizesFirstMessage, validateMessageCoverage } from "@/lib/behavior-model";
 
 export const maxDuration = 800; // ~13 minutes
 
@@ -96,7 +97,15 @@ CRITICAL REQUIREMENTS:
 15. FREQUENCY CONSISTENCY: The message frequency you state anywhere in a document — in the SMS section, consent disclosures, frequency tables — must exactly match the frequency values from the questionnaire data (Transactional Frequency and Marketing Frequency fields). Use the exact number or range provided. Never substitute "varies" when a specific frequency is given.
 16. DUAL CONSENT MECHANISM: The Privacy Policy and Terms must explicitly state that providing a phone number alone does not constitute consent to receive SMS messages. Include language matching this exactly (substituting the real business name): "Providing your phone number on our contact forms, registration pages, or intake forms does not, by itself, constitute consent to receive SMS text messages from [Business Name]. Consent to receive text messages is obtained separately through an affirmative, unchecked checkbox specifically designated for SMS consent at the point of opt-in."
 17. NO PURCHASED LISTS STATEMENT: Include this exact sentence verbatim in the SMS/data section: "We do not purchase, rent, or acquire personal information from data brokers, list vendors, or any third-party lead generation sources for use in our SMS messaging program."
-18. EXPLICIT PROHIBITION SECTION — STANDALONE SUBSECTION: Within the SMS/Text Messaging section of the Privacy Policy, create a dedicated subsection with this exact title: "Explicit Prohibition on SMS Opt-In Data Sharing". This must be a named subsection (h3 or equivalent), not merely a sentence in another section. It must contain an explicit and unambiguous statement that SMS opt-in consent information — including phone numbers collected via opt-in — is never sold, rented, shared, transferred, or disclosed to any third party, affiliate, or partner under any circumstances, for any purpose. This subsection MUST also include the following exact sentence (required by carrier compliance policies): "No mobile information will be shared with third parties or affiliates for marketing or promotional purposes."
+18. EXPLICIT PROHIBITION SECTION — STANDALONE SUBSECTION: Within the SMS/Text Messaging section of the Privacy Policy, create a dedicated subsection with this exact title: "Explicit Prohibition on SMS Opt-In Data Sharing". This must be a named subsection (h3 or equivalent), not merely a sentence in another section.
+   CRITICAL — VENDOR-SAFE LANGUAGE: If the business discloses service providers (GoHighLevel, Twilio, Stripe, etc.) elsewhere in the policy, do NOT use absolute language like "never shared with third parties under any circumstances for any purpose" — that contradicts the vendor disclosures (service providers ARE third parties). Instead use the carrier-approved narrow pattern:
+   "No mobile information will be shared with third parties or affiliates for marketing or promotional purposes."
+   This allows operational data sharing with service providers while prohibiting marketing use of mobile data. This exact sentence is required by carrier compliance policies.
+   BANNED phrases in this section when vendors are disclosed:
+   - "never shared with third parties" (without "for marketing or promotional purposes" qualifier)
+   - "under any circumstances"
+   - "for any purpose whatsoever"
+   - "never sold, rented, shared, transferred, or disclosed to any third party" (too absolute)
 19. SMS OPT-OUT RECORDS — PERMANENT RETENTION: In the data retention section, include this sentence as a standalone statement: "SMS opt-out records, including the date and time of each STOP request received and processed, are retained permanently to ensure that opted-out mobile numbers are never reactivated without a new affirmative opt-in consent."
 20. SMS OPT-IN CONSENT RETENTION — 5 YEARS: State explicitly in the data retention section that SMS opt-in consent records and all supporting documentation are retained for a minimum of five (5) years from the date consent was obtained. Use "five (5) years" — not four years, not "several years."
 21. SERVICE TEXTS LANGUAGE: In all consent-facing language — consent disclosure blockquotes, opt-in confirmation message descriptions, checkbox text quoted inside documents — use "service texts" instead of "transactional texts" when referring to non-promotional messages (reminders, confirmations, updates, notifications). "Transactional" is internal carrier/industry terminology; "service texts" is the plain-language equivalent that consumers recognize and that carriers expect to see in consumer-facing consent copy. This rule applies to any language that will appear directly on a form, inside a quoted consent block, or in a message body description shown to end users.
@@ -931,7 +940,8 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
   1. The URL where the process starts (and if different, the URL where the consent checkbox actually appears)
   2. The steps the person goes through
   3. That they check the SMS consent checkbox to opt in — this IS the opt-in action, it's part of the process
-  4. That's it.
+  4. That the Privacy Policy and Terms & Conditions are linked on the form (include the URLs if provided in the business data)
+  5. That's it.
 
   WHAT TO NOT INCLUDE — DO NOT ADD ANY OF THESE. IF YOU DO, THE OUTPUT IS WRONG:
   - No consent disclosure text
@@ -952,11 +962,11 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
 
   If it's a simple one-page form, just say where they go and what's on the page.
 
-  EXAMPLE for multi-step: "Contacts opt in at example.com/get-quote. On step 1, the visitor selects their project type and budget. On step 2, they enter their name, email, and phone number, check the SMS consent checkbox, and submit the form."
+  EXAMPLE for multi-step: "Contacts opt in at example.com/get-quote. On step 1, the visitor selects their project type and budget. On step 2, they enter their name, email, and phone number, check the SMS consent checkbox, and submit the form. The Privacy Policy (example.com/privacy-policy) and Terms & Conditions (example.com/terms) are linked on the form."
 
-  EXAMPLE for simple form: "Contacts opt in at example.com/contact. The visitor enters their name, email, and phone number, checks the SMS consent checkbox, and submits the form."
+  EXAMPLE for simple form: "Contacts opt in at example.com/contact. The visitor enters their name, email, and phone number, checks the SMS consent checkbox, and submits the form. The Privacy Policy and Terms & Conditions are linked on the form."
 
-  EXAMPLE with different URLs: "The process starts at example.com/apply. The visitor completes a 3-step application (loan type, property details, financial info). On the final step at example.com/apply/contact-info, they enter their phone number, check the SMS consent checkbox, and submit the form."
+  EXAMPLE with different URLs: "The process starts at example.com/apply. The visitor completes a 3-step application (loan type, property details, financial info). On the final step at example.com/apply/contact-info, they enter their phone number, check the SMS consent checkbox, and submit the form. Links to the Privacy Policy and Terms & Conditions are displayed adjacent to the checkbox."
 
   Keep it short. A reviewer reading this should be able to open the website and follow these steps to find the consent checkbox.
 
@@ -979,7 +989,12 @@ You MUST output ONLY valid JSON with no markdown, no code fences, no extra text.
 
 - "marketing_consent_checkbox": Checkbox text for marketing SMS consent. Must include ALL of: consent to marketing texts from the business with parenthetical examples of message types, msg frequency (exact number from data), "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", "Consent is not required for purchase.", "SMS opt-in data is never shared with third parties."
 
-- "transactional_consent_checkbox": Checkbox text for transactional/service SMS consent. Use "service texts" not "transactional texts" in consumer-facing language. Must include ALL of: consent to service texts from the business with parenthetical examples (e.g. reminders, updates, confirmations), msg frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", "SMS opt-in data is never shared with third parties."
+- "transactional_consent_checkbox": Checkbox text for service SMS consent. CRITICAL — THE CHECKBOX MUST AUTHORIZE THE FIRST MESSAGE:
+  If the business's first message is a conversational response (inquiry follow-up, qualification question, confirmation of a request) and the recipient is a lead (not an existing customer), the checkbox text MUST include language that authorizes that type of message. Do NOT only reference "service texts" or "account updates" if the first actual text is a response to an inquiry.
+  For businesses that respond to inquiries AND send transactional updates: use "service and follow-up texts" and include parenthetical examples covering BOTH (e.g., "responses to your inquiry, follow-up communications, appointment reminders, status updates").
+  For businesses that ONLY service existing customers: "service texts" with transactional examples is fine.
+  Must include ALL of: consent language, msg frequency, "Msg & data rates may apply.", "Reply STOP to opt out.", "Reply HELP for info.", "SMS opt-in data is never shared with third parties."
+  Use "service texts" or "service and follow-up texts" — NOT "transactional texts" in consumer-facing language.
 
 - "form_secondary_text": A secondary text block displayed below BOTH consent checkboxes on the form. This is what distinguishes approvals from MESSAGE_FLOW rejections. Must include ALL of these elements:
   1. For unrestricted businesses with TWO consent checkboxes (marketing + transactional): use "By checking the boxes above" (PLURAL) as the triggering action. For restricted businesses with only ONE checkbox (transactional only): use "By checking the box above" (SINGULAR). NEVER use "by providing your phone number and checking the box."
@@ -1024,6 +1039,31 @@ Each field must be realistic, specific to the business, and ready to copy-paste.
 function buildSubmissionLanguagePrompt(answers: Record<string, string>, websiteContent: string, _today: string, analysisHistory: string = ""): string {
   const restricted = isRestrictedIndustry(answers);
   const restrictedIndustries = restricted ? getSelectedRestricted(answers) : [];
+  const behavior = buildBehaviorModel(answers);
+
+  const behaviorSection = `
+BEHAVIOR MODEL (source of truth — ALL generated fields must match this):
+- First Message Trigger: ${behavior.firstMessage.trigger}
+- First Message Type: ${behavior.firstMessage.type}
+- First Message Example: ${behavior.firstMessage.example || "N/A"}
+- Recipient Stage at First Message: ${behavior.recipientStage}
+- Has Conversational Messages: ${behavior.hasConversational}
+- Has Transactional Messages: ${behavior.hasTransactional}
+- Has Promotional Messages: ${behavior.hasPromotional}
+- Message Direction: ${behavior.messageDirection}
+- Consent Must Authorize: ${behavior.consentScope.mustAuthorize.join(", ") || "service texts"}
+- Consent Description: ${behavior.consentScope.consentDescription}
+- Service Providers: ${behavior.serviceProviders.join(", ") || "None disclosed"}
+- Has Vendors (affects privacy language): ${behavior.hasVendors}
+- Direct Lending Content: ${behavior.hasDirectLending}
+- Privacy Policy URL: ${behavior.optIn.privacyPolicyUrl || "N/A"}
+- Terms URL: ${behavior.optIn.termsUrl || "N/A"}
+
+CONSENT SCOPE — THE CHECKBOX MUST AUTHORIZE ALL OF THESE:
+${behavior.consentScope.mustAuthorize.map((a) => `  - ${a}`).join("\n")}
+If ANY of these message types is missing from the consent checkbox, the first message may not be authorized and the campaign will be rejected.
+`;
+
   return `Generate A2P 10DLC registration form fields for the following business:
 
 BUSINESS IDENTITY:
@@ -1053,8 +1093,8 @@ OPT-IN DETAILS:
 - Support Email: ${answers.support_email || "N/A"}
 - STOP/HELP Number: ${answers.stop_help_number || "N/A"}
 ${buildWebsiteSection(answers, websiteContent)}
-${buildUseCaseSection(answers)}${buildIndustryRestrictionSection(answers)}
-Generate the JSON with all 8 fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business.${restricted ? (() => {
+${behaviorSection}${buildUseCaseSection(answers)}${buildIndustryRestrictionSection(answers)}
+Generate the JSON with all fields. Use "${answers.legal_business_name || "the business"}" as the business name in all messages. Make the messages sound natural and specific to this business. DERIVE ALL LANGUAGE FROM THE BEHAVIOR MODEL — do not invent message types that aren't in the model.${restricted ? (() => {
     const uc = getUseCaseLabel(answers);
     const isCustomerCareOnly = uc === "Customer Care";
     if (isCustomerCareOnly) {
@@ -1209,6 +1249,24 @@ export async function POST(req: NextRequest) {
     // Strip markdown code fences if the AI wraps JSON in them
     if (isSubmissionLanguage) {
       generatedContent = generatedContent.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
+
+      // Run hard gate validators on submission language
+      try {
+        const behavior = buildBehaviorModel(answers);
+        const parsed = JSON.parse(generatedContent);
+        const failures = [
+          validateCheckboxAuthorizesFirstMessage(behavior, parsed.transactional_consent_checkbox || ""),
+          validateMessageCoverage(behavior, parsed.use_case_description || ""),
+        ].filter(Boolean);
+
+        // If critical failures found, log them but still save — the analysis will catch them
+        // In the future, this could block saving entirely
+        if (failures.length > 0) {
+          console.warn("Hard gate failures detected:", failures);
+        }
+      } catch {
+        // JSON parse failed — will be caught later
+      }
     }
 
     // Append SEO attribution footer to Privacy Policy and Terms & Conditions
